@@ -1,0 +1,48 @@
+---
+import { getCollection, render } from "astro:content";
+import type { GetStaticPaths } from "astro";
+import "@/styles/global.css";
+import { SITE, DISCLAIMER } from "@/consts";
+
+export const getStaticPaths = (async () => {
+  const entries = await getCollection("checklists");
+  return entries
+    .filter((e) => !e.data.draft)
+    .map((entry) => ({ params: { slug: entry.id }, props: { entry } }));
+}) satisfies GetStaticPaths;
+
+const { entry } = Astro.props;
+const { Content } = await render(entry);
+const { title, destination } = entry.data;
+---
+
+<html lang="fr">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>🖨️ {title} — {SITE.name}</title>
+    <meta name="robots" content="noindex, nofollow" />
+    <style>
+      body { font-family: Inter, sans-serif; max-width: 800px; margin: 0 auto; padding: 2rem; color: #0f172a; }
+      h1 { font-size: 1.6rem; margin-bottom: 0.5rem; }
+      h2 { font-size: 1.2rem; margin-top: 1.5rem; }
+      ul { list-style: none; padding-left: 0; }
+      ul li::before { content: "☐ "; }
+      @media print { body { padding: 1cm; } ul li::before { content: "☐ "; } }
+    </style>
+  </head>
+  <body>
+    <header>
+      <p style="font-size:0.8rem;color:#64748b;">{SITE.name} · Checklist imprimable</p>
+      <h1>{title}</h1>
+      <p style="color:#64748b;">Destination : {destination}</p>
+    </header>
+    <main class="prose-article">
+      <Content />
+    </main>
+    <footer style="margin-top:3rem;padding-top:1rem;border-top:1px solid #e2e8f0;font-size:0.8rem;color:#64748b;">
+      <p>⚠️ {DISCLAIMER}</p>
+      <p>© {new Date().getFullYear()} {SITE.name}</p>
+    </footer>
+  </body>
+</html>

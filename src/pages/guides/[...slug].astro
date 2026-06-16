@@ -1,0 +1,92 @@
+---
+import { getCollection, render } from "astro:content";
+import type { GetStaticPaths } from "astro";
+import BaseLayout from "@/layouts/BaseLayout.astro";
+import Container from "@/components/Container.astro";
+import Badge from "@/components/Badge.astro";
+import Button from "@/components/Button.astro";
+import Card from "@/components/Card.astro";
+import FAQ from "@/components/FAQ.astro";
+import { DISCLAIMER } from "@/consts";
+
+export const getStaticPaths = (async () => {
+  const entries = await getCollection("guides");
+  return entries
+    .filter((e) => !e.data.draft)
+    .map((entry) => ({
+      params: { slug: entry.id },
+      props: { entry },
+    }));
+}) satisfies GetStaticPaths;
+
+const { entry } = Astro.props;
+const { Content } = await render(entry);
+const { title, description, destination, price, emoji, gradient, buyLink, checklistLink } = entry.data;
+
+const faq = [
+  { question: "Est-ce un produit physique ?", answer: "Non, c'est un guide 100 % numérique au format PDF téléchargeable." },
+  { question: "Le guide est-il mis à jour ?", answer: "Le guide est revu régulièrement, mais vérifiez toujours prix et horaires avant votre départ." },
+  { question: "Puis-je l'imprimer ?", answer: "Oui, le PDF est conçu pour rester lisible une fois imprimé." },
+];
+---
+
+<BaseLayout title={title} description={description} type="article">
+  <section class="relative overflow-hidden">
+    <div class="pointer-events-none absolute inset-0 -z-10 bg-mesh" aria-hidden="true"></div>
+    <Container class="py-14 sm:py-20">
+      <div class="grid items-center gap-10 lg:grid-cols-2">
+        <div>
+          <Badge variant="success">● Guide disponible · PDF</Badge>
+          <h1 class="mt-4 font-display text-3xl font-extrabold leading-[1.12] tracking-tight text-ink-900 sm:text-5xl">
+            {title}
+          </h1>
+          <p class="mt-5 text-lg text-ink-700">{description}</p>
+          <div class="mt-7 flex flex-wrap items-center gap-4">
+            <span class="font-display text-3xl font-extrabold text-ink-900">{price}</span>
+            <Button href={buyLink} external size="lg" variant="primary">Acheter le guide</Button>
+            {checklistLink && (
+              <a href={checklistLink} class="text-sm font-semibold text-brand-700 hover:underline">
+                ou la checklist gratuite
+              </a>
+            )}
+          </div>
+        </div>
+        <div class={`relative flex aspect-[4/3] items-center justify-center overflow-hidden rounded-[1.75rem] bg-gradient-to-br ${gradient} shadow-glow`} aria-hidden="true">
+          <span class="text-8xl drop-shadow">{emoji}</span>
+        </div>
+      </div>
+    </Container>
+  </section>
+
+  <section class="py-12 sm:py-16">
+    <Container class="mx-auto max-w-3xl">
+      <div class="prose-article">
+        <Content />
+      </div>
+    </Container>
+  </section>
+
+  <section class="py-12 sm:py-16">
+    <Container class="max-w-3xl">
+      <FAQ items={faq} />
+    </Container>
+  </section>
+
+  <section class="pb-16 sm:pb-20">
+    <Container>
+      <div class="relative overflow-hidden rounded-[1.75rem] bg-gradient-to-br from-brand-700 via-brand-600 to-accent-600 p-8 text-center shadow-glow sm:p-12">
+        <h2 class="relative font-display text-2xl font-bold text-white sm:text-3xl">
+          Prêt à partir à {destination} l'esprit léger ?
+        </h2>
+        <div class="relative mt-7 flex flex-col items-center justify-center gap-3 sm:flex-row">
+          <a href={buyLink} target="_blank" rel="noopener noreferrer" class="inline-flex items-center justify-center rounded-full bg-white px-7 py-3.5 text-[0.95rem] font-semibold text-brand-700 shadow-soft transition-all hover:-translate-y-0.5 hover:shadow-lift">
+            Acheter le guide — {price}
+          </a>
+        </div>
+      </div>
+      <p class="mx-auto mt-6 max-w-2xl rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-center text-sm text-amber-800" role="note">
+        ⚠️ {DISCLAIMER}
+      </p>
+    </Container>
+  </section>
+</BaseLayout>

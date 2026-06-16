@@ -56,13 +56,19 @@ jobs:
         continue-on-error: true
         run: node automation/review.mjs
 
-      # 4) Build du site statique (ne dépend pas des brouillons).
+      # 4) Productize — crée les packs business pour les publish_candidates.
+      - name: Productize
+        id: productize
+        continue-on-error: true
+        run: node automation/productize.mjs
+
+      # 5) Build du site statique (ne dépend pas des brouillons).
       - name: Build site
         id: build
         continue-on-error: true
         run: npm run build
 
-      # 5) Brouillons + recherche + résumé + review disponibles en artefact (jamais committés).
+      # 6) Brouillons + recherche + résumé + review + products disponibles en artefact.
       - name: Upload drafts & summary
         if: always()
         uses: actions/upload-artifact@v4
@@ -72,10 +78,11 @@ jobs:
             automation/research/**
             automation/drafts/**
             automation/output/**
+            automation/products/**
           if-no-files-found: ignore
           retention-days: 14
 
-      # 6) Notification Discord (recherche, modèles, review, fichiers, erreurs, build).
+      # 7) Notification Discord.
       - name: Notify Discord
         if: always()
         env:
@@ -83,7 +90,7 @@ jobs:
           RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
         run: node automation/notify.mjs
 
-      # 7) Si le build a échoué, marquer le job en échec (après la notif).
+      # 8) Si le build a échoué, marquer le job en échec (après la notif).
       - name: Fail if build failed
         if: steps.build.outcome == 'failure'
         run: |

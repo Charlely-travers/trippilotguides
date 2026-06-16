@@ -331,6 +331,18 @@ function applySocialChecks(result, social, researchNumbers) {
     score = Math.max(0, score - 1.5);
     weaknesses.push(`Social : promesses chiffrées non vérifiées (${flags.join(" ; ")}).`);
   }
+
+  // Phrases cassées après nettoyage automatique des prix
+  const brokenPhrase =
+    /coûtent?\s+avec un budget maîtrisé/i.test(social) ||
+    /à\s+avec un budget maîtrisé/i.test(social) ||
+    /à\s+budget indicatif/i.test(social) ||
+    /pour\s+avec un budget maîtrisé/i.test(social);
+  if (brokenPhrase) {
+    score = Math.min(score, 7); // pas de publish_candidate
+    weaknesses.push("Social : phrase cassée après nettoyage des prix.");
+  }
+
   return { ...result, score: round1(score), weaknesses };
 }
 

@@ -186,6 +186,37 @@ function buildPayload(summary) {
 
   // Erreurs
   const errors = summary?.errors ?? [];
+
+  // Packs productisés
+  const productize = summary?.productize;
+  if (productize && productize.count > 0) {
+    const prods = (productize.products || [])
+      .map(
+        (p) =>
+          `📦 **${p.slug}** (score: ${p.score}) — ${p.files.length} fichiers\n` +
+          `   ⚠️ TODO : ${p.todoLinks.join(", ")}`
+      )
+      .join("\n");
+    fields.push({
+      name: `🏭 Packs produits (${productize.count})`,
+      value: truncate(prods, 1024),
+    });
+    fields.push({
+      name: "👤 Prochaine action humaine",
+      value:
+        "1. Télécharger l'artefact `automation-output`\n" +
+        "2. Remplacer les `TODO_*` par les vrais liens (Gumroad, Tally)\n" +
+        "3. Relire les contenus\n" +
+        "4. Passer `draft: false` dans src/content/\n" +
+        "5. `npm run build` + commit/push",
+    });
+  } else if (productize) {
+    fields.push({
+      name: "🏭 Packs produits",
+      value: "Aucun (pas de publish_candidate score ≥ 9).",
+    });
+  }
+
   fields.push({
     name: `⚠️ Erreurs (${errors.length})`,
     value: errors.length

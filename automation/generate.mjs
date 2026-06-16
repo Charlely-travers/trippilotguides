@@ -586,21 +586,70 @@ function collectResearchNumbers(research) {
   return set;
 }
 
-/** Supprime/atténue les promesses chiffrées non sourcées du social. */
+/** Supprime/atténue les promesses chiffrées non sourcées du social, proprement. */
 function sanitizeUnsupportedSocialClaims(md, research) {
   const allowed = collectResearchNumbers(research);
+  const unsourced = (numStr) =>
+    (String(numStr).match(/\d+/g) || []).some((n) => !allowed.has(n));
   let out = md;
+
   // Promesses d'économie en pourcentage
   out = out.replace(/écono\w*[^.\n!?]*?\d+\s*%/gi, "économiser sur votre budget");
+
   // "tout faire pour (moins de) X€"
-  out = out.replace(/tout faire pour\s*(?:moins de\s*)?\d+\s*(?:€|euros?)/gi, "tout organiser avec un budget maîtrisé");
-  // "moins de X€ / par jour"
-  out = out.replace(/moins de\s*\d+\s*(?:€|euros?)(?:\s*\/?\s*(?:par )?jour)?/gi, "avec un budget maîtrisé");
+  out = out.replace(
+    /tout faire pour\s*(?:moins de\s*)?([\d.,]+)\s*(?:€|euros?)/gi,
+    (m, n) => (unsourced(n) ? "tout organiser avec un budget maîtrisé" : m)
+  );
+
+  // "(pour) moins de X€ [/ par jour]"
+  out = out.replace(
+    /(?:pour\s+)?moins de\s*([\d.,]+)\s*(?:€|euros?)(?:\s*\/?\s*(?:par\s+)?jour)?/gi,
+    (m, n) => (unsourced(n) ? "avec un budget maîtrisé" : m)
+  );
+
+  // "coûte(nt) (environ) X€" ou fourchette
+  out = out.replace(
+    /coûtent\s+(?:environ\s+|autour de\s+)?([\d.,]+(?:\s*[–-]\s*[\d.,]+)?)\s*(?:€|euros?)/gi,
+    (m, n) => (unsourced(n) ? "restent abordables" : m)
+  );
+  out = out.replace(
+    /coûte\s+(?:environ\s+|autour de\s+)?([\d.,]+(?:\s*[–-]\s*[\d.,]+)?)\s*(?:€|euros?)/gi,
+    (m, n) => (unsourced(n) ? "reste abordable" : m)
+  );
+
+  // "à X-Y€" (fourchette) -> "à prix accessible"
+  out = out.replace(
+    /à\s+([\d.,]+\s*[–-]\s*[\d.,]+)\s*(?:€|euros?)/gi,
+    (m, n) => (unsourced(n) ? "à prix accessible" : m)
+  );
+  // "à X€" (valeur unique) -> "à petit prix"
+  out = out.replace(
+    /à\s+([\d.,]+)\s*(?:€|euros?)/gi,
+    (m, n) => (unsourced(n) ? "à petit prix" : m)
+  );
+
   // Promesses trop fortes
   out = out.replace(/sans rien (rater|manquer)/gi, "en profitant de l'essentiel");
-  // Prix précis non présents dans la recherche -> "budget indicatif"
-  out = out.replace(/(\d+)\s*€/g, (m, n) => (allowed.has(n) ? m : "budget indicatif"));
+
+  // Reste : prix générique non sourcé -> "à tarif indicatif"
+  out = out.replace(/([\d.,]+)\s*(?:€|euros?)/gi, (m, n) =>
+    unsourced(n) ? "à tarif indicatif" : m
+  );
+
   return out;
+}
+
+/** Corrige les tournures bancales pouvant subsister après nettoyage des prix. */
+function cleanAwkwardSocialPhrases(md) {
+  return md
+    .replace(/coûtent\s+avec un budget maîtrisé/gi, "restent abordables")
+    .replace(/coûte\s+avec un budget maîtrisé/gi, "reste abordable")
+    .replace(/coûte\s+à tarif indicatif/gi, "reste abordable")
+    .replace(/pour\s+avec un budget maîtrisé/gi, "avec un budget maîtrisé")
+    .replace(/à\s+avec un budget maîtrisé/gi, "à petit prix")
+    .replace(/à\s+budget indicatif/gi, "à prix indicatif")
+    .replace(/\bbudget indicatif\b/gi, "budget maîtrisé");
 }
 
 /** Contenus réseaux sociaux : Markdown BRUT (avec normalisation si JSON renvoyé). */
@@ -647,7 +696,9 @@ async function generateSocialMarkdown(research) {
     md = raw;
   }
   md = md.replace(/^```(?:markdown)?\s*/i, "").replace(/```$/i, "").trim();
-  return sanitizeUnsupportedSocialClaims(sanitizeSocialText(md), research);
+  return cleanAwkwardSocialPhrases(
+    sanitizeUnsupportedSocialClaims(sanitizeSocialText(md), research)
+  );
 }
 
 /* ---------------- Assemblage déterministe ---------------- */
