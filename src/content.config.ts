@@ -10,6 +10,8 @@ const blog = defineCollection({
     emoji: z.string().default("📍"),
     gradient: z.string().default("from-brand-500 to-accent-600"),
     readingTime: z.string().default("6 min"),
+    /** Si true, l'article n'est ni listé ni rendu (brouillon). */
+    draft: z.boolean().default(false),
   }),
 });
 

@@ -1,20 +1,42 @@
 ---
 import "@/styles/global.css";
+import { ClientRouter } from "astro:transitions";
 import Seo from "@/components/Seo.astro";
 import Header from "@/components/Header.astro";
 import Footer from "@/components/Footer.astro";
-import { SITE } from "@/consts";
+import { SITE, LINKS } from "@/consts";
 
 interface Props {
   title: string;
   description: string;
   type?: "website" | "article";
+  jsonLd?: Record<string, unknown> | Record<string, unknown>[];
 }
 const {
   title = SITE.defaultTitle,
   description = SITE.defaultDescription,
   type = "website",
+  jsonLd,
 } = Astro.props;
+
+// Données structurées globales (organisation + site).
+const orgSchema = {
+  "@context": "https://schema.org",
+  "@type": "Organization",
+  name: SITE.name,
+  url: SITE.url,
+  logo: new URL("/favicon.svg", SITE.url).href,
+  email: LINKS.email,
+};
+const websiteSchema = {
+  "@context": "https://schema.org",
+  "@type": "WebSite",
+  name: SITE.name,
+  url: SITE.url,
+  inLanguage: "fr-FR",
+};
+
+const schemas = [orgSchema, websiteSchema, ...(jsonLd ? (Array.isArray(jsonLd) ? jsonLd : [jsonLd]) : [])];
 ---
 
 <!doctype html>
@@ -23,17 +45,16 @@ const {
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="generator" content={Astro.generator} />
+    <meta name="theme-color" content="#fbfaf8" />
     <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
-    <link
-      rel="preconnect"
-      href="https://fonts.googleapis.com"
-    />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
-      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap"
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@500;600;700;800&display=swap"
       rel="stylesheet"
     />
-    <Seo title={title} description={description} type={type} />
+    <Seo title={title} description={description} type={type} jsonLd={schemas} />
+    <ClientRouter />
   </head>
   <body class="flex min-h-screen flex-col">
     <a

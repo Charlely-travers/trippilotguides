@@ -7,12 +7,12 @@ interface Props {
 const { class: className = "", as = "div", hover = false } = Astro.props;
 const Tag = as;
 const hoverClasses = hover
-  ? "transition-all duration-200 hover:-translate-y-1 hover:shadow-lift"
+  ? "transition-all duration-300 hover:-translate-y-1.5 hover:shadow-lift hover:border-brand-200"
   : "";
 ---
 
 <Tag
-  class={`rounded-2xl bg-surface ring-1 ring-slate-200/80 shadow-soft ${hoverClasses} ${className}`}
+  class={`rounded-2xl border border-slate-200/80 bg-surface shadow-card ${hoverClasses} ${className}`}
 >
   <slot />
 </Tag>

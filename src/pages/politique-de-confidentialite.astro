@@ -1,0 +1,101 @@
+---
+import BaseLayout from "@/layouts/BaseLayout.astro";
+import Container from "@/components/Container.astro";
+import { SITE, LINKS, LEGAL_UPDATED } from "@/consts";
+---
+
+<BaseLayout
+  title="Politique de confidentialité"
+  description="Politique de confidentialité de TripPilot Guides : quelles données sont collectées, pourquoi, et vos droits (RGPD)."
+>
+  <section class="relative overflow-hidden">
+    <div class="pointer-events-none absolute inset-0 -z-10 bg-mesh" aria-hidden="true"></div>
+    <Container class="py-14 sm:py-20">
+      <div class="mx-auto max-w-3xl">
+        <h1 class="font-display text-3xl font-extrabold tracking-tight text-ink-900 sm:text-4xl">
+          Politique de confidentialité
+        </h1>
+        <p class="mt-3 text-sm text-ink-500">Dernière mise à jour : {LEGAL_UPDATED}</p>
+
+        <div class="prose-article mt-8">
+          <p>
+            Cette politique explique quelles données personnelles sont
+            collectées sur {SITE.name}, dans quel but, et comment exercer vos
+            droits conformément au Règlement général sur la protection des
+            données (RGPD).
+          </p>
+
+          <h2>Données que nous collectons</h2>
+          <p>Nous collectons un minimum de données :</p>
+          <ul>
+            <li>
+              <strong>Adresse email</strong> : uniquement si vous la fournissez
+              volontairement pour recevoir la checklist gratuite ou des conseils
+              de voyage. La collecte est gérée par notre prestataire de formulaire
+              et d'emailing (par exemple Tally ou MailerLite).
+            </li>
+            <li>
+              <strong>Données de navigation</strong> : si un outil de mesure
+              d'audience est utilisé, des données techniques anonymisées peuvent
+              être collectées (pages vues, type d'appareil).
+            </li>
+          </ul>
+          <p>
+            Nous ne demandons jamais d'informations bancaires : les paiements
+            sont gérés par des plateformes tierces (Gumroad, Etsy ou Payhip) sur
+            leurs propres serveurs sécurisés.
+          </p>
+
+          <h2>Finalité du traitement</h2>
+          <ul>
+            <li>Vous envoyer la ressource gratuite demandée.</li>
+            <li>Vous informer de la sortie de nouveaux guides (si vous y avez consenti).</li>
+            <li>Améliorer le contenu et l'expérience du site.</li>
+          </ul>
+
+          <h2>Base légale</h2>
+          <p>
+            Le traitement repose sur votre <strong>consentement</strong>, que
+            vous pouvez retirer à tout moment.
+          </p>
+
+          <h2>Durée de conservation</h2>
+          <p>
+            Votre adresse email est conservée tant que vous êtes inscrit. Vous
+            pouvez vous désinscrire à tout moment via le lien présent dans chaque
+            email, ce qui entraîne la suppression de vos données.
+          </p>
+
+          <h2>Prestataires</h2>
+          <p>
+            Nous faisons appel à des prestataires tiers pour le formulaire
+            d'inscription, l'emailing, la vente des guides et l'hébergement.
+            Ces prestataires disposent de leurs propres politiques de
+            confidentialité.
+          </p>
+
+          <h2>Cookies</h2>
+          <p>
+            Le site fonctionne sans cookie publicitaire. Seuls des cookies
+            strictement nécessaires ou de mesure d'audience anonyme peuvent être
+            utilisés. Vous pouvez configurer votre navigateur pour les refuser.
+          </p>
+
+          <h2>Vos droits</h2>
+          <p>
+            Conformément au RGPD, vous disposez d'un droit d'accès, de
+            rectification, d'effacement, de limitation et d'opposition au
+            traitement de vos données. Pour exercer ces droits, écrivez-nous à
+            <a href={`mailto:${LINKS.email}`}>{LINKS.email}</a>.
+          </p>
+
+          <h2>Contact</h2>
+          <p>
+            Pour toute question relative à vos données personnelles, contactez-nous
+            à <a href={`mailto:${LINKS.email}`}>{LINKS.email}</a>.
+          </p>
+        </div>
+      </div>
+    </Container>
+  </section>
+</BaseLayout>

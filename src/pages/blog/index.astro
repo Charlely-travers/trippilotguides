@@ -6,20 +6,21 @@ import Badge from "@/components/Badge.astro";
 import BlogCard from "@/components/BlogCard.astro";
 import CTASection from "@/components/CTASection.astro";
 
-const posts = (await getCollection("blog")).sort(
-  (a, b) => b.data.pubDate.valueOf() - a.data.pubDate.valueOf()
-);
+const posts = (await getCollection("blog"))
+  .filter((p) => !p.data.draft)
+  .sort((a, b) => b.data.pubDate.valueOf() - a.data.pubDate.valueOf());
 ---
 
 <BaseLayout
   title="Blog voyage — conseils, itinéraires et budgets"
   description="Conseils de voyage, itinéraires détaillés et astuces budget pour préparer votre séjour à Rome et ailleurs. Des articles clairs pour voyager sereinement."
 >
-  <section class="py-14 sm:py-20">
-    <Container>
+  <section class="relative overflow-hidden">
+    <div class="pointer-events-none absolute inset-0 -z-10 bg-mesh" aria-hidden="true"></div>
+    <Container class="py-16 sm:py-20">
       <div class="max-w-2xl">
-        <Badge variant="brand">Le blog</Badge>
-        <h1 class="mt-4 text-3xl font-extrabold text-ink-900 sm:text-4xl">
+        <Badge variant="soft" class="shadow-soft">Le blog</Badge>
+        <h1 class="mt-4 font-display text-3xl font-extrabold tracking-tight text-ink-900 sm:text-5xl">
           Conseils et itinéraires de voyage
         </h1>
         <p class="mt-4 text-lg text-ink-700">
@@ -27,8 +28,12 @@ const posts = (await getCollection("blog")).sort(
           logement et checklists. On commence par Rome.
         </p>
       </div>
+    </Container>
+  </section>
 
-      <div class="mt-10 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+  <section class="pb-16 sm:pb-20">
+    <Container>
+      <div class="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
         {
           posts.map((post) => (
             <BlogCard

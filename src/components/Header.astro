@@ -15,26 +15,32 @@ const isActive = (href: string) =>
 ---
 
 <header
-  class="sticky top-0 z-50 border-b border-slate-200/70 bg-cream/80 backdrop-blur"
+  class="glass sticky top-0 z-50 border-b border-slate-200/60"
 >
   <Container class="flex h-16 items-center justify-between gap-4">
-    <a href="/" class="flex items-center gap-2 font-bold text-ink-900">
+    <a
+      href="/"
+      class="flex items-center gap-2.5 font-display text-base font-bold text-ink-900 sm:text-lg"
+    >
       <span
-        class="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-brand-600 to-accent-600 text-white"
+        class="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-brand-600 to-accent-600 text-white shadow-soft"
         aria-hidden="true">✈</span
       >
-      <span class="text-base sm:text-lg">{SITE.name}</span>
+      <span>{SITE.name}</span>
     </a>
 
-    <nav class="hidden items-center gap-1 md:flex" aria-label="Navigation principale">
+    <nav
+      class="hidden items-center gap-1 rounded-full border border-slate-200/70 bg-white/60 p-1 md:flex"
+      aria-label="Navigation principale"
+    >
       {
         nav.map((item) => (
           <a
             href={item.href}
             aria-current={isActive(item.href) ? "page" : undefined}
-            class={`rounded-full px-3.5 py-2 text-sm font-medium transition-colors ${
+            class={`rounded-full px-3.5 py-1.5 text-sm font-medium transition-colors ${
               isActive(item.href)
-                ? "text-brand-700 bg-brand-50"
+                ? "bg-gradient-to-br from-brand-600 to-accent-600 text-white shadow-soft"
                 : "text-ink-700 hover:text-brand-700 hover:bg-brand-50"
             }`}
           >
@@ -48,32 +54,41 @@ const isActive = (href: string) =>
       href={LINKS.freeChecklist}
       target="_blank"
       rel="noopener noreferrer"
-      class="hidden rounded-full bg-brand-600 px-4 py-2 text-sm font-semibold text-white shadow-soft transition-all hover:bg-brand-700 hover:-translate-y-0.5 sm:inline-flex"
+      class="hidden rounded-full bg-gradient-to-br from-brand-600 to-accent-600 px-4 py-2 text-sm font-semibold text-white shadow-soft ring-1 ring-inset ring-white/10 transition-all hover:-translate-y-0.5 hover:shadow-lift sm:inline-flex"
     >
       Checklist gratuite
     </a>
 
-    <!-- Menu mobile (CSS only via <details>) -->
+    {/* Menu mobile (CSS only via <details>) */}
     <details class="relative md:hidden">
       <summary
-        class="flex h-10 w-10 cursor-pointer list-none items-center justify-center rounded-xl ring-1 ring-slate-200"
+        class="flex h-10 w-10 cursor-pointer list-none items-center justify-center rounded-xl border border-slate-200 bg-white/70"
         aria-label="Ouvrir le menu"
       >
         <span class="text-xl text-ink-900" aria-hidden="true">≡</span>
       </summary>
       <div
-        class="absolute right-0 mt-2 w-56 rounded-2xl bg-surface p-2 shadow-lift ring-1 ring-slate-200"
+        class="absolute right-0 mt-2 w-60 rounded-2xl border border-slate-200 bg-surface p-2 shadow-lift"
       >
         {
           nav.map((item) => (
             <a
               href={item.href}
+              aria-current={isActive(item.href) ? "page" : undefined}
               class="block rounded-xl px-4 py-2.5 text-sm font-medium text-ink-700 hover:bg-brand-50 hover:text-brand-700"
             >
               {item.label}
             </a>
           ))
         }
+        <a
+          href={LINKS.freeChecklist}
+          target="_blank"
+          rel="noopener noreferrer"
+          class="mt-1 block rounded-xl bg-gradient-to-br from-brand-600 to-accent-600 px-4 py-2.5 text-center text-sm font-semibold text-white"
+        >
+          Checklist gratuite
+        </a>
       </div>
     </details>
   </Container>

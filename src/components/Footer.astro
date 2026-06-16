@@ -11,39 +11,53 @@ const columns = [
       { label: "Tous les guides", href: "/guides" },
       { label: "Guide Rome 5 jours", href: "/guides/rome-5-jours-budget-700" },
       { label: "Blog voyage", href: "/blog" },
+      { label: "Checklist gratuite", href: "/checklist-rome-gratuite" },
     ],
   },
   {
     title: "Ressources",
     links: [
-      { label: "Checklist gratuite", href: "/checklist-rome-gratuite" },
       { label: "Budget Rome", href: "/blog/budget-rome-5-jours" },
       { label: "Où dormir à Rome", href: "/blog/ou-dormir-a-rome" },
+      { label: "Erreurs à éviter", href: "/blog/erreurs-voyage-rome" },
+      { label: "Itinéraire 5 jours", href: "/blog/rome-5-jours-itineraire" },
+    ],
+  },
+  {
+    title: "Informations",
+    links: [
+      { label: "Contact", href: "/contact" },
+      { label: "Mentions légales", href: "/mentions-legales" },
+      { label: "Confidentialité", href: "/politique-de-confidentialite" },
+      { label: "Conditions de vente", href: "/conditions-de-vente" },
     ],
   },
 ];
 ---
 
 <footer class="mt-8 border-t border-slate-200/70 bg-surface">
-  <Container class="py-12">
-    <div class="grid gap-10 sm:grid-cols-2 lg:grid-cols-4">
+  <Container class="py-14">
+    <div class="grid gap-10 sm:grid-cols-2 lg:grid-cols-5">
       <div class="lg:col-span-2">
-        <a href="/" class="flex items-center gap-2 font-bold text-ink-900">
+        <a
+          href="/"
+          class="flex items-center gap-2.5 font-display font-bold text-ink-900"
+        >
           <span
             class="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-brand-600 to-accent-600 text-white"
             aria-hidden="true">✈</span
           >
           <span class="text-lg">{SITE.name}</span>
         </a>
-        <p class="mt-3 max-w-sm text-sm text-ink-500">
+        <p class="mt-3 max-w-sm text-sm leading-relaxed text-ink-500">
           Des guides de voyage PDF prêts à suivre : planning jour par jour,
           budget, logement et checklist. Préparez votre voyage sans stress.
         </p>
         <a
-          href={LINKS.email}
+          href={`mailto:${LINKS.email}`}
           class="mt-4 inline-block text-sm font-medium text-brand-700 hover:underline"
         >
-          hello@trippilotguides.com
+          {LINKS.email}
         </a>
       </div>
 
@@ -51,12 +65,12 @@ const columns = [
         columns.map((col) => (
           <nav aria-label={col.title}>
             <h2 class="text-sm font-semibold text-ink-900">{col.title}</h2>
-            <ul class="mt-3 space-y-2">
+            <ul class="mt-3 space-y-2.5">
               {col.links.map((link) => (
                 <li>
                   <a
                     href={link.href}
-                    class="text-sm text-ink-500 hover:text-brand-700"
+                    class="text-sm text-ink-500 transition-colors hover:text-brand-700"
                   >
                     {link.label}
                   </a>
@@ -69,7 +83,7 @@ const columns = [
     </div>
 
     <div
-      class="mt-10 flex flex-col gap-3 border-t border-slate-200/70 pt-6 text-xs text-ink-500 sm:flex-row sm:items-center sm:justify-between"
+      class="mt-12 flex flex-col gap-3 border-t border-slate-200/70 pt-6 text-xs text-ink-500 sm:flex-row sm:items-center sm:justify-between"
     >
       <p>© {year} {SITE.name}. Tous droits réservés.</p>
       <p class="max-w-xl">

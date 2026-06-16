@@ -1,0 +1,102 @@
+---
+import BaseLayout from "@/layouts/BaseLayout.astro";
+import Container from "@/components/Container.astro";
+import { SITE, LINKS, LEGAL_UPDATED } from "@/consts";
+---
+
+<BaseLayout
+  title="Conditions générales de vente"
+  description="Conditions générales de vente des guides de voyage numériques TripPilot Guides : produits, prix, livraison, droit de rétractation et garanties."
+>
+  <section class="relative overflow-hidden">
+    <div class="pointer-events-none absolute inset-0 -z-10 bg-mesh" aria-hidden="true"></div>
+    <Container class="py-14 sm:py-20">
+      <div class="mx-auto max-w-3xl">
+        <h1 class="font-display text-3xl font-extrabold tracking-tight text-ink-900 sm:text-4xl">
+          Conditions générales de vente
+        </h1>
+        <p class="mt-3 text-sm text-ink-500">Dernière mise à jour : {LEGAL_UPDATED}</p>
+
+        <div class="prose-article mt-8">
+          <p>
+            Les présentes conditions générales de vente (CGV) encadrent la vente
+            des guides de voyage numériques proposés par {SITE.name}.
+          </p>
+
+          <h2>1. Produits</h2>
+          <p>
+            Les produits vendus sont des <strong>guides de voyage au format
+            numérique (PDF)</strong>. Il s'agit de produits dématérialisés,
+            téléchargeables, sans envoi de support physique. Les guides sont
+            élaborés avec l'aide d'outils d'intelligence artificielle puis revus,
+            et fournis à titre informatif.
+          </p>
+
+          <h2>2. Prix</h2>
+          <p>
+            Les prix sont indiqués en euros, toutes taxes comprises le cas
+            échéant. {SITE.name} se réserve le droit de modifier ses prix à tout
+            moment ; le prix appliqué est celui en vigueur au moment de la
+            commande.
+          </p>
+
+          <h2>3. Commande et paiement</h2>
+          <p>
+            La vente et le paiement sont gérés par des plateformes tierces
+            (Gumroad, Etsy ou Payhip). Le paiement s'effectue de manière
+            sécurisée sur ces plateformes ; {SITE.name} n'a pas accès à vos
+            informations bancaires. La commande est validée après confirmation du
+            paiement par la plateforme.
+          </p>
+
+          <h2>4. Livraison</h2>
+          <p>
+            Après confirmation du paiement, le guide PDF est mis à disposition
+            immédiatement au téléchargement via la plateforme de vente, ou envoyé
+            par email selon la plateforme. Aucun produit physique n'est expédié.
+          </p>
+
+          <h2>5. Droit de rétractation</h2>
+          <p>
+            Conformément à l'article L221-28 du Code de la consommation, le droit
+            de rétractation ne s'applique pas aux contenus numériques fournis sur
+            un support immatériel dont l'exécution a commencé après accord
+            préalable du client. En achetant et en téléchargeant le guide, vous
+            reconnaissez renoncer à votre droit de rétractation une fois le
+            téléchargement commencé.
+          </p>
+
+          <h2>6. Garanties et responsabilité</h2>
+          <p>
+            Les informations contenues dans les guides (prix, horaires, adresses,
+            recommandations) sont fournies à titre indicatif et peuvent évoluer.
+            Elles ne constituent ni une réservation, ni une garantie de
+            disponibilité ou de tarif. Il vous appartient de vérifier les
+            informations importantes auprès des sources officielles avant votre
+            départ. {SITE.name} ne saurait être tenu responsable des
+            conséquences liées à l'utilisation des informations fournies.
+          </p>
+
+          <h2>7. Service client</h2>
+          <p>
+            Pour toute question concernant une commande ou un guide, contactez-nous
+            à <a href={`mailto:${LINKS.email}`}>{LINKS.email}</a>. En cas de
+            problème de téléchargement, nous mettrons tout en œuvre pour vous
+            fournir un accès à votre produit.
+          </p>
+
+          <h2>8. Droit applicable</h2>
+          <p>
+            Les présentes CGV sont soumises au droit français. En cas de litige,
+            une solution amiable sera recherchée avant toute action judiciaire.
+          </p>
+
+          <p>
+            En finalisant un achat, le client déclare avoir pris connaissance et
+            accepté les présentes conditions générales de vente.
+          </p>
+        </div>
+      </div>
+    </Container>
+  </section>
+</BaseLayout>

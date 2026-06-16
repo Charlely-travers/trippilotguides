@@ -5,19 +5,34 @@ import Badge from "@/components/Badge.astro";
 import GuideCard from "@/components/GuideCard.astro";
 import CTASection from "@/components/CTASection.astro";
 import { guides } from "@/data/guides";
+import { SITE } from "@/consts";
 
 const available = guides.filter((g) => g.status === "available").length;
+
+const itemListSchema = {
+  "@context": "https://schema.org",
+  "@type": "ItemList",
+  name: "Guides de voyage TripPilot",
+  itemListElement: guides.map((g, i) => ({
+    "@type": "ListItem",
+    position: i + 1,
+    name: g.title,
+    url: new URL(`/guides/${g.slug}`, SITE.url).href,
+  })),
+};
 ---
 
 <BaseLayout
   title="Tous les guides de voyage"
   description="Découvrez nos guides de voyage PDF : itinéraires jour par jour, budgets détaillés et conseils pratiques. Rome déjà disponible, d'autres destinations bientôt."
+  jsonLd={itemListSchema}
 >
-  <section class="py-14 sm:py-20">
-    <Container>
+  <section class="relative overflow-hidden">
+    <div class="pointer-events-none absolute inset-0 -z-10 bg-mesh" aria-hidden="true"></div>
+    <Container class="py-16 sm:py-20">
       <div class="max-w-2xl">
-        <Badge variant="brand">{available} guide disponible · plus à venir</Badge>
-        <h1 class="mt-4 text-3xl font-extrabold text-ink-900 sm:text-4xl">
+        <Badge variant="soft" class="shadow-soft">{available} guide disponible · plus à venir</Badge>
+        <h1 class="mt-4 font-display text-3xl font-extrabold tracking-tight text-ink-900 sm:text-5xl">
           Nos guides de voyage
         </h1>
         <p class="mt-4 text-lg text-ink-700">
@@ -25,8 +40,12 @@ const available = guides.filter((g) => g.status === "available").length;
           Choisis ta destination et pars avec un planning clair.
         </p>
       </div>
+    </Container>
+  </section>
 
-      <div class="mt-10 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+  <section class="pb-16 sm:pb-20">
+    <Container>
+      <div class="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
         {guides.map((guide) => <GuideCard guide={guide} />)}
       </div>
     </Container>

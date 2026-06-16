@@ -19,18 +19,18 @@ const {
 } = Astro.props;
 
 const base =
-  "inline-flex items-center justify-center gap-2 rounded-full font-semibold transition-all duration-200 focus-visible:outline-none disabled:opacity-60";
+  "group relative inline-flex items-center justify-center gap-2 rounded-full font-semibold tracking-tight transition-all duration-200 focus-visible:outline-none disabled:opacity-60";
 
 const sizes: Record<string, string> = {
   md: "px-5 py-2.5 text-sm",
-  lg: "px-7 py-3.5 text-base",
+  lg: "px-7 py-3.5 text-[0.95rem]",
 };
 
 const variants: Record<string, string> = {
   primary:
-    "bg-brand-600 text-white shadow-soft hover:bg-brand-700 hover:shadow-lift hover:-translate-y-0.5",
+    "text-white bg-gradient-to-br from-brand-600 to-accent-600 shadow-soft hover:shadow-lift hover:-translate-y-0.5 ring-1 ring-inset ring-white/10",
   secondary:
-    "bg-white text-ink-900 ring-1 ring-slate-200 shadow-soft hover:ring-brand-200 hover:-translate-y-0.5",
+    "bg-surface text-ink-900 ring-1 ring-slate-200 shadow-soft hover:ring-brand-400 hover:-translate-y-0.5",
   ghost: "text-brand-700 hover:bg-brand-50",
 };
 

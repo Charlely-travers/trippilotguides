@@ -5,7 +5,7 @@ import Badge from "@/components/Badge.astro";
 import Button from "@/components/Button.astro";
 import Card from "@/components/Card.astro";
 import FAQ from "@/components/FAQ.astro";
-import { LINKS, DISCLAIMER } from "@/consts";
+import { LINKS, DISCLAIMER, SITE } from "@/consts";
 import { getGuide } from "@/data/guides";
 
 const guide = getGuide("rome-5-jours-budget-700")!;
@@ -63,37 +63,61 @@ const days = [
   "Quartiers & musées",
   "Shopping, détente & départ",
 ];
+
+const productSchema = {
+  "@context": "https://schema.org",
+  "@type": "Product",
+  name: guide.title,
+  description:
+    "Guide PDF Rome en 5 jours : itinéraire jour par jour, budget détaillé, quartiers où dormir, transports, restaurants et checklist imprimable.",
+  brand: { "@type": "Brand", name: SITE.name },
+  offers: {
+    "@type": "Offer",
+    price: "9",
+    priceCurrency: "EUR",
+    availability: "https://schema.org/InStock",
+    url: new URL(`/guides/${guide.slug}`, SITE.url).href,
+  },
+};
+
+const faqSchema = {
+  "@context": "https://schema.org",
+  "@type": "FAQPage",
+  mainEntity: faq.map((f) => ({
+    "@type": "Question",
+    name: f.question,
+    acceptedAnswer: { "@type": "Answer", text: f.answer },
+  })),
+};
 ---
 
 <BaseLayout
   title="Rome en 5 jours — itinéraire complet avec budget 700€"
   description="Guide PDF Rome en 5 jours : itinéraire jour par jour, budget détaillé 700€, quartiers où dormir, transports, restaurants et checklist imprimable."
   type="article"
+  jsonLd={[productSchema, faqSchema]}
 >
-  <!-- HERO PRODUIT -->
+  {/* HERO PRODUIT */}
   <section class="relative overflow-hidden">
-    <div
-      class="pointer-events-none absolute inset-0 -z-10 bg-gradient-to-b from-brand-50/70 via-cream to-cream"
-      aria-hidden="true"
-    >
-    </div>
-    <Container class="py-12 sm:py-16">
+    <div class="pointer-events-none absolute inset-0 -z-10 bg-mesh" aria-hidden="true"></div>
+    <div class="pointer-events-none absolute inset-0 -z-10 bg-grid" aria-hidden="true"></div>
+    <Container class="py-14 sm:py-20">
       <div class="grid items-center gap-10 lg:grid-cols-2">
         <div>
           <Badge variant="success">● Guide disponible · PDF</Badge>
           <h1
-            class="mt-4 text-3xl font-extrabold leading-tight text-ink-900 sm:text-4xl"
+            class="mt-4 font-display text-3xl font-extrabold leading-[1.12] tracking-tight text-ink-900 sm:text-5xl"
           >
-            Rome en 5 jours — itinéraire complet avec budget 700€
+            Rome en 5 jours — itinéraire complet avec budget <span class="text-gradient">700€</span>
           </h1>
-          <p class="mt-4 text-lg text-ink-700">
+          <p class="mt-5 text-lg text-ink-700">
             Un guide PDF clair et complet pour vivre Rome sans stress :
             planning jour par jour, budget réaliste, logement, transports et
             checklist imprimable.
           </p>
 
-          <div class="mt-6 flex flex-wrap items-center gap-4">
-            <span class="text-3xl font-extrabold text-ink-900">{guide.price}</span>
+          <div class="mt-7 flex flex-wrap items-center gap-4">
+            <span class="font-display text-3xl font-extrabold text-ink-900">{guide.price}</span>
             <Button href={LINKS.buyRomeGuide} external size="lg" variant="primary">
               Acheter le guide
             </Button>
@@ -116,9 +140,13 @@ const days = [
         </div>
 
         <div
-          class={`relative flex aspect-[4/3] items-center justify-center rounded-[1.75rem] bg-gradient-to-br ${guide.gradient} shadow-lift`}
+          class={`relative flex aspect-[4/3] items-center justify-center overflow-hidden rounded-[1.75rem] bg-gradient-to-br ${guide.gradient} shadow-glow`}
           aria-hidden="true"
         >
+          <div
+            class="absolute inset-0 opacity-30 mix-blend-overlay"
+            style="background-image: radial-gradient(circle at 25% 15%, rgba(255,255,255,.6), transparent 45%);"
+          ></div>
           <span class="text-8xl drop-shadow">{guide.emoji}</span>
           <span
             class="absolute bottom-5 left-5 rounded-xl bg-white/90 px-4 py-2 text-sm font-bold text-ink-900 backdrop-blur"
@@ -130,15 +158,12 @@ const days = [
     </Container>
   </section>
 
-  <!-- CE QUE CONTIENT LE GUIDE -->
+  {/* CE QUE CONTIENT LE GUIDE */}
   <section class="py-12 sm:py-16" aria-labelledby="includes-title">
     <Container>
       <div class="max-w-2xl">
-        <Badge variant="brand">Contenu du guide</Badge>
-        <h2
-          id="includes-title"
-          class="mt-3 text-2xl font-bold text-ink-900 sm:text-3xl"
-        >
+        <p class="eyebrow">Contenu du guide</p>
+        <h2 id="includes-title" class="mt-2 font-display text-2xl font-bold text-ink-900 sm:text-3xl">
           Ce que contient le guide
         </h2>
       </div>
@@ -149,7 +174,7 @@ const days = [
               <span class="text-2xl" aria-hidden="true">
                 {item.emoji}
               </span>
-              <h3 class="mt-3 text-base font-bold text-ink-900">
+              <h3 class="mt-3 font-display text-base font-bold text-ink-900">
                 {item.title}
               </h3>
               <p class="mt-1.5 text-sm text-ink-700">{item.text}</p>
@@ -159,16 +184,14 @@ const days = [
       </div>
 
       <Card class="mt-8 p-6">
-        <h3 class="text-base font-bold text-ink-900">
+        <h3 class="font-display text-base font-bold text-ink-900">
           Aperçu de l'itinéraire sur 5 jours
         </h3>
         <ol class="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
           {
             days.map((day, i) => (
-              <li class="rounded-xl bg-brand-50 p-4">
-                <span class="text-xs font-bold text-brand-600">
-                  Jour {i + 1}
-                </span>
+              <li class="rounded-xl border border-brand-100 bg-brand-50 p-4">
+                <span class="eyebrow">Jour {i + 1}</span>
                 <p class="mt-1 text-sm font-medium text-ink-900">{day}</p>
               </li>
             ))
@@ -178,26 +201,23 @@ const days = [
     </Container>
   </section>
 
-  <!-- POUR QUI -->
+  {/* POUR QUI */}
   <section class="py-12 sm:py-16" aria-labelledby="forwho-title">
     <Container>
       <div class="max-w-2xl">
-        <Badge variant="success">Public cible</Badge>
-        <h2
-          id="forwho-title"
-          class="mt-3 text-2xl font-bold text-ink-900 sm:text-3xl"
-        >
+        <p class="eyebrow">Public cible</p>
+        <h2 id="forwho-title" class="mt-2 font-display text-2xl font-bold text-ink-900 sm:text-3xl">
           Pour qui est ce guide ?
         </h2>
       </div>
       <div class="mt-8 grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
         {
           forWho.map((item) => (
-            <Card class="p-6">
+            <Card class="p-6" hover>
               <span class="text-2xl" aria-hidden="true">
                 {item.emoji}
               </span>
-              <h3 class="mt-3 text-base font-bold text-ink-900">
+              <h3 class="mt-3 font-display text-base font-bold text-ink-900">
                 {item.title}
               </h3>
               <p class="mt-1.5 text-sm text-ink-700">{item.text}</p>
@@ -208,22 +228,19 @@ const days = [
     </Container>
   </section>
 
-  <!-- APERÇU DU GUIDE (fausses pages) -->
+  {/* APERÇU DU GUIDE (fausses pages) */}
   <section class="py-12 sm:py-16" aria-labelledby="preview-title">
     <Container>
       <div class="max-w-2xl">
-        <Badge variant="neutral">Aperçu</Badge>
-        <h2
-          id="preview-title"
-          class="mt-3 text-2xl font-bold text-ink-900 sm:text-3xl"
-        >
+        <p class="eyebrow">Aperçu</p>
+        <h2 id="preview-title" class="mt-2 font-display text-2xl font-bold text-ink-900 sm:text-3xl">
           Un aperçu de l'intérieur
         </h2>
       </div>
       <div class="mt-8 grid gap-6 sm:grid-cols-3">
         {
           previews.map((page) => (
-            <div class="rounded-2xl bg-surface p-3 ring-1 ring-slate-200/80 shadow-soft">
+            <div class="rounded-2xl border border-slate-200/80 bg-surface p-3 shadow-card">
               <div
                 class="flex aspect-[3/4] flex-col justify-between rounded-xl bg-gradient-to-br from-slate-50 to-brand-50 p-5"
                 aria-hidden="true"
@@ -237,7 +254,7 @@ const days = [
                 </div>
               </div>
               <div class="px-2 py-3">
-                <h3 class="text-sm font-bold text-ink-900">{page.title}</h3>
+                <h3 class="font-display text-sm font-bold text-ink-900">{page.title}</h3>
                 <p class="mt-1 text-xs text-ink-500">{page.text}</p>
               </div>
             </div>
@@ -250,30 +267,35 @@ const days = [
     </Container>
   </section>
 
-  <!-- FAQ -->
+  {/* FAQ */}
   <section class="py-12 sm:py-16">
     <Container class="max-w-3xl">
       <FAQ items={faq} />
     </Container>
   </section>
 
-  <!-- CTA FINAL -->
+  {/* CTA FINAL */}
   <section class="pb-16 sm:pb-20">
     <Container>
-      <Card class="overflow-hidden bg-gradient-to-br from-brand-600 to-accent-600 p-8 text-center sm:p-12">
-        <h2 class="text-2xl font-bold text-white sm:text-3xl">
+      <div class="relative overflow-hidden rounded-[1.75rem] bg-gradient-to-br from-brand-700 via-brand-600 to-accent-600 p-8 text-center shadow-glow sm:p-12">
+        <div
+          class="pointer-events-none absolute inset-0 opacity-40"
+          style="background-image: radial-gradient(26rem 26rem at 15% 0%, rgba(255,255,255,.18), transparent 60%);"
+          aria-hidden="true"
+        ></div>
+        <h2 class="relative font-display text-2xl font-bold text-white sm:text-3xl">
           Prêt à partir à Rome l'esprit léger ?
         </h2>
-        <p class="mx-auto mt-3 max-w-xl text-brand-50">
+        <p class="relative mx-auto mt-3 max-w-xl text-brand-50">
           Télécharge le guide PDF et suis un itinéraire clair, jour par jour,
           avec un budget maîtrisé.
         </p>
-        <div class="mt-7 flex flex-col items-center justify-center gap-3 sm:flex-row">
+        <div class="relative mt-7 flex flex-col items-center justify-center gap-3 sm:flex-row">
           <a
             href={LINKS.buyRomeGuide}
             target="_blank"
             rel="noopener noreferrer"
-            class="inline-flex items-center justify-center rounded-full bg-white px-7 py-3.5 text-base font-semibold text-brand-700 shadow-soft transition-all hover:-translate-y-0.5 hover:shadow-lift"
+            class="inline-flex items-center justify-center rounded-full bg-white px-7 py-3.5 text-[0.95rem] font-semibold text-brand-700 shadow-soft transition-all hover:-translate-y-0.5 hover:shadow-lift"
           >
             Acheter le guide — {guide.price}
           </a>
@@ -281,15 +303,15 @@ const days = [
             href={LINKS.freeChecklist}
             target="_blank"
             rel="noopener noreferrer"
-            class="inline-flex items-center justify-center rounded-full px-7 py-3.5 text-base font-semibold text-white ring-1 ring-white/40 transition-all hover:bg-white/10"
+            class="inline-flex items-center justify-center rounded-full px-7 py-3.5 text-[0.95rem] font-semibold text-white ring-1 ring-white/40 transition-all hover:bg-white/10"
           >
             Checklist gratuite
           </a>
         </div>
-      </Card>
+      </div>
 
       <p
-        class="mx-auto mt-6 max-w-2xl rounded-xl bg-amber-50 px-4 py-3 text-center text-sm text-amber-800 ring-1 ring-amber-200"
+        class="mx-auto mt-6 max-w-2xl rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-center text-sm text-amber-800"
         role="note"
       >
         ⚠️ {DISCLAIMER}

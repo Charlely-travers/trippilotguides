@@ -20,6 +20,10 @@ gitcheck.log
 .env.*
 !.env.example
 
+# sorties d'automatisation (générées, jamais committées)
+automation/output/
+automation/drafts/
+
 # système / éditeurs
 .DS_Store
 Thumbs.db

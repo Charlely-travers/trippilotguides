@@ -1,0 +1,30 @@
+---
+import BaseLayout from "@/layouts/BaseLayout.astro";
+import Container from "@/components/Container.astro";
+import Button from "@/components/Button.astro";
+---
+
+<BaseLayout
+  title="Page introuvable"
+  description="La page que vous cherchez n'existe pas ou a été déplacée."
+>
+  <section class="relative overflow-hidden">
+    <div class="pointer-events-none absolute inset-0 -z-10 bg-mesh" aria-hidden="true"></div>
+    <Container class="py-24 sm:py-32">
+      <div class="mx-auto max-w-xl text-center">
+        <p class="font-display text-7xl font-extrabold text-gradient">404</p>
+        <h1 class="mt-4 font-display text-2xl font-bold text-ink-900 sm:text-3xl">
+          Cette page a pris un autre itinéraire
+        </h1>
+        <p class="mx-auto mt-4 max-w-md text-ink-700">
+          La page que vous cherchez n'existe pas ou a été déplacée. Revenons sur
+          la bonne route.
+        </p>
+        <div class="mt-8 flex flex-col items-center justify-center gap-3 sm:flex-row">
+          <Button href="/" size="lg" variant="primary">Retour à l'accueil</Button>
+          <Button href="/guides" size="lg" variant="secondary">Voir les guides</Button>
+        </div>
+      </div>
+    </Container>
+  </section>
+</BaseLayout>

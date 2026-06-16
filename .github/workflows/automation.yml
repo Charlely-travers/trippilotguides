@@ -1,0 +1,78 @@
+name: Automatisation contenu (V1)
+
+# Déclenchement MANUEL uniquement. Aucune publication automatique.
+on:
+  workflow_dispatch:
+    inputs:
+      generate_count:
+        description: "Nombre d'idées (les mieux notées) pour lesquelles générer des brouillons"
+        required: false
+        default: "1"
+      model:
+        description: "Modèle Mistral à utiliser"
+        required: false
+        default: "mistral-small-latest"
+
+permissions:
+  contents: read
+
+jobs:
+  content-automation:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: "npm"
+
+      - name: Install dependencies
+        run: npm ci
+
+      # 1) Scoring Mistral + génération de brouillons (draft: true).
+      #    continue-on-error : on veut toujours lancer le build et notifier.
+      - name: Generate drafts (Mistral)
+        id: generate
+        continue-on-error: true
+        env:
+          MISTRAL_API_KEY: ${{ secrets.MISTRAL_API_KEY }}
+          MISTRAL_MODEL: ${{ github.event.inputs.model }}
+          GENERATE_COUNT: ${{ github.event.inputs.generate_count }}
+        run: node automation/generate.mjs
+
+      # 2) Build du site statique (ne dépend pas des brouillons).
+      - name: Build site
+        id: build
+        continue-on-error: true
+        run: npm run build
+
+      # 3) Brouillons + résumé disponibles en artefact (jamais committés).
+      - name: Upload drafts & summary
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: automation-output
+          path: |
+            automation/drafts/**
+            automation/output/**
+          if-no-files-found: ignore
+          retention-days: 14
+
+      # 4) Notification Discord (idées scorées, fichiers, erreurs, statut build).
+      - name: Notify Discord
+        if: always()
+        env:
+          DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
+          BUILD_STATUS: ${{ steps.build.outcome }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: node automation/notify.mjs
+
+      # 5) Si le build a échoué, marquer le job en échec (après la notif).
+      - name: Fail if build failed
+        if: steps.build.outcome == 'failure'
+        run: |
+          echo "Le build a échoué."
+          exit 1

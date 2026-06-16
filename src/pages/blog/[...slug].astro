@@ -6,15 +6,17 @@ import Container from "@/components/Container.astro";
 import Badge from "@/components/Badge.astro";
 import Button from "@/components/Button.astro";
 import Card from "@/components/Card.astro";
-import { LINKS, DISCLAIMER } from "@/consts";
+import { LINKS, DISCLAIMER, SITE } from "@/consts";
 import { getGuide } from "@/data/guides";
 
 export const getStaticPaths = (async () => {
   const posts = await getCollection("blog");
-  return posts.map((post) => ({
-    params: { slug: post.id },
-    props: { post },
-  }));
+  return posts
+    .filter((post) => !post.data.draft)
+    .map((post) => ({
+      params: { slug: post.id },
+      props: { post },
+    }));
 }) satisfies GetStaticPaths;
 
 const { post } = Astro.props;
@@ -26,34 +28,58 @@ const dateLabel = post.data.pubDate.toLocaleDateString("fr-FR", {
   month: "long",
   year: "numeric",
 });
+
+const articleSchema = {
+  "@context": "https://schema.org",
+  "@type": "Article",
+  headline: post.data.title,
+  description: post.data.description,
+  datePublished: post.data.pubDate.toISOString(),
+  inLanguage: "fr-FR",
+  author: { "@type": "Organization", name: SITE.name },
+  publisher: { "@type": "Organization", name: SITE.name },
+  mainEntityOfPage: new URL(`/blog/${post.id}`, SITE.url).href,
+};
+
+const breadcrumbSchema = {
+  "@context": "https://schema.org",
+  "@type": "BreadcrumbList",
+  itemListElement: [
+    { "@type": "ListItem", position: 1, name: "Accueil", item: SITE.url },
+    { "@type": "ListItem", position: 2, name: "Blog", item: new URL("/blog", SITE.url).href },
+    {
+      "@type": "ListItem",
+      position: 3,
+      name: post.data.title,
+      item: new URL(`/blog/${post.id}`, SITE.url).href,
+    },
+  ],
+};
 ---
 
 <BaseLayout
   title={post.data.title}
   description={post.data.description}
   type="article"
+  jsonLd={[articleSchema, breadcrumbSchema]}
 >
   <article>
-    <!-- En-tête article -->
+    {/* En-tête article */}
     <header class="relative overflow-hidden">
-      <div
-        class={`pointer-events-none absolute inset-0 -z-10 bg-gradient-to-b ${post.data.gradient} opacity-10`}
-        aria-hidden="true"
-      >
-      </div>
+      <div class="pointer-events-none absolute inset-0 -z-10 bg-mesh" aria-hidden="true"></div>
       <Container class="py-12 sm:py-16">
-        <div class="mx-auto max-w-3xl">
-          <a
-            href="/blog"
-            class="text-sm font-semibold text-brand-700 hover:underline"
-            >← Retour au blog</a
-          >
-          <div class="mt-4 flex flex-wrap items-center gap-3">
+        <nav class="mx-auto max-w-3xl text-sm text-ink-500" aria-label="Fil d'Ariane">
+          <a href="/" class="hover:text-brand-700">Accueil</a>
+          <span class="mx-1.5" aria-hidden="true">/</span>
+          <a href="/blog" class="hover:text-brand-700">Blog</a>
+        </nav>
+        <div class="mx-auto mt-4 max-w-3xl">
+          <div class="flex flex-wrap items-center gap-3">
             <Badge variant="neutral">{post.data.readingTime} de lecture</Badge>
             <span class="text-sm text-ink-500">{dateLabel}</span>
           </div>
           <h1
-            class="mt-4 text-3xl font-extrabold leading-tight text-ink-900 sm:text-4xl"
+            class="mt-4 font-display text-3xl font-extrabold leading-[1.15] tracking-tight text-ink-900 sm:text-4xl"
           >
             {post.data.title}
           </h1>
@@ -64,9 +90,9 @@ const dateLabel = post.data.pubDate.toLocaleDateString("fr-FR", {
 
     <Container class="pb-8">
       <div class="mx-auto max-w-3xl">
-        <!-- CTA checklist en haut -->
+        {/* CTA checklist en haut */}
         <div
-          class="mb-10 flex flex-col gap-3 rounded-2xl bg-brand-50 p-5 sm:flex-row sm:items-center sm:justify-between"
+          class="mb-10 flex flex-col gap-3 rounded-2xl border border-brand-100 bg-brand-50 p-5 sm:flex-row sm:items-center sm:justify-between"
         >
           <p class="text-sm font-medium text-ink-900">
             🎁 Reçois la checklist gratuite avant de partir à Rome.
@@ -76,31 +102,31 @@ const dateLabel = post.data.pubDate.toLocaleDateString("fr-FR", {
           </Button>
         </div>
 
-        <!-- Contenu Markdown -->
+        {/* Contenu Markdown */}
         <div class="prose-article">
           <Content />
         </div>
 
-        <!-- Disclaimer -->
+        {/* Disclaimer */}
         <p
-          class="mt-10 rounded-xl bg-amber-50 px-4 py-3 text-sm text-amber-800 ring-1 ring-amber-200"
+          class="mt-10 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800"
           role="note"
         >
           ⚠️ {DISCLAIMER}
         </p>
 
-        <!-- CTA guide complet -->
+        {/* CTA guide complet */}
         <Card class="mt-10 overflow-hidden">
           <div class="grid items-stretch gap-0 sm:grid-cols-[1fr_1.4fr]">
             <div
-              class={`relative flex min-h-40 items-center justify-center bg-gradient-to-br ${guide.gradient} p-8`}
+              class={`relative flex min-h-44 items-center justify-center overflow-hidden bg-gradient-to-br ${guide.gradient} p-8`}
               aria-hidden="true"
             >
               <span class="text-6xl drop-shadow">{guide.emoji}</span>
             </div>
             <div class="p-7">
               <Badge variant="success">Guide complet</Badge>
-              <h2 class="mt-3 text-xl font-bold text-ink-900">
+              <h2 class="mt-3 font-display text-xl font-bold text-ink-900">
                 {guide.title}
               </h2>
               <p class="mt-2 text-sm text-ink-700">{guide.excerpt}</p>
@@ -108,7 +134,7 @@ const dateLabel = post.data.pubDate.toLocaleDateString("fr-FR", {
                 <Button href={`/guides/${guide.slug}`} variant="primary">
                   Voir le guide
                 </Button>
-                <span class="font-bold text-ink-900">{guide.price}</span>
+                <span class="font-display font-bold text-ink-900">{guide.price}</span>
               </div>
             </div>
           </div>

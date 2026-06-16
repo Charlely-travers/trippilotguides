@@ -11,13 +11,21 @@ const isAvailable = guide.status === "available";
 ---
 
 <article
-  class="group flex flex-col overflow-hidden rounded-2xl bg-surface ring-1 ring-slate-200/80 shadow-soft transition-all duration-200 hover:-translate-y-1 hover:shadow-lift"
+  class="group flex flex-col overflow-hidden rounded-2xl border border-slate-200/80 bg-surface shadow-card transition-all duration-300 hover:-translate-y-1.5 hover:border-brand-200 hover:shadow-lift"
 >
   <div
-    class={`relative flex h-40 items-center justify-center bg-gradient-to-br ${guide.gradient}`}
+    class={`relative flex h-44 items-center justify-center overflow-hidden bg-gradient-to-br ${guide.gradient}`}
     aria-hidden="true"
   >
-    <span class="text-5xl drop-shadow-sm">{guide.emoji}</span>
+    <div
+      class="absolute inset-0 opacity-30 mix-blend-overlay"
+      style="background-image: radial-gradient(circle at 30% 20%, rgba(255,255,255,.5), transparent 45%);"
+    >
+    </div>
+    <span
+      class="text-6xl drop-shadow-sm transition-transform duration-500 group-hover:scale-110"
+      >{guide.emoji}</span
+    >
     <div class="absolute right-3 top-3">
       {
         isAvailable ? (
@@ -30,7 +38,9 @@ const isAvailable = guide.status === "available";
   </div>
 
   <div class="flex flex-1 flex-col p-5">
-    <h3 class="text-lg font-bold text-ink-900">{guide.destination}</h3>
+    <h3 class="font-display text-lg font-bold text-ink-900">
+      {guide.destination}
+    </h3>
     <p class="mt-1 text-sm text-ink-500">{guide.title}</p>
 
     <dl class="mt-4 grid grid-cols-2 gap-3 text-sm">
@@ -48,7 +58,9 @@ const isAvailable = guide.status === "available";
       </div>
     </dl>
 
-    <div class="mt-5 flex items-center justify-between pt-2">
+    <div
+      class="mt-5 flex items-center justify-between border-t border-slate-100 pt-4"
+    >
       {
         isAvailable ? (
           <Button href={`/guides/${guide.slug}`} variant="primary" size="md">
@@ -60,7 +72,9 @@ const isAvailable = guide.status === "available";
           </span>
         )
       }
-      <span class="text-sm font-semibold text-ink-900">{guide.price}</span>
+      <span class="font-display text-base font-bold text-ink-900"
+        >{guide.price}</span
+      >
     </div>
   </div>
 </article>
