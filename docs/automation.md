@@ -13,8 +13,14 @@ artefact à relire.
    - un article de blog (`blog.md`, avec `draft: true`),
    - un plan de guide PDF (`guide-outline.md`),
    - des posts pour réseaux sociaux (`social.md`).
-4. Lance `npm run build` pour vérifier que le site compile toujours.
-5. Envoie un **résumé Discord** : idées scorées, fichiers générés, erreurs, statut du build.
+4. **Relit et note** chaque brouillon sur 10 (`review.mjs`) : contenu pas trop
+   générique, CTA présents, disclaimer prix/horaires, infos incertaines marquées
+   « à vérifier », structure H1/H2, potentiel SEO et potentiel de vente PDF.
+   Un brouillon noté `< 7` est marqué `needs_improvement`. Repli **heuristique**
+   automatique si `MISTRAL_API_KEY` est absente.
+5. Lance `npm run build` pour vérifier que le site compile toujours.
+6. Envoie un **résumé Discord** : idées scorées, **scores de review**, fichiers
+   générés, erreurs, statut du build.
 
 ## Principes de sécurité
 
@@ -65,8 +71,12 @@ export MISTRAL_API_KEY="votre_cle"
 export DISCORD_WEBHOOK_URL="votre_webhook"   # optionnel en local
 
 npm run automation:generate   # scoring + brouillons -> automation/drafts + summary.json
+npm run automation:review     # note les brouillons /10 -> review.json + summary.review
 npm run build                 # vérifie la compilation
 BUILD_STATUS=success npm run automation:notify   # envoie le rapport Discord
+
+# ou tout enchaîner (generate -> review -> build -> notify) :
+npm run automation:all
 ```
 
 Les brouillons apparaissent dans `automation/drafts/<slug>/` :
@@ -87,8 +97,10 @@ Les brouillons apparaissent dans `automation/drafts/<slug>/` :
 | --- | --- |
 | `automation/ideas.json` | Liste d'idées en entrée |
 | `automation/generate.mjs` | Scoring Mistral + génération des brouillons |
+| `automation/review.mjs` | Relecture + note /10 des brouillons (IA ou heuristique) |
 | `automation/notify.mjs` | Envoi du rapport Discord |
-| `automation/output/summary.json` | Résumé machine (généré) |
+| `automation/output/summary.json` | Résumé machine (généré, inclut `review`) |
+| `automation/output/review.json` | Détail de la relecture (généré) |
 | `automation/drafts/` | Brouillons générés (jamais publiés) |
 | `.github/workflows/automation.yml` | Workflow GitHub Actions manuel |
 

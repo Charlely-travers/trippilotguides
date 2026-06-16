@@ -13,7 +13,9 @@
     "preview": "astro preview",
     "astro": "astro",
     "automation:generate": "node automation/generate.mjs",
-    "automation:notify": "node automation/notify.mjs"
+    "automation:review": "node automation/review.mjs",
+    "automation:notify": "node automation/notify.mjs",
+    "automation:all": "node automation/generate.mjs && node automation/review.mjs && npm run build && node automation/notify.mjs"
   },
   "dependencies": {
     "@astrojs/sitemap": "^3.7.3",

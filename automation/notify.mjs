@@ -77,6 +77,37 @@ function buildPayload(summary) {
     inline: true,
   });
 
+  // Review qualité des brouillons
+  const review = summary?.review;
+  if (review && Array.isArray(review.items) && review.items.length) {
+    const header =
+      `Score moyen : \`${review.averageScore}/10\` · ` +
+      `À améliorer : \`${review.needsImprovementCount}\` · ` +
+      `Méthode : ${review.method}`;
+    fields.push({ name: "🔎 Review IA", value: truncate(header, 1024) });
+
+    const lines = review.items
+      .slice(0, 5)
+      .map((it) => {
+        const icon = it.status === "ok" ? "✅" : "⚠️";
+        const weak =
+          it.status !== "ok" && it.weaknesses?.length
+            ? `\n   _${truncate(it.weaknesses[0], 90)}_`
+            : "";
+        return `${icon} ${truncate(it.slug, 50)} — \`${it.score}/10\` (${it.status})${weak}`;
+      })
+      .join("\n");
+    fields.push({
+      name: "📊 Score par brouillon",
+      value: truncate(lines, 1024),
+    });
+  } else if (review) {
+    fields.push({
+      name: "🔎 Review IA",
+      value: "Aucun brouillon à évaluer.",
+    });
+  }
+
   // Erreurs
   const errors = summary?.errors ?? [];
   fields.push({

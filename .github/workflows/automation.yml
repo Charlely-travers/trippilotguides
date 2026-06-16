@@ -43,13 +43,23 @@ jobs:
           GENERATE_COUNT: ${{ github.event.inputs.generate_count }}
         run: node automation/generate.mjs
 
-      # 2) Build du site statique (ne dépend pas des brouillons).
+      # 2) Relecture qualité des brouillons (note /10, statut, points faibles).
+      #    Repli heuristique automatique si MISTRAL_API_KEY absente.
+      - name: Review drafts
+        id: review
+        continue-on-error: true
+        env:
+          MISTRAL_API_KEY: ${{ secrets.MISTRAL_API_KEY }}
+          MISTRAL_MODEL: ${{ github.event.inputs.model }}
+        run: node automation/review.mjs
+
+      # 3) Build du site statique (ne dépend pas des brouillons).
       - name: Build site
         id: build
         continue-on-error: true
         run: npm run build
 
-      # 3) Brouillons + résumé disponibles en artefact (jamais committés).
+      # 4) Brouillons + résumé + review disponibles en artefact (jamais committés).
       - name: Upload drafts & summary
         if: always()
         uses: actions/upload-artifact@v4
@@ -61,7 +71,7 @@ jobs:
           if-no-files-found: ignore
           retention-days: 14
 
-      # 4) Notification Discord (idées scorées, fichiers, erreurs, statut build).
+      # 5) Notification Discord (idées scorées, review, fichiers, erreurs, statut build).
       - name: Notify Discord
         if: always()
         env:
@@ -70,7 +80,7 @@ jobs:
           RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
         run: node automation/notify.mjs
 
-      # 5) Si le build a échoué, marquer le job en échec (après la notif).
+      # 6) Si le build a échoué, marquer le job en échec (après la notif).
       - name: Fail if build failed
         if: steps.build.outcome == 'failure'
         run: |
