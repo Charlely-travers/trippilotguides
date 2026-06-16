@@ -151,6 +151,74 @@ function deterministicWeaknesses(c) {
   return w;
 }
 
+/* ---------------- Détection de contenu tronqué ---------------- */
+
+const BLOG_MARKER = "TRIPILOT_COMPLETE_BLOG";
+const GUIDE_MARKER = "TRIPILOT_COMPLETE_GUIDE";
+
+/** Détecte un contenu coupé au milieu (phrase, gras, parenthèse, section vide…). */
+function isTruncated(raw) {
+  if (!raw) return true;
+  // Retire les marqueurs HTML et les espaces de fin
+  let t = raw.replace(/<!--[\s\S]*?-->/g, "").replace(/[\s]+$/g, "");
+  if (!t.trim()) return true;
+
+  // Gras Markdown non fermé (nombre impair de **)
+  if (((t.match(/\*\*/g) || []).length) % 2 !== 0) return true;
+  // Parenthèses ouvertes non refermées
+  if ((t.match(/\(/g) || []).length > (t.match(/\)/g) || []).length) return true;
+
+  const lines = t.split(/\n/).map((l) => l.replace(/\s+$/g, "")).filter((l) => l.length > 0);
+  const last = lines[lines.length - 1] || "";
+
+  // Ligne finissant par un caractère qui annonce une suite
+  if (/[-:(]$/.test(last)) return true;
+  if (/\bart$/i.test(last)) return true;
+  if (/\*\*$/.test(last)) return true;
+  // Titre/section commencé mais non suivi de contenu (dernier élément = heading)
+  if (/^#{1,6}\s+\S/.test(last)) return true;
+
+  // Lignes "douces" (fin acceptable sans ponctuation) : citation, liste, checkbox, tableau
+  const soft =
+    /^>/.test(last) ||
+    /^\s*([-*]|\d+[.)])\s/.test(last) ||
+    last.includes("|");
+  if (!soft) {
+    // Paragraphe normal : doit se terminer par une ponctuation de fin
+    if (!/[.!?…»)\]"']$/.test(last)) return true;
+  }
+  return false;
+}
+
+/** Supprime les faiblesses IA en contradiction avec un check déterministe positif. */
+function filterContradictoryWeaknesses(weaknesses, checks) {
+  const seen = new Set();
+  return weaknesses.filter((w) => {
+    const l = (w || "").toLowerCase();
+    if (!l || seen.has(l)) return false;
+    seen.add(l);
+    // CTA présents (les deux) -> retirer les "pas de CTA"
+    if (
+      checks.ctaPresent &&
+      /(pas de cta|aucun cta|sans cta|absence de cta|call to action|cta\b.*(manqu|absent))/.test(l)
+    )
+      return false;
+    // Disclaimer présent -> retirer les "pas de disclaimer"
+    if (
+      checks.disclaimerPresent &&
+      /(disclaimer|avertissement|mention légale).*(manqu|absent)|aucun disclaimer|pas de disclaimer/.test(l)
+    )
+      return false;
+    // "à vérifier" présent -> retirer les "infos incertaines non marquées"
+    if (
+      checks.needsVerificationPresent &&
+      /(incertain|à vérifier|a verifier).*(non|absent|manqu|pas)|aucune mention.*vérif/.test(l)
+    )
+      return false;
+    return true;
+  });
+}
+
 /* ---------------- Relecture Mistral (avec API) ---------------- */
 
 async function mistralReview({ blog, guide, social }) {
@@ -384,7 +452,24 @@ async function main() {
     const gen = generatedBySlug.get(path.posix.basename(dir));
     result = applyResearchChecks(result, { blog, guide }, gen);
 
-    const status = statusFromScore(result.score);
+    // 5) Détection de troncature / incomplétude (heuristique + marqueurs de complétude)
+    const blogMarkerOk = blog.includes(BLOG_MARKER);
+    const guideMarkerOk = guide.includes(GUIDE_MARKER);
+    const markersOk = blogMarkerOk && guideMarkerOk;
+    const blogTruncated = isTruncated(blog) || !blogMarkerOk;
+    const guideTruncated = isTruncated(guide) || !guideMarkerOk;
+    const truncated = blogTruncated || guideTruncated;
+    if (truncated) {
+      result.score = Math.min(result.score, 7);
+      result.weaknesses.unshift("Contenu tronqué ou incomplet.");
+    }
+
+    // 6) Faiblesses : retirer les contradictions avec les checks déterministes
+    result.weaknesses = filterContradictoryWeaknesses(result.weaknesses, result.checks).slice(0, 8);
+
+    // 7) Statut : publish_candidate refusé si marqueurs absents (déjà plafonné à 7 si tronqué)
+    let status = statusFromScore(result.score);
+    if (status === "publish_candidate" && !markersOk) status = "ok";
     if (status === "needs_improvement") review.needsImprovementCount++;
 
     review.items.push({
@@ -392,11 +477,13 @@ async function main() {
       slug: path.posix.basename(dir),
       score: result.score,
       status,
-      checks: result.checks,
+      checks: { ...result.checks, truncated, markersOk },
       weaknesses: result.weaknesses,
       complete,
       missingFiles,
       socialBroken,
+      truncated,
+      markersOk,
       files,
     });
   }

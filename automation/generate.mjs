@@ -54,7 +54,7 @@ function safeParseJson(raw) {
   }
 }
 
-async function mistralChat(messages, { json = true, temperature = 0.4, maxTokens } = {}) {
+async function mistralChatFull(messages, { json = true, temperature = 0.4, maxTokens } = {}) {
   if (!API_KEY) throw new Error("MISTRAL_API_KEY manquante");
   const res = await fetch(API_URL, {
     method: "POST",
@@ -75,9 +75,15 @@ async function mistralChat(messages, { json = true, temperature = 0.4, maxTokens
     throw new Error(`Mistral HTTP ${res.status} — ${text.slice(0, 300)}`);
   }
   const data = await res.json();
-  const content = data?.choices?.[0]?.message?.content;
+  const choice = data?.choices?.[0];
+  const content = choice?.message?.content;
   if (!content) throw new Error("Réponse Mistral vide");
-  return content;
+  // finish_reason "length" => réponse tronquée par la limite de tokens
+  return { content, finishReason: choice?.finish_reason || "stop" };
+}
+
+async function mistralChat(messages, opts) {
+  return (await mistralChatFull(messages, opts)).content;
 }
 
 /* ---------------- Contexte de recherche ---------------- */
@@ -176,21 +182,23 @@ async function generateBlogMarkdown(research) {
     "N'ajoute PAS l'encadré « à vérifier », les sources, les CTA ni le disclaimer : ils seront ajoutés ensuite. " +
     "Ne mets pas de bloc ```; renvoie directement le Markdown.";
 
-  const md = (
-    await mistralChat(
-      [
-        { role: "system", content: system },
-        { role: "user", content: user },
-      ],
-      { json: false, temperature: 0.6, maxTokens: 4000 }
-    )
-  ).trim();
-  // Retire un éventuel bloc de code englobant ```markdown ... ```
-  return md.replace(/^```(?:markdown)?\s*/i, "").replace(/```$/i, "").trim();
+  const { content, finishReason } = await mistralChatFull(
+    [
+      { role: "system", content: system },
+      { role: "user", content: user },
+    ],
+    { json: false, temperature: 0.6, maxTokens: 4000 }
+  );
+  const markdown = content
+    .trim()
+    .replace(/^```(?:markdown)?\s*/i, "")
+    .replace(/```$/i, "")
+    .trim();
+  return { markdown, complete: finishReason !== "length" };
 }
 
-/** Plan de guide PDF : Markdown BRUT, avec repli local si l'IA échoue. */
-async function generateGuideOutlineMarkdown(research) {
+/** Plan de guide PDF : 3 appels séparés (évite la troncature), assemblés. */
+async function generateGuidePart(research, instructions, maxTokens) {
   const system =
     "Tu es concepteur de guides de voyage PDF premium pour TripPilot Guides. " +
     "Tu réponds en Markdown BRUT (pas de JSON, pas de bloc de code englobant).";
@@ -198,33 +206,95 @@ async function generateGuideOutlineMarkdown(research) {
     "DONNÉES DE RECHERCHE :\n" +
     researchContext(research) +
     "\n\n" +
-    "Rédige UNIQUEMENT, en Markdown, un plan de production COMPLET de guide PDF contenant :\n" +
-    "- ## Structure du PDF (sections ordonnées)\n" +
-    "- ## Pages prévues (sommaire avec numéros de page indicatifs)\n" +
-    "- ## Tableaux budget (≥ 2 tableaux Markdown : par jour ; par poste bas/moyen/confort)\n" +
-    "- ## Planning type d'une journée (tableau Matin / Midi / Après-midi / Soir)\n" +
-    "- ## Alternatives pluie / fatigue\n" +
-    "- ## Checklist imprimable (cases '- [ ]')\n" +
-    "- ## Liens à vérifier\n" +
-    "- ## Éléments visuels à créer dans Canva\n\n" +
-    "Ne mets pas de bloc ```; renvoie directement le Markdown.";
-
-  const md = (
-    await mistralChat(
-      [
-        { role: "system", content: system },
-        { role: "user", content: user },
-      ],
-      { json: false, temperature: 0.5, maxTokens: 3000 }
-    )
-  ).trim();
-  const clean = md.replace(/^```(?:markdown)?\s*/i, "").replace(/```$/i, "").trim();
-  if (clean.length < 80) throw new Error("guide outline trop court");
-  return clean;
+    instructions +
+    "\nNe mets pas de bloc ```; renvoie directement le Markdown.";
+  const { content, finishReason } = await mistralChatFull(
+    [
+      { role: "system", content: system },
+      { role: "user", content: user },
+    ],
+    { json: false, temperature: 0.5, maxTokens }
+  );
+  const md = content
+    .trim()
+    .replace(/^```(?:markdown)?\s*/i, "")
+    .replace(/```$/i, "")
+    .trim();
+  return { md, complete: finishReason !== "length" && md.length >= 40 };
 }
 
-/** Repli local du plan de guide à partir de la recherche (jamais d'échec). */
-function buildGuideFallback(research) {
+async function generateGuideOutlineMarkdown(research) {
+  const defs = [
+    {
+      instr:
+        "Rédige UNIQUEMENT, en Markdown :\n" +
+        "## Structure du PDF (sections ordonnées)\n" +
+        "## Pages prévues (sommaire avec numéros de page indicatifs)\n" +
+        "## Budget (≥ 2 tableaux Markdown : par jour ; par poste bas/moyen/confort)",
+      maxTokens: 1500,
+      fb: () => buildGuideFallbackStructure(research),
+    },
+    {
+      instr:
+        "Rédige UNIQUEMENT, en Markdown :\n" +
+        "## Itinéraire jour par jour (matin / après-midi / soir, détaillé)\n" +
+        "## Planning type d'une journée (tableau Matin / Midi / Après-midi / Soir)\n" +
+        "## Alternatives pluie / fatigue",
+      maxTokens: 1800,
+      fb: () => buildGuideFallbackItinerary(research),
+    },
+    {
+      instr:
+        "Rédige UNIQUEMENT, en Markdown :\n" +
+        "## Checklist imprimable (cases '- [ ]')\n" +
+        "## Éléments visuels à créer dans Canva (couverture, cartes, icônes, encadrés budget)\n" +
+        "## Liens à vérifier",
+      maxTokens: 1200,
+      fb: () => buildGuideFallbackChecklist(research),
+    },
+  ];
+
+  const parts = [];
+  let complete = true;
+  for (const d of defs) {
+    try {
+      const { md, complete: ok } = await generateGuidePart(research, d.instr, d.maxTokens);
+      if (ok) {
+        parts.push(md);
+      } else {
+        parts.push(d.fb());
+        complete = false;
+      }
+    } catch {
+      parts.push(d.fb());
+      complete = false;
+    }
+  }
+  return { markdown: parts.join("\n\n"), complete };
+}
+
+/** Replis locaux du plan de guide (par partie), à partir de la recherche. */
+function buildGuideFallbackStructure(research) {
+  const lines = [];
+  lines.push(`## Structure du PDF`);
+  lines.push(`1. Couverture`);
+  lines.push(`2. Itinéraire jour par jour`);
+  lines.push(`3. Budget`);
+  lines.push(`4. Transports & quartiers`);
+  lines.push(`5. Checklist imprimable`);
+  lines.push(`\n## Pages prévues`);
+  lines.push(`- p.1 Couverture · p.2 Sommaire · p.3+ Itinéraire · Budget · Checklist`);
+  lines.push(`\n## Budget`);
+  lines.push(`| Poste | Bas | Moyen | Confort |`);
+  lines.push(`| --- | --- | --- | --- |`);
+  lines.push(`| Hébergement / nuit | à vérifier | à vérifier | à vérifier |`);
+  lines.push(`| Repas / jour | à vérifier | à vérifier | à vérifier |`);
+  lines.push(`| Transports | à vérifier | à vérifier | à vérifier |`);
+  lines.push(`| Visites | à vérifier | à vérifier | à vérifier |`);
+  return lines.join("\n");
+}
+
+function buildGuideFallbackItinerary(research) {
   const lines = [];
   const dest = research.destination || research.idea;
   lines.push(`## Itinéraire jour par jour`);
@@ -237,36 +307,38 @@ function buildGuideFallback(research) {
   } else {
     lines.push(`- À compléter avec les incontournables de ${dest}.`);
   }
-
-  lines.push(`\n## Budget`);
-  lines.push(`| Poste | Bas | Moyen | Confort |`);
+  lines.push(`\n## Planning type d'une journée`);
+  lines.push(`| Matin | Midi | Après-midi | Soir |`);
   lines.push(`| --- | --- | --- | --- |`);
-  lines.push(`| Hébergement / nuit | à vérifier | à vérifier | à vérifier |`);
-  lines.push(`| Repas / jour | à vérifier | à vérifier | à vérifier |`);
-  lines.push(`| Transports | à vérifier | à vérifier | à vérifier |`);
-  lines.push(`| Visites | à vérifier | à vérifier | à vérifier |`);
+  lines.push(`| Visite principale | Pause déjeuner | Quartier à pied | Dîner |`);
+  lines.push(`\n## Alternatives pluie / fatigue`);
+  lines.push(`- Musées couverts, café, marché couvert ; journée allégée si besoin.`);
+  return lines.join("\n");
+}
 
-  lines.push(`\n## Transports`);
-  (research.transports?.length ? research.transports : ["À compléter (aéroport, transports sur place)."]).forEach(
-    (t) => lines.push(`- ${t}`)
-  );
-
-  lines.push(`\n## Quartiers où dormir`);
-  (research.neighborhoods?.length ? research.neighborhoods : ["À compléter selon le budget."]).forEach(
-    (n) => lines.push(`- ${n}`)
-  );
-
-  if (research.restaurants?.length) {
-    lines.push(`\n## Restaurants / pauses (à vérifier)`);
-    research.restaurants.forEach((r) => lines.push(`- ${r}`));
-  }
-
-  lines.push(`\n## Checklist imprimable`);
+function buildGuideFallbackChecklist(research) {
+  const lines = [];
+  lines.push(`## Checklist imprimable`);
   ["Documents", "Budget et moyens de paiement", "Transport (billets, pass)", "Logement (adresse, check-in)", "Valise", "Applis utiles"].forEach(
     (c) => lines.push(`- [ ] ${c}`)
   );
-
+  lines.push(`\n## Éléments visuels à créer dans Canva`);
+  lines.push(`- Couverture, carte des quartiers, icônes budget, encadrés « à vérifier ».`);
+  lines.push(`\n## Liens à vérifier`);
+  if (research.sources?.length) {
+    research.sources.forEach((s) => lines.push(`- ${s.title} : ${s.url}`));
+  } else {
+    lines.push(`- Sites officiels des attractions, transports et hébergements.`);
+  }
   return lines.join("\n");
+}
+
+function buildGuideFallback(research) {
+  return [
+    buildGuideFallbackStructure(research),
+    buildGuideFallbackItinerary(research),
+    buildGuideFallbackChecklist(research),
+  ].join("\n\n");
 }
 
 /** Conversion robuste d'un item social (string ou objet) en texte lisible. */
@@ -308,12 +380,26 @@ function socialJsonToMarkdown(parsed) {
   ).trim();
 }
 
+/** Interdit toute mention d'un guide PDF gratuit/offert (seule la checklist est gratuite). */
+function sanitizeSocialText(md) {
+  return md
+    .replace(/guide(?:\s+pdf)?\s+complet\s+gratuit/gi, "guide PDF complet à acheter")
+    .replace(/guide\s+complet\s+gratuit/gi, "guide PDF complet à acheter")
+    .replace(/guide\s+pdf\s+gratuit/gi, "guide PDF complet disponible")
+    .replace(/guide\s+pdf\s+offert/gi, "guide PDF complet disponible")
+    .replace(/guide\s+pdf\s+complet\s+offert/gi, "guide PDF complet disponible")
+    .replace(/guide\s+(?:complet\s+)?offert/gi, "guide PDF complet disponible")
+    .replace(/guide\s+gratuit/gi, "guide PDF complet à acheter");
+}
+
 /** Contenus réseaux sociaux : Markdown BRUT (avec normalisation si JSON renvoyé). */
 async function generateSocialMarkdown(research) {
   const system =
     "Tu es social media manager voyage pour TripPilot Guides. " +
-    "Accroches en français jouant sur l'émotion/le problème du voyageur, menant à la " +
-    "checklist gratuite ou au guide PDF complet. Tu réponds en Markdown BRUT.";
+    "Accroches en français jouant sur l'émotion/le problème du voyageur. " +
+    "RÈGLE STRICTE : seule la CHECKLIST est gratuite. Le guide PDF complet n'est JAMAIS " +
+    "gratuit ni offert ; il est payant (« guide PDF complet à acheter »). " +
+    "Tu réponds en Markdown BRUT.";
   const user =
     "DONNÉES DE RECHERCHE :\n" +
     researchContext(research) +
@@ -321,8 +407,8 @@ async function generateSocialMarkdown(research) {
     "Rédige UNIQUEMENT, en Markdown, ces trois sections :\n" +
     "## 📌 Idées Pinterest (10)\n(liste numérotée de 10 titres d'épingles avec hashtags)\n\n" +
     "## 🎬 Hooks TikTok / Reels (10)\n(liste numérotée de 10 accroches qui stoppent le scroll)\n\n" +
-    "## 📝 Scripts courts (5)\n(5 scripts de 15-30s : accroche + corps + CTA vers checklist ou guide)\n\n" +
-    "Angle émotionnel/problème. Ne mets pas de bloc ```; renvoie directement le Markdown.";
+    "## 📝 Scripts courts (5)\n(5 scripts de 15-30s : accroche + corps + CTA vers la checklist gratuite ou le guide PDF complet à acheter)\n\n" +
+    "Angle émotionnel/problème. Ne promets jamais un guide gratuit. Ne mets pas de bloc ```; renvoie directement le Markdown.";
 
   const raw = (
     await mistralChat(
@@ -335,16 +421,19 @@ async function generateSocialMarkdown(research) {
   ).trim();
 
   // Si le modèle a malgré tout renvoyé du JSON, on le normalise (jamais de [object Object]).
+  let md;
   if (looksLikeJson(raw)) {
     try {
       const parsed = safeParseJson(raw);
-      const md = socialJsonToMarkdown(parsed);
-      if (md) return md;
+      md = socialJsonToMarkdown(parsed);
     } catch {
-      /* on retombe sur le brut nettoyé */
+      md = raw;
     }
+  } else {
+    md = raw;
   }
-  return raw.replace(/^```(?:markdown)?\s*/i, "").replace(/```$/i, "").trim();
+  md = md.replace(/^```(?:markdown)?\s*/i, "").replace(/```$/i, "").trim();
+  return sanitizeSocialText(md);
 }
 
 /* ---------------- Assemblage déterministe ---------------- */
@@ -393,7 +482,10 @@ function ctaBlock() {
   );
 }
 
-function assembleBlogMarkdown(blogMarkdown, research) {
+const BLOG_MARKER = "<!-- TRIPILOT_COMPLETE_BLOG -->";
+const GUIDE_MARKER = "<!-- TRIPILOT_COMPLETE_GUIDE -->";
+
+function assembleBlogMarkdown(blogMarkdown, research, complete) {
   let md = blogMarkdown.trim();
   md += verificationBox(research);
   md += ctaBlock();
@@ -401,10 +493,12 @@ function assembleBlogMarkdown(blogMarkdown, research) {
   if (!/prix et horaires peuvent évoluer/i.test(md)) {
     md += `\n\n> ${DISCLAIMER}\n`;
   }
+  // Marqueur de complétude : ajouté seulement si le contenu n'est pas tronqué.
+  if (complete) md += `\n\n${BLOG_MARKER}\n`;
   return md;
 }
 
-async function writeDraftFiles(slug, meta, blogMarkdown, guideMarkdown, socialMarkdown, research) {
+async function writeDraftFiles(slug, meta, blog, guide, socialMarkdown, research) {
   const dir = path.join(DRAFTS_DIR, slug);
   await fs.mkdir(dir, { recursive: true });
   const today = new Date().toISOString().slice(0, 10);
@@ -423,25 +517,26 @@ async function writeDraftFiles(slug, meta, blogMarkdown, guideMarkdown, socialMa
   const blogPath = path.join(dir, "blog.md");
   await fs.writeFile(
     blogPath,
-    blogFm + "\n" + assembleBlogMarkdown(blogMarkdown || "", research) + "\n",
+    blogFm + "\n" + assembleBlogMarkdown(blog.markdown || "", research, blog.complete) + "\n",
     "utf8"
   );
   written.push(path.relative(ROOT, blogPath));
 
-  // 2) Plan de guide PDF (toujours présent grâce au repli)
+  // 2) Plan de guide PDF (toujours présent grâce au repli ; marqueur si complet)
   const guidePath = path.join(dir, "guide-outline.md");
   await fs.writeFile(
     guidePath,
     `# Plan de guide PDF — ${meta.title || research.idea}\n\n` +
       "> Brouillon généré automatiquement. `draft: true`. À relire avant toute utilisation.\n\n" +
-      `${guideMarkdown}\n` +
+      `${guide.markdown}\n` +
       sourcesSection(research) +
-      verificationBox(research),
+      verificationBox(research) +
+      (guide.complete ? `\n\n${GUIDE_MARKER}\n` : ""),
     "utf8"
   );
   written.push(path.relative(ROOT, guidePath));
 
-  // 3) Social (toujours présent ; jamais de [object Object])
+  // 3) Social (toujours présent ; jamais de [object Object] ; jamais "guide gratuit")
   const socialPath = path.join(dir, "social.md");
   await fs.writeFile(
     socialPath,
@@ -519,19 +614,21 @@ async function main() {
     try {
       // 3 appels séparés (Markdown brut) + métadonnées légères
       const meta = await generateBlogMeta(data);
-      const blogMarkdown = await generateBlogMarkdown(data);
+      const blog = await generateBlogMarkdown(data); // { markdown, complete }
 
-      // Guide : IA puis repli local garanti (jamais d'échec)
-      let guideMarkdown = "";
+      // Guide : 3 appels séparés (assemblés) + repli local garanti
+      let guide;
       try {
-        guideMarkdown = await generateGuideOutlineMarkdown(data);
+        guide = await generateGuideOutlineMarkdown(data); // { markdown, complete }
       } catch (err) {
         summary.errors.push(`Guide "${slug}" : ${err.message} (repli local)`);
-        guideMarkdown = buildGuideFallback(data);
+        guide = { markdown: buildGuideFallback(data), complete: false };
       }
-      if (!guideMarkdown || guideMarkdown.length < 40) guideMarkdown = buildGuideFallback(data);
+      if (!guide.markdown || guide.markdown.length < 40) {
+        guide = { markdown: buildGuideFallback(data), complete: false };
+      }
 
-      // Social : Markdown brut (normalisé si JSON) ; repli minimal sinon
+      // Social : Markdown brut (normalisé + assaini)
       let socialMarkdown = "";
       try {
         socialMarkdown = await generateSocialMarkdown(data);
@@ -545,14 +642,7 @@ async function main() {
           "## 📝 Scripts courts\n\n_À compléter._";
       }
 
-      const files = await writeDraftFiles(
-        slug,
-        meta,
-        blogMarkdown,
-        guideMarkdown,
-        socialMarkdown,
-        data
-      );
+      const files = await writeDraftFiles(slug, meta, blog, guide, socialMarkdown, data);
       summary.mistralUsed = true;
       summary.generated.push({
         idea: data.idea,
@@ -562,6 +652,8 @@ async function main() {
         researchMethod: data.method,
         sourcesCount: data.sources?.length || 0,
         needsVerificationCount: data.needsVerification?.length || 0,
+        blogComplete: blog.complete,
+        guideComplete: guide.complete,
       });
       summary.generatedFiles.push(...files);
     } catch (err) {
