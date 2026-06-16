@@ -125,6 +125,24 @@ function buildPayload(summary) {
       name: "📊 Score par brouillon",
       value: truncate(lines, 1024),
     });
+
+    // Complétude des brouillons (fichiers manquants / social cassé)
+    const issues = review.items
+      .filter((it) => it.complete === false || it.socialBroken)
+      .map((it) => {
+        const flags = [];
+        if (it.socialBroken) flags.push("social.md contient `[object Object]`");
+        if (Array.isArray(it.missingFiles) && it.missingFiles.length)
+          flags.push(`manque ${it.missingFiles.join(", ")}`);
+        if (!flags.length) flags.push("brouillon incomplet");
+        return `⚠️ ${truncate(it.slug, 40)} — ${flags.join(" · ")}`;
+      });
+    fields.push({
+      name: "🧩 Complétude",
+      value: issues.length
+        ? truncate(issues.join("\n"), 1024)
+        : "✅ Tous les brouillons sont complets (blog + guide + social, sans [object Object]).",
+    });
   } else if (review) {
     fields.push({
       name: "🔎 Review IA",

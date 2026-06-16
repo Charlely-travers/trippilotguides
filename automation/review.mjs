@@ -75,9 +75,9 @@ function uniqueRatio(s) {
   return new Set(words).size / words.length;
 }
 
-/* ---------------- Relecture heuristique (sans API) ---------------- */
+/* ---------------- Checks déterministes (prioritaires) ---------------- */
 
-function heuristicReview({ blog, guide, social }) {
+function deterministicChecks(blog, guide, social) {
   const body = stripFrontmatter(blog);
   const all = `${blog}\n${guide}\n${social}`;
   const words = wordCount(body);
@@ -85,87 +85,70 @@ function heuristicReview({ blog, guide, social }) {
   const h1InBody = (body.match(/^#\s+/gm) || []).length;
   const hasTitle = /^---[\s\S]*?\btitle:\s*\S/.test(blog);
 
-  const weaknesses = [];
-
-  // Contenu pas trop générique
-  const notGeneric = words >= 600 && h2 >= 3 && uniqueRatio(body) >= 0.3;
-  if (!notGeneric)
-    weaknesses.push(
-      words < 600
-        ? "Article trop court (manque de profondeur)."
-        : "Contenu potentiellement trop générique."
-    );
-
-  // CTA présents (lien checklist / guide / verbes d'action)
-  const ctaPresent =
-    /(checklist|\/guides|guide pdf|télécharge|télécharger|acheter|découvrir le guide)/i.test(
-      all
-    );
-  if (!ctaPresent) weaknesses.push("Aucun appel à l'action (checklist / guide) détecté.");
-
-  // Disclaimer prix/horaires
+  const ctaChecklist = /checklist gratuite/i.test(all) || /téléchargez/i.test(all);
+  const ctaGuide = /guide pdf complet/i.test(all);
+  const ctaPresent = ctaChecklist && ctaGuide;
   const disclaimerPresent =
-    /(prix\s+et\s+horaires|peuvent\s+évoluer|prix.{0,40}(chang|évolu)|horaires.{0,40}(chang|évolu))/i.test(
-      all
-    );
-  if (!disclaimerPresent)
-    weaknesses.push("Disclaimer prix/horaires manquant.");
-
-  // Infos incertaines marquées à vérifier
-  const uncertaintyMarked =
-    /(à\s+vérifier|vérifie[rz]|indicatif|peu(t|vent)\s+varier|avant\s+(votre|ton)\s+départ)/i.test(
-      all
-    );
-  if (!uncertaintyMarked)
-    weaknesses.push("Aucune mention « à vérifier » pour les infos incertaines.");
-
-  // Structure H1/H2 propre : titre en frontmatter (H1), pas de # dans le corps, >= 2 H2
+    /prix et horaires peuvent évoluer/i.test(all) || /vérifiez toujours/i.test(all);
+  const sourcesPresent = /^##\s*sources/im.test(all);
+  const needsVerificationPresent =
+    /à\s+vérifier avant le départ/i.test(all) || /à\s+vérifier/i.test(all);
+  const notGeneric = words >= 600 && h2 >= 3 && uniqueRatio(body) >= 0.3;
   const headingStructure = hasTitle && h1InBody === 0 && h2 >= 2;
-  if (!headingStructure) {
-    if (!hasTitle) weaknesses.push("Titre (frontmatter) manquant.");
-    else if (h1InBody > 0)
-      weaknesses.push("H1 en double dans le corps (utiliser ## pour les sections).");
-    else weaknesses.push("Pas assez de sous-titres H2.");
-  }
-
-  // Potentiel SEO (0-10)
-  let seoPotential = 0;
-  seoPotential += Math.min(5, words / 200); // ~1000 mots => 5
-  seoPotential += Math.min(3, h2); // jusqu'à 3
-  seoPotential += /\bdescription:\s*\S/.test(blog) ? 2 : 0;
-  seoPotential = Math.min(10, round1(seoPotential));
-
-  // Potentiel de vente PDF (0-10)
-  let pdfSalesPotential = 0;
-  pdfSalesPotential += guide && wordCount(guide) > 80 ? 4 : 0;
-  pdfSalesPotential += /(budget|itinéraire|jour\s*1|checklist)/i.test(all) ? 3 : 0;
-  pdfSalesPotential += ctaPresent ? 3 : 0;
-  pdfSalesPotential = Math.min(10, round1(pdfSalesPotential));
-
-  // Score global /10
-  let score = 0;
-  score += notGeneric ? 2 : 0;
-  score += ctaPresent ? 1.5 : 0;
-  score += disclaimerPresent ? 1.5 : 0;
-  score += uncertaintyMarked ? 1 : 0;
-  score += headingStructure ? 1.5 : 0;
-  score += (seoPotential / 10) * 1.25;
-  score += (pdfSalesPotential / 10) * 1.25;
-  score = Math.min(10, round1(score));
 
   return {
-    score,
-    checks: {
-      notGeneric,
-      ctaPresent,
-      disclaimerPresent,
-      uncertaintyMarked,
-      headingStructure,
-      seoPotential,
-      pdfSalesPotential,
-    },
-    weaknesses,
+    words,
+    h2,
+    ctaChecklist,
+    ctaGuide,
+    ctaPresent,
+    disclaimerPresent,
+    sourcesPresent,
+    needsVerificationPresent,
+    notGeneric,
+    headingStructure,
   };
+}
+
+function heuristicSubjective(checks, guide) {
+  let seo = 0;
+  seo += Math.min(5, checks.words / 200);
+  seo += Math.min(3, checks.h2);
+  seo += checks.sourcesPresent ? 2 : 0;
+  const guideWords = wordCount(guide);
+  let pdf = 0;
+  pdf += guideWords > 120 ? 4 : guideWords > 40 ? 2 : 0;
+  pdf += /budget|itinéraire|checklist/i.test(guide) ? 3 : 0;
+  pdf += checks.ctaPresent ? 3 : 0;
+  return {
+    seoPotential: Math.min(10, round1(seo)),
+    pdfSalesPotential: Math.min(10, round1(pdf)),
+  };
+}
+
+function scoreFrom(c, seoPotential, pdfSalesPotential) {
+  let s = 0;
+  s += c.notGeneric ? 2 : 0;
+  s += c.ctaPresent ? 1.5 : 0;
+  s += c.disclaimerPresent ? 1.5 : 0;
+  s += c.needsVerificationPresent ? 1 : 0;
+  s += c.headingStructure ? 1.5 : 0;
+  s += (seoPotential / 10) * 1.25;
+  s += (pdfSalesPotential / 10) * 1.25;
+  return Math.min(10, round1(s));
+}
+
+function deterministicWeaknesses(c) {
+  const w = [];
+  if (!c.notGeneric)
+    w.push(c.words < 600 ? "Article trop court (manque de profondeur)." : "Contenu peut-être trop générique.");
+  if (!c.ctaChecklist) w.push("CTA checklist gratuite manquant.");
+  if (!c.ctaGuide) w.push("CTA guide PDF complet manquant.");
+  if (!c.disclaimerPresent) w.push("Disclaimer prix/horaires manquant.");
+  if (!c.needsVerificationPresent) w.push("Section « à vérifier » absente.");
+  if (!c.headingStructure) w.push("Structure de titres (H1/H2) à revoir.");
+  if (!c.sourcesPresent) w.push("Section Sources absente.");
+  return w;
 }
 
 /* ---------------- Relecture Mistral (avec API) ---------------- */
@@ -343,19 +326,61 @@ async function main() {
       files.find((f) => f.endsWith("social.md")) || `${dir}/social.md`
     );
 
-    let result;
+    // 1) Checks déterministes (prioritaires) + potentiels heuristiques
+    const det = deterministicChecks(blog, guide, social);
+    const heur = heuristicSubjective(det, guide);
+    let seo = heur.seoPotential;
+    let pdf = heur.pdfSalesPotential;
+    let iaChecks = {};
+    let iaWeak = [];
+
+    // 2) La review IA complète (potentiels + faiblesses), sans écraser un check déterministe positif
     if (useMistral) {
       try {
-        result = await mistralReview({ blog, guide, social });
+        const ia = await mistralReview({ blog, guide, social });
+        seo = ia.checks.seoPotential;
+        pdf = ia.checks.pdfSalesPotential;
+        iaChecks = ia.checks;
+        iaWeak = ia.weaknesses || [];
       } catch (err) {
         review.errors.push(`Review IA "${dir}" : ${err.message} (repli heuristique)`);
-        result = heuristicReview({ blog, guide, social });
       }
-    } else {
-      result = heuristicReview({ blog, guide, social });
     }
 
-    // Pénalité forte si la recherche n'est pas exploitée + contrôle sources/à vérifier
+    const checks = {
+      notGeneric: det.notGeneric || !!iaChecks.notGeneric,
+      ctaPresent: det.ctaPresent,
+      ctaChecklist: det.ctaChecklist,
+      ctaGuide: det.ctaGuide,
+      disclaimerPresent: det.disclaimerPresent || !!iaChecks.disclaimerPresent,
+      needsVerificationPresent: det.needsVerificationPresent || !!iaChecks.uncertaintyMarked,
+      headingStructure: det.headingStructure || !!iaChecks.headingStructure,
+      sourcesPresent: det.sourcesPresent,
+      seoPotential: seo,
+      pdfSalesPotential: pdf,
+    };
+
+    let result = {
+      score: scoreFrom(checks, seo, pdf),
+      checks,
+      weaknesses: [...deterministicWeaknesses(checks), ...iaWeak],
+    };
+
+    // 3) Complétude des fichiers du brouillon
+    const hasBlog = blog.trim().length > 0;
+    const hasGuide = guide.trim().length > 0;
+    const hasSocial = social.trim().length > 0;
+    const socialBroken = /\[object Object\]/.test(social);
+    const missingFiles = [];
+    if (!hasBlog) missingFiles.push("blog.md");
+    if (!hasGuide) missingFiles.push("guide-outline.md");
+    if (!hasSocial) missingFiles.push("social.md");
+    const complete = hasBlog && hasGuide && hasSocial && !socialBroken;
+    if (socialBroken) result.weaknesses.push("social.md contient [object Object].");
+    if (missingFiles.length)
+      result.weaknesses.push(`Brouillon incomplet (manque : ${missingFiles.join(", ")}).`);
+
+    // 4) Pénalité forte si la recherche n'est pas exploitée + contrôle sources/à vérifier
     const gen = generatedBySlug.get(path.posix.basename(dir));
     result = applyResearchChecks(result, { blog, guide }, gen);
 
@@ -369,6 +394,9 @@ async function main() {
       status,
       checks: result.checks,
       weaknesses: result.weaknesses,
+      complete,
+      missingFiles,
+      socialBroken,
       files,
     });
   }
@@ -397,6 +425,9 @@ async function main() {
       draft: i.draft,
       score: i.score,
       status: i.status,
+      complete: i.complete,
+      missingFiles: i.missingFiles,
+      socialBroken: i.socialBroken,
       weaknesses: i.weaknesses.slice(0, 3),
     })),
   };

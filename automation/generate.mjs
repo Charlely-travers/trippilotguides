@@ -109,104 +109,242 @@ function researchContext(r) {
     .join("\n");
 }
 
-/* ---------------- Générateurs (à partir de la recherche) ---------------- */
+/* ---------------- Générateurs (Markdown brut, 3 appels séparés) ---------------- */
 
-async function generateBlog(research) {
+function looksLikeJson(text) {
+  const t = text.trim();
+  return t.startsWith("{") || t.startsWith("[");
+}
+
+/** Petit JSON de métadonnées (robuste, avec repli déterministe). */
+async function generateBlogMeta(research) {
+  const fallback = {
+    title: research.angle || `${research.destination} : guide pratique`,
+    description:
+      (research.angle || `Préparez votre voyage à ${research.destination}.`).slice(0, 155),
+    emoji: "📍",
+  };
+  try {
+    const content = await mistralChat(
+      [
+        {
+          role: "system",
+          content:
+            "Tu génères des métadonnées SEO en français. Réponds STRICTEMENT en JSON.",
+        },
+        {
+          role: "user",
+          content:
+            `Sujet : "${research.idea}" (destination : ${research.destination}).\n` +
+            'Renvoie {"title": string (55-65 car.), "description": string (140-160 car.), "emoji": string (un emoji)}.',
+        },
+      ],
+      { temperature: 0.4, maxTokens: 300 }
+    );
+    const parsed = safeParseJson(content);
+    return {
+      title: String(parsed.title || fallback.title).trim(),
+      description: String(parsed.description || fallback.description).trim(),
+      emoji: String(parsed.emoji || fallback.emoji).trim() || "📍",
+    };
+  } catch {
+    return fallback;
+  }
+}
+
+/** Article de blog : Markdown BRUT (pas de gros JSON fragile). */
+async function generateBlogMarkdown(research) {
   const system =
     "Tu es rédacteur web SEO francophone senior pour TripPilot Guides (guides de voyage PDF). " +
     "Tu écris un français clair, concret et fiable, orienté conversion mais JAMAIS mensonger. " +
-    "Tu t'appuies UNIQUEMENT sur les données de recherche fournies. Pour toute information " +
-    "absente, incertaine ou non sourcée, tu restes prudent (« à vérifier », « en général », " +
-    "« comptez environ ») et tu ne donnes pas de prix ou d'horaire comme certains. " +
-    "Réponds STRICTEMENT en JSON.";
+    "Tu t'appuies UNIQUEMENT sur les données de recherche fournies ; pour toute information " +
+    "absente ou non sourcée, tu restes prudent (« à vérifier », « comptez environ »). " +
+    "Tu réponds en Markdown BRUT (pas de JSON, pas de bloc de code englobant).";
   const user =
     "DONNÉES DE RECHERCHE :\n" +
     researchContext(research) +
     "\n\n" +
-    "Rédige un article de blog COMPLET en français de 1200 à 1600 mots fondé sur ces données. " +
-    'Renvoie un objet JSON {"blogTitle": string (55-65 car.), "blogDescription": string (140-160 car.), ' +
-    '"emoji": string, "blogMarkdown": string}.\n\n' +
-    "blogMarkdown (Markdown, titres ## et ###, PAS de # car le titre est dans le frontmatter), dans cet ordre :\n" +
-    "1. Intro avec angle commercial clair (problème du lecteur + promesse).\n" +
-    "2. ## Itinéraire jour par jour (matin/après-midi/soir).\n" +
-    "3. ## Budget détaillé — tableau Markdown avec 3 niveaux (routard / équilibré / confort), montants indicatifs.\n" +
-    "4. ## Erreurs à éviter.\n" +
-    "5. ## Transports (aéroport et sur place).\n" +
-    "6. ## Où dormir (quartiers selon budget).\n" +
-    "7. ## Quoi réserver avant de partir.\n\n" +
-    "N'invente pas de prix précis ni d'adresses non présents dans les données ; reste prudent. " +
-    "N'ajoute pas toi-même l'encadré « à vérifier », les sources, les CTA ni le disclaimer : ils seront ajoutés ensuite.";
+    "Rédige UNIQUEMENT le corps d'un article de blog en français de 1200 à 1600 mots, en Markdown. " +
+    "Titres ## et ### (PAS de # : le titre est géré ailleurs). Structure, dans cet ordre :\n" +
+    "- Une introduction avec un angle commercial clair (problème du lecteur + promesse).\n" +
+    "- ## Itinéraire jour par jour (matin/après-midi/soir).\n" +
+    "- ## Budget détaillé : tableau Markdown à 3 niveaux (routard / équilibré / confort), montants indicatifs.\n" +
+    "- ## Erreurs à éviter.\n" +
+    "- ## Transports (aéroport et sur place).\n" +
+    "- ## Où dormir (quartiers selon budget).\n" +
+    "- ## Quoi réserver avant de partir.\n\n" +
+    "N'ajoute PAS l'encadré « à vérifier », les sources, les CTA ni le disclaimer : ils seront ajoutés ensuite. " +
+    "Ne mets pas de bloc ```; renvoie directement le Markdown.";
 
-  const content = await mistralChat(
-    [
-      { role: "system", content: system },
-      { role: "user", content: user },
-    ],
-    { temperature: 0.6, maxTokens: 4000 }
-  );
-  const parsed = safeParseJson(content);
-  if (!parsed?.blogMarkdown) throw new Error("blogMarkdown manquant");
-  return parsed;
+  const md = (
+    await mistralChat(
+      [
+        { role: "system", content: system },
+        { role: "user", content: user },
+      ],
+      { json: false, temperature: 0.6, maxTokens: 4000 }
+    )
+  ).trim();
+  // Retire un éventuel bloc de code englobant ```markdown ... ```
+  return md.replace(/^```(?:markdown)?\s*/i, "").replace(/```$/i, "").trim();
 }
 
-async function generateGuideOutline(research) {
+/** Plan de guide PDF : Markdown BRUT, avec repli local si l'IA échoue. */
+async function generateGuideOutlineMarkdown(research) {
   const system =
     "Tu es concepteur de guides de voyage PDF premium pour TripPilot Guides. " +
-    "Tu t'appuies sur les données de recherche fournies et restes prudent sur les infos non sourcées. " +
-    "Réponds STRICTEMENT en JSON.";
+    "Tu réponds en Markdown BRUT (pas de JSON, pas de bloc de code englobant).";
   const user =
     "DONNÉES DE RECHERCHE :\n" +
     researchContext(research) +
     "\n\n" +
-    'Renvoie {"guideOutline": string} : un plan de production COMPLET en Markdown contenant :\n' +
+    "Rédige UNIQUEMENT, en Markdown, un plan de production COMPLET de guide PDF contenant :\n" +
     "- ## Structure du PDF (sections ordonnées)\n" +
     "- ## Pages prévues (sommaire avec numéros de page indicatifs)\n" +
-    "- ## Tableaux budget (≥ 2 tableaux Markdown : budget par jour ; budget par poste bas/moyen/confort)\n" +
+    "- ## Tableaux budget (≥ 2 tableaux Markdown : par jour ; par poste bas/moyen/confort)\n" +
     "- ## Planning type d'une journée (tableau Matin / Midi / Après-midi / Soir)\n" +
     "- ## Alternatives pluie / fatigue\n" +
     "- ## Checklist imprimable (cases '- [ ]')\n" +
-    "- ## Liens à vérifier (reprends les sources et points à vérifier des données)\n" +
-    "- ## Éléments visuels à créer dans Canva (couverture, cartes, icônes, encadrés budget)\n";
+    "- ## Liens à vérifier\n" +
+    "- ## Éléments visuels à créer dans Canva\n\n" +
+    "Ne mets pas de bloc ```; renvoie directement le Markdown.";
 
-  const content = await mistralChat(
-    [
-      { role: "system", content: system },
-      { role: "user", content: user },
-    ],
-    { temperature: 0.5, maxTokens: 3000 }
-  );
-  const parsed = safeParseJson(content);
-  return String(parsed?.guideOutline || "").trim();
+  const md = (
+    await mistralChat(
+      [
+        { role: "system", content: system },
+        { role: "user", content: user },
+      ],
+      { json: false, temperature: 0.5, maxTokens: 3000 }
+    )
+  ).trim();
+  const clean = md.replace(/^```(?:markdown)?\s*/i, "").replace(/```$/i, "").trim();
+  if (clean.length < 80) throw new Error("guide outline trop court");
+  return clean;
 }
 
-async function generateSocial(research) {
+/** Repli local du plan de guide à partir de la recherche (jamais d'échec). */
+function buildGuideFallback(research) {
+  const lines = [];
+  const dest = research.destination || research.idea;
+  lines.push(`## Itinéraire jour par jour`);
+  if (research.attractions?.length) {
+    research.attractions.forEach((a, i) => {
+      lines.push(
+        `- **Jour ${i + 1}** : ${a.name}${a.priceIndicatif ? ` (prix indicatif : ${a.priceIndicatif})` : ""}`
+      );
+    });
+  } else {
+    lines.push(`- À compléter avec les incontournables de ${dest}.`);
+  }
+
+  lines.push(`\n## Budget`);
+  lines.push(`| Poste | Bas | Moyen | Confort |`);
+  lines.push(`| --- | --- | --- | --- |`);
+  lines.push(`| Hébergement / nuit | à vérifier | à vérifier | à vérifier |`);
+  lines.push(`| Repas / jour | à vérifier | à vérifier | à vérifier |`);
+  lines.push(`| Transports | à vérifier | à vérifier | à vérifier |`);
+  lines.push(`| Visites | à vérifier | à vérifier | à vérifier |`);
+
+  lines.push(`\n## Transports`);
+  (research.transports?.length ? research.transports : ["À compléter (aéroport, transports sur place)."]).forEach(
+    (t) => lines.push(`- ${t}`)
+  );
+
+  lines.push(`\n## Quartiers où dormir`);
+  (research.neighborhoods?.length ? research.neighborhoods : ["À compléter selon le budget."]).forEach(
+    (n) => lines.push(`- ${n}`)
+  );
+
+  if (research.restaurants?.length) {
+    lines.push(`\n## Restaurants / pauses (à vérifier)`);
+    research.restaurants.forEach((r) => lines.push(`- ${r}`));
+  }
+
+  lines.push(`\n## Checklist imprimable`);
+  ["Documents", "Budget et moyens de paiement", "Transport (billets, pass)", "Logement (adresse, check-in)", "Valise", "Applis utiles"].forEach(
+    (c) => lines.push(`- [ ] ${c}`)
+  );
+
+  return lines.join("\n");
+}
+
+/** Conversion robuste d'un item social (string ou objet) en texte lisible. */
+function normalizeSocialItem(item) {
+  if (item == null) return "";
+  if (typeof item === "string") return item;
+  if (typeof item === "object") {
+    const parts = [];
+    if (item.title) parts.push(`**${item.title}**`);
+    if (item.hook) parts.push(item.hook);
+    if (item.caption) parts.push(item.caption);
+    if (item.script) parts.push(item.script);
+    if (item.text) parts.push(item.text);
+    if (item.idea) parts.push(item.idea);
+    if (item.cta) parts.push(`CTA : ${item.cta}`);
+    if (item.hashtags)
+      parts.push(Array.isArray(item.hashtags) ? item.hashtags.join(" ") : String(item.hashtags));
+    const out = parts.filter(Boolean).join(" — ").trim();
+    return out || JSON.stringify(item);
+  }
+  return String(item);
+}
+
+/** Reconstruit le Markdown social depuis un JSON (au cas où l'IA renvoie des objets). */
+function socialJsonToMarkdown(parsed) {
+  const sec = (title, arr) => {
+    const items = Array.isArray(arr) ? arr : [];
+    if (!items.length) return "";
+    return (
+      `## ${title}\n\n` +
+      items.map((x, i) => `${i + 1}. ${normalizeSocialItem(x)}`).join("\n") +
+      "\n\n"
+    );
+  };
+  return (
+    sec("📌 Idées Pinterest", parsed.pinterest) +
+    sec("🎬 Hooks TikTok / Reels", parsed.hooks) +
+    sec("📝 Scripts courts", parsed.scripts)
+  ).trim();
+}
+
+/** Contenus réseaux sociaux : Markdown BRUT (avec normalisation si JSON renvoyé). */
+async function generateSocialMarkdown(research) {
   const system =
-    "Tu es social media manager spécialisé voyage pour TripPilot Guides. " +
+    "Tu es social media manager voyage pour TripPilot Guides. " +
     "Accroches en français jouant sur l'émotion/le problème du voyageur, menant à la " +
-    "checklist gratuite ou au guide PDF. Réponds STRICTEMENT en JSON.";
+    "checklist gratuite ou au guide PDF complet. Tu réponds en Markdown BRUT.";
   const user =
     "DONNÉES DE RECHERCHE :\n" +
     researchContext(research) +
     "\n\n" +
-    'Renvoie {"pinterest":[10 idées d\'épingles (titre + angle, avec hashtags)],' +
-    '"hooks":[10 hooks TikTok/Reels (1re phrase qui stoppe le scroll)],' +
-    '"scripts":[5 scripts 15-30s, chacun accroche + corps + CTA vers checklist ou guide]}. ' +
-    "Angle émotionnel/problème (stress d'organisation, peur de se tromper, budget, premier voyage).";
+    "Rédige UNIQUEMENT, en Markdown, ces trois sections :\n" +
+    "## 📌 Idées Pinterest (10)\n(liste numérotée de 10 titres d'épingles avec hashtags)\n\n" +
+    "## 🎬 Hooks TikTok / Reels (10)\n(liste numérotée de 10 accroches qui stoppent le scroll)\n\n" +
+    "## 📝 Scripts courts (5)\n(5 scripts de 15-30s : accroche + corps + CTA vers checklist ou guide)\n\n" +
+    "Angle émotionnel/problème. Ne mets pas de bloc ```; renvoie directement le Markdown.";
 
-  const content = await mistralChat(
-    [
-      { role: "system", content: system },
-      { role: "user", content: user },
-    ],
-    { temperature: 0.85, maxTokens: 2500 }
-  );
-  const parsed = safeParseJson(content);
-  const arr = (v) => (Array.isArray(v) ? v.map((x) => String(x)) : []);
-  return {
-    pinterest: arr(parsed?.pinterest),
-    hooks: arr(parsed?.hooks),
-    scripts: arr(parsed?.scripts),
-  };
+  const raw = (
+    await mistralChat(
+      [
+        { role: "system", content: system },
+        { role: "user", content: user },
+      ],
+      { json: false, temperature: 0.85, maxTokens: 2500 }
+    )
+  ).trim();
+
+  // Si le modèle a malgré tout renvoyé du JSON, on le normalise (jamais de [object Object]).
+  if (looksLikeJson(raw)) {
+    try {
+      const parsed = safeParseJson(raw);
+      const md = socialJsonToMarkdown(parsed);
+      if (md) return md;
+    } catch {
+      /* on retombe sur le brut nettoyé */
+    }
+  }
+  return raw.replace(/^```(?:markdown)?\s*/i, "").replace(/```$/i, "").trim();
 }
 
 /* ---------------- Assemblage déterministe ---------------- */
@@ -266,7 +404,7 @@ function assembleBlogMarkdown(blogMarkdown, research) {
   return md;
 }
 
-async function writeDraftFiles(slug, blog, guideOutline, social, research) {
+async function writeDraftFiles(slug, meta, blogMarkdown, guideMarkdown, socialMarkdown, research) {
   const dir = path.join(DRAFTS_DIR, slug);
   await fs.mkdir(dir, { recursive: true });
   const today = new Date().toISOString().slice(0, 10);
@@ -274,10 +412,10 @@ async function writeDraftFiles(slug, blog, guideOutline, social, research) {
 
   // 1) Article de blog
   const blogFm = frontmatter({
-    title: blog.blogTitle || research.idea,
-    description: blog.blogDescription || research.idea,
+    title: meta.title || research.idea,
+    description: meta.description || research.idea,
     pubDate: today,
-    emoji: blog.emoji || "📍",
+    emoji: meta.emoji || "📍",
     gradient: "from-brand-500 via-accent-500 to-accent-600",
     readingTime: "9 min",
     draft: true,
@@ -285,45 +423,34 @@ async function writeDraftFiles(slug, blog, guideOutline, social, research) {
   const blogPath = path.join(dir, "blog.md");
   await fs.writeFile(
     blogPath,
-    blogFm + "\n" + assembleBlogMarkdown(blog.blogMarkdown || "", research) + "\n",
+    blogFm + "\n" + assembleBlogMarkdown(blogMarkdown || "", research) + "\n",
     "utf8"
   );
   written.push(path.relative(ROOT, blogPath));
 
-  // 2) Plan de guide PDF
-  if (guideOutline) {
-    const guidePath = path.join(dir, "guide-outline.md");
-    await fs.writeFile(
-      guidePath,
-      `# Plan de guide PDF — ${blog.blogTitle || research.idea}\n\n` +
-        "> Brouillon généré automatiquement. `draft: true`. À relire avant toute utilisation.\n\n" +
-        `${guideOutline}\n` +
-        sourcesSection(research),
-      "utf8"
-    );
-    written.push(path.relative(ROOT, guidePath));
-  }
+  // 2) Plan de guide PDF (toujours présent grâce au repli)
+  const guidePath = path.join(dir, "guide-outline.md");
+  await fs.writeFile(
+    guidePath,
+    `# Plan de guide PDF — ${meta.title || research.idea}\n\n` +
+      "> Brouillon généré automatiquement. `draft: true`. À relire avant toute utilisation.\n\n" +
+      `${guideMarkdown}\n` +
+      sourcesSection(research) +
+      verificationBox(research),
+    "utf8"
+  );
+  written.push(path.relative(ROOT, guidePath));
 
-  // 3) Social
-  const hasSocial =
-    social && (social.pinterest?.length || social.hooks?.length || social.scripts?.length);
-  if (hasSocial) {
-    const numbered = (list) => (list || []).map((x, i) => `${i + 1}. ${x}`).join("\n");
-    const scripts = (social.scripts || [])
-      .map((s, i) => `### Script ${i + 1}\n\n${s}\n`)
-      .join("\n");
-    const socialPath = path.join(dir, "social.md");
-    await fs.writeFile(
-      socialPath,
-      `# Posts social — ${blog.blogTitle || research.idea}\n\n` +
-        "> Brouillon généré automatiquement. `draft: true`.\n\n" +
-        `## 📌 Idées Pinterest (10)\n\n${numbered(social.pinterest)}\n\n` +
-        `## 🎬 Hooks TikTok / Reels (10)\n\n${numbered(social.hooks)}\n\n` +
-        `## 📝 Scripts courts (5)\n\n${scripts}\n`,
-      "utf8"
-    );
-    written.push(path.relative(ROOT, socialPath));
-  }
+  // 3) Social (toujours présent ; jamais de [object Object])
+  const socialPath = path.join(dir, "social.md");
+  await fs.writeFile(
+    socialPath,
+    `# Posts social — ${meta.title || research.idea}\n\n` +
+      "> Brouillon généré automatiquement. `draft: true`.\n\n" +
+      `${socialMarkdown}\n`,
+    "utf8"
+  );
+  written.push(path.relative(ROOT, socialPath));
 
   return written;
 }
@@ -390,22 +517,42 @@ async function main() {
 
   for (const { slug, data } of research) {
     try {
-      const blog = await generateBlog(data);
+      // 3 appels séparés (Markdown brut) + métadonnées légères
+      const meta = await generateBlogMeta(data);
+      const blogMarkdown = await generateBlogMarkdown(data);
 
-      let guideOutline = "";
-      let social = { pinterest: [], hooks: [], scripts: [] };
+      // Guide : IA puis repli local garanti (jamais d'échec)
+      let guideMarkdown = "";
       try {
-        guideOutline = await generateGuideOutline(data);
+        guideMarkdown = await generateGuideOutlineMarkdown(data);
       } catch (err) {
-        summary.errors.push(`Guide "${slug}" : ${err.message}`);
+        summary.errors.push(`Guide "${slug}" : ${err.message} (repli local)`);
+        guideMarkdown = buildGuideFallback(data);
       }
+      if (!guideMarkdown || guideMarkdown.length < 40) guideMarkdown = buildGuideFallback(data);
+
+      // Social : Markdown brut (normalisé si JSON) ; repli minimal sinon
+      let socialMarkdown = "";
       try {
-        social = await generateSocial(data);
+        socialMarkdown = await generateSocialMarkdown(data);
       } catch (err) {
         summary.errors.push(`Social "${slug}" : ${err.message}`);
       }
+      if (!socialMarkdown || socialMarkdown.length < 20) {
+        socialMarkdown =
+          "## 📌 Idées Pinterest\n\n_À compléter._\n\n" +
+          "## 🎬 Hooks TikTok / Reels\n\n_À compléter._\n\n" +
+          "## 📝 Scripts courts\n\n_À compléter._";
+      }
 
-      const files = await writeDraftFiles(slug, blog, guideOutline, social, data);
+      const files = await writeDraftFiles(
+        slug,
+        meta,
+        blogMarkdown,
+        guideMarkdown,
+        socialMarkdown,
+        data
+      );
       summary.mistralUsed = true;
       summary.generated.push({
         idea: data.idea,
