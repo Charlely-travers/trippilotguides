@@ -1,0 +1,18 @@
+---
+interface Props {
+  class?: string;
+  as?: keyof HTMLElementTagNameMap;
+  hover?: boolean;
+}
+const { class: className = "", as = "div", hover = false } = Astro.props;
+const Tag = as;
+const hoverClasses = hover
+  ? "transition-all duration-200 hover:-translate-y-1 hover:shadow-lift"
+  : "";
+---
+
+<Tag
+  class={`rounded-2xl bg-surface ring-1 ring-slate-200/80 shadow-soft ${hoverClasses} ${className}`}
+>
+  <slot />
+</Tag>

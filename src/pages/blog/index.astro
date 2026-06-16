@@ -1,0 +1,49 @@
+---
+import { getCollection } from "astro:content";
+import BaseLayout from "@/layouts/BaseLayout.astro";
+import Container from "@/components/Container.astro";
+import Badge from "@/components/Badge.astro";
+import BlogCard from "@/components/BlogCard.astro";
+import CTASection from "@/components/CTASection.astro";
+
+const posts = (await getCollection("blog")).sort(
+  (a, b) => b.data.pubDate.valueOf() - a.data.pubDate.valueOf()
+);
+---
+
+<BaseLayout
+  title="Blog voyage — conseils, itinéraires et budgets"
+  description="Conseils de voyage, itinéraires détaillés et astuces budget pour préparer votre séjour à Rome et ailleurs. Des articles clairs pour voyager sereinement."
+>
+  <section class="py-14 sm:py-20">
+    <Container>
+      <div class="max-w-2xl">
+        <Badge variant="brand">Le blog</Badge>
+        <h1 class="mt-4 text-3xl font-extrabold text-ink-900 sm:text-4xl">
+          Conseils et itinéraires de voyage
+        </h1>
+        <p class="mt-4 text-lg text-ink-700">
+          Des guides pratiques pour préparer ton voyage : itinéraires, budgets,
+          logement et checklists. On commence par Rome.
+        </p>
+      </div>
+
+      <div class="mt-10 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+        {
+          posts.map((post) => (
+            <BlogCard
+              href={`/blog/${post.id}`}
+              title={post.data.title}
+              description={post.data.description}
+              emoji={post.data.emoji}
+              gradient={post.data.gradient}
+              readingTime={post.data.readingTime}
+            />
+          ))
+        }
+      </div>
+    </Container>
+  </section>
+
+  <CTASection />
+</BaseLayout>

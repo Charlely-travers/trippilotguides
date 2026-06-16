@@ -1,0 +1,66 @@
+---
+import type { Guide } from "@/data/guides";
+import Badge from "./Badge.astro";
+import Button from "./Button.astro";
+
+interface Props {
+  guide: Guide;
+}
+const { guide } = Astro.props;
+const isAvailable = guide.status === "available";
+---
+
+<article
+  class="group flex flex-col overflow-hidden rounded-2xl bg-surface ring-1 ring-slate-200/80 shadow-soft transition-all duration-200 hover:-translate-y-1 hover:shadow-lift"
+>
+  <div
+    class={`relative flex h-40 items-center justify-center bg-gradient-to-br ${guide.gradient}`}
+    aria-hidden="true"
+  >
+    <span class="text-5xl drop-shadow-sm">{guide.emoji}</span>
+    <div class="absolute right-3 top-3">
+      {
+        isAvailable ? (
+          <Badge variant="success">● Disponible</Badge>
+        ) : (
+          <Badge variant="soft">Bientôt</Badge>
+        )
+      }
+    </div>
+  </div>
+
+  <div class="flex flex-1 flex-col p-5">
+    <h3 class="text-lg font-bold text-ink-900">{guide.destination}</h3>
+    <p class="mt-1 text-sm text-ink-500">{guide.title}</p>
+
+    <dl class="mt-4 grid grid-cols-2 gap-3 text-sm">
+      <div>
+        <dt class="text-ink-500">Durée</dt>
+        <dd class="font-semibold text-ink-900">{guide.duration}</dd>
+      </div>
+      <div>
+        <dt class="text-ink-500">Budget</dt>
+        <dd class="font-semibold text-ink-900">{guide.budget}</dd>
+      </div>
+      <div class="col-span-2">
+        <dt class="text-ink-500">Pour qui</dt>
+        <dd class="font-medium text-ink-700">{guide.audience}</dd>
+      </div>
+    </dl>
+
+    <div class="mt-5 flex items-center justify-between pt-2">
+      {
+        isAvailable ? (
+          <Button href={`/guides/${guide.slug}`} variant="primary" size="md">
+            Voir le guide
+          </Button>
+        ) : (
+          <span class="inline-flex cursor-not-allowed items-center rounded-full bg-slate-100 px-5 py-2.5 text-sm font-semibold text-ink-500 ring-1 ring-slate-200">
+            Bientôt disponible
+          </span>
+        )
+      }
+      <span class="text-sm font-semibold text-ink-900">{guide.price}</span>
+    </div>
+  </div>
+</article>

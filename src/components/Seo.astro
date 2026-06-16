@@ -1,0 +1,32 @@
+---
+import { SITE } from "@/consts";
+
+interface Props {
+  title: string;
+  description: string;
+  /** Type Open Graph. */
+  type?: "website" | "article";
+}
+const { title, description, type = "website" } = Astro.props;
+
+const fullTitle =
+  title === SITE.defaultTitle ? title : `${title} — ${SITE.name}`;
+const canonical = new URL(Astro.url.pathname, SITE.url).href;
+---
+
+<title>{fullTitle}</title>
+<meta name="description" content={description} />
+<link rel="canonical" href={canonical} />
+
+<!-- Open Graph -->
+<meta property="og:type" content={type} />
+<meta property="og:site_name" content={SITE.name} />
+<meta property="og:locale" content={SITE.locale} />
+<meta property="og:title" content={fullTitle} />
+<meta property="og:description" content={description} />
+<meta property="og:url" content={canonical} />
+
+<!-- Twitter -->
+<meta name="twitter:card" content="summary_large_image" />
+<meta name="twitter:title" content={fullTitle} />
+<meta name="twitter:description" content={description} />

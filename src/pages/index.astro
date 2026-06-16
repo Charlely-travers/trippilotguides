@@ -1,0 +1,242 @@
+---
+import { getCollection } from "astro:content";
+import BaseLayout from "@/layouts/BaseLayout.astro";
+import Container from "@/components/Container.astro";
+import Button from "@/components/Button.astro";
+import Badge from "@/components/Badge.astro";
+import Card from "@/components/Card.astro";
+import GuideCard from "@/components/GuideCard.astro";
+import BlogCard from "@/components/BlogCard.astro";
+import CTASection from "@/components/CTASection.astro";
+import { featuredGuide } from "@/data/guides";
+import { LINKS, SITE } from "@/consts";
+
+const steps = [
+  {
+    n: "1",
+    title: "Choisis ta destination",
+    text: "Sélectionne le guide qui correspond à ton voyage et à la durée de ton séjour.",
+    emoji: "🗺️",
+  },
+  {
+    n: "2",
+    title: "Télécharge le guide PDF",
+    text: "Reçois immédiatement un PDF complet, clair et imprimable, prêt à l'emploi.",
+    emoji: "📥",
+  },
+  {
+    n: "3",
+    title: "Pars avec un planning clair",
+    text: "Suis l'itinéraire jour par jour, sans stress et sans perdre de temps sur place.",
+    emoji: "🧭",
+  },
+];
+
+const reasons = [
+  { title: "Budget détaillé", text: "Hébergement, repas, transports et visites : un budget réaliste poste par poste.", emoji: "💶" },
+  { title: "Itinéraire jour par jour", text: "Matin, après-midi et soir organisés pour profiter sans courir.", emoji: "📅" },
+  { title: "Conseils logement", text: "Les meilleurs quartiers où dormir selon ton budget et ton style.", emoji: "🏨" },
+  { title: "Checklist avant départ", text: "Documents, valise, applis : tu ne risques plus rien d'oublier.", emoji: "✅" },
+  { title: "Format imprimable", text: "Un PDF propre à garder sur ton téléphone ou à imprimer.", emoji: "🖨️" },
+  { title: "Pensé pour les premiers voyages", text: "Des explications simples, idéales pour une première visite.", emoji: "🌍" },
+];
+
+const posts = (await getCollection("blog"))
+  .sort((a, b) => b.data.pubDate.valueOf() - a.data.pubDate.valueOf())
+  .slice(0, 3);
+---
+
+<BaseLayout title={SITE.defaultTitle} description={SITE.defaultDescription}>
+  <!-- HERO -->
+  <section class="relative overflow-hidden">
+    <div
+      class="pointer-events-none absolute inset-0 -z-10 bg-gradient-to-b from-brand-50/70 via-cream to-cream"
+      aria-hidden="true"
+    >
+    </div>
+    <Container class="py-16 sm:py-24">
+      <div class="mx-auto max-w-3xl text-center">
+        <Badge variant="brand">✨ Guides de voyage digitaux premium</Badge>
+        <h1
+          class="mt-5 text-4xl font-extrabold leading-tight tracking-tight text-ink-900 sm:text-5xl"
+        >
+          Des itinéraires de voyage prêts à suivre, sans stress
+        </h1>
+        <p class="mx-auto mt-5 max-w-2xl text-lg text-ink-700">
+          Guides PDF complets avec planning jour par jour, budget, quartiers où
+          dormir, transports, checklist et conseils pratiques.
+        </p>
+        <div
+          class="mt-8 flex flex-col items-center justify-center gap-3 sm:flex-row"
+        >
+          <Button href={LINKS.freeChecklist} external size="lg" variant="primary">
+            Télécharger la checklist gratuite
+          </Button>
+          <Button href="/guides" size="lg" variant="secondary">
+            Voir les guides
+          </Button>
+        </div>
+        <p class="mt-4 text-sm text-ink-500">
+          PDF instantané · Imprimable · Sans abonnement
+        </p>
+      </div>
+    </Container>
+  </section>
+
+  <!-- COMMENT ÇA MARCHE -->
+  <section class="py-12 sm:py-16" aria-labelledby="how-title">
+    <Container>
+      <div class="max-w-2xl">
+        <Badge variant="neutral">Comment ça marche</Badge>
+        <h2
+          id="how-title"
+          class="mt-3 text-2xl font-bold text-ink-900 sm:text-3xl"
+        >
+          Trois étapes pour un voyage organisé
+        </h2>
+      </div>
+      <div class="mt-8 grid gap-5 md:grid-cols-3">
+        {
+          steps.map((step) => (
+            <Card class="p-6">
+              <div class="flex items-center gap-3">
+                <span
+                  class="flex h-10 w-10 items-center justify-center rounded-xl bg-brand-50 text-lg"
+                  aria-hidden="true"
+                >
+                  {step.emoji}
+                </span>
+                <span class="text-sm font-bold text-brand-600">
+                  Étape {step.n}
+                </span>
+              </div>
+              <h3 class="mt-4 text-lg font-bold text-ink-900">{step.title}</h3>
+              <p class="mt-2 text-ink-700">{step.text}</p>
+            </Card>
+          ))
+        }
+      </div>
+    </Container>
+  </section>
+
+  <!-- POURQUOI NOS GUIDES -->
+  <section class="py-12 sm:py-16" aria-labelledby="why-title">
+    <Container>
+      <div class="max-w-2xl">
+        <Badge variant="success">Pourquoi nos guides</Badge>
+        <h2
+          id="why-title"
+          class="mt-3 text-2xl font-bold text-ink-900 sm:text-3xl"
+        >
+          Tout ce qu'il faut pour partir l'esprit léger
+        </h2>
+      </div>
+      <div class="mt-8 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+        {
+          reasons.map((reason) => (
+            <Card class="p-6" hover>
+              <span class="text-2xl" aria-hidden="true">
+                {reason.emoji}
+              </span>
+              <h3 class="mt-3 text-base font-bold text-ink-900">
+                {reason.title}
+              </h3>
+              <p class="mt-1.5 text-sm text-ink-700">{reason.text}</p>
+            </Card>
+          ))
+        }
+      </div>
+    </Container>
+  </section>
+
+  <!-- GUIDE ROME MIS EN AVANT -->
+  <section class="py-12 sm:py-16" aria-labelledby="featured-title">
+    <Container>
+      <Card class="overflow-hidden">
+        <div class="grid items-stretch gap-0 md:grid-cols-2">
+          <div
+            class={`relative flex min-h-56 items-center justify-center bg-gradient-to-br ${featuredGuide.gradient} p-10`}
+            aria-hidden="true"
+          >
+            <span class="text-7xl drop-shadow">{featuredGuide.emoji}</span>
+          </div>
+          <div class="p-8 sm:p-10">
+            <Badge variant="success">● Guide disponible</Badge>
+            <h2
+              id="featured-title"
+              class="mt-4 text-2xl font-bold text-ink-900 sm:text-3xl"
+            >
+              {featuredGuide.title}
+            </h2>
+            <p class="mt-3 text-ink-700">{featuredGuide.excerpt}</p>
+            <ul class="mt-5 space-y-2 text-sm text-ink-700">
+              <li class="flex items-center gap-2">
+                <span class="text-emerald-strong">✓</span> Itinéraire détaillé sur
+                5 jours
+              </li>
+              <li class="flex items-center gap-2">
+                <span class="text-emerald-strong">✓</span> Budget complet pour ≈ 700€
+              </li>
+              <li class="flex items-center gap-2">
+                <span class="text-emerald-strong">✓</span> Checklist imprimable incluse
+              </li>
+            </ul>
+            <div class="mt-7 flex flex-wrap items-center gap-3">
+              <Button
+                href={`/guides/${featuredGuide.slug}`}
+                size="lg"
+                variant="primary"
+              >
+                Voir le guide Rome
+              </Button>
+              <span class="text-lg font-bold text-ink-900"
+                >{featuredGuide.price}</span
+              >
+            </div>
+          </div>
+        </div>
+      </Card>
+    </Container>
+  </section>
+
+  <!-- ARTICLES RÉCENTS -->
+  <section class="py-12 sm:py-16" aria-labelledby="posts-title">
+    <Container>
+      <div
+        class="flex flex-wrap items-end justify-between gap-4"
+      >
+        <div class="max-w-2xl">
+          <Badge variant="neutral">Le blog</Badge>
+          <h2
+            id="posts-title"
+            class="mt-3 text-2xl font-bold text-ink-900 sm:text-3xl"
+          >
+            Articles récents pour préparer ton voyage
+          </h2>
+        </div>
+        <a
+          href="/blog"
+          class="text-sm font-semibold text-brand-700 hover:underline"
+        >
+          Tous les articles →
+        </a>
+      </div>
+      <div class="mt-8 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+        {
+          posts.map((post) => (
+            <BlogCard
+              href={`/blog/${post.id}`}
+              title={post.data.title}
+              description={post.data.description}
+              emoji={post.data.emoji}
+              gradient={post.data.gradient}
+              readingTime={post.data.readingTime}
+            />
+          ))
+        }
+      </div>
+    </Container>
+  </section>
+
+  <CTASection />
+</BaseLayout>

@@ -1,0 +1,299 @@
+---
+import BaseLayout from "@/layouts/BaseLayout.astro";
+import Container from "@/components/Container.astro";
+import Badge from "@/components/Badge.astro";
+import Button from "@/components/Button.astro";
+import Card from "@/components/Card.astro";
+import FAQ from "@/components/FAQ.astro";
+import { LINKS, DISCLAIMER } from "@/consts";
+import { getGuide } from "@/data/guides";
+
+const guide = getGuide("rome-5-jours-budget-700")!;
+
+const includes = [
+  { title: "Itinéraire matin / après-midi / soir", text: "Chaque journée découpée en trois temps pour profiter sans courir.", emoji: "📅" },
+  { title: "Budget détaillé", text: "Hébergement, repas, transports et visites estimés poste par poste.", emoji: "💶" },
+  { title: "Quartiers recommandés", text: "Où dormir selon ton budget et tes envies, avec les zones à éviter.", emoji: "🏨" },
+  { title: "Transports", text: "Aéroport, métro, bus et déplacements à pied expliqués simplement.", emoji: "🚇" },
+  { title: "Restaurants et pauses", text: "Des adresses et des types de lieux pour bien manger sans se ruiner.", emoji: "🍝" },
+  { title: "Erreurs à éviter", text: "Les pièges classiques d'un premier voyage à Rome.", emoji: "⚠️" },
+  { title: "Checklist imprimable", text: "Une liste claire à cocher avant de partir.", emoji: "✅" },
+];
+
+const forWho = [
+  { title: "Premier voyage à Rome", text: "Tout est expliqué simplement, aucune expérience requise.", emoji: "🌍" },
+  { title: "Couple ou solo", text: "Un itinéraire adaptable que tu voyages à deux ou seul.", emoji: "🧳" },
+  { title: "Budget maîtrisé", text: "Pensé autour d'un budget réaliste d'environ 700€.", emoji: "💶" },
+  { title: "Envie d'un planning simple", text: "Tu veux profiter, pas passer des heures à organiser.", emoji: "🧭" },
+];
+
+const previews = [
+  { title: "Jour 1 — Centre historique", text: "Colisée, Forum romain et soirée dans le Trastevere.", emoji: "🏛️" },
+  { title: "Budget détaillé", text: "Tableau clair des dépenses jour par jour pour ≈ 700€.", emoji: "💶" },
+  { title: "Checklist départ", text: "Documents, valise et applis utiles à cocher avant le vol.", emoji: "✅" },
+];
+
+const faq = [
+  {
+    question: "Est-ce un produit physique ?",
+    answer:
+      "Non, c'est un guide 100 % numérique au format PDF. Tu le reçois après ton achat et tu peux le consulter sur ton téléphone, ta tablette ou ton ordinateur, ou l'imprimer.",
+  },
+  {
+    question: "Le guide est-il mis à jour ?",
+    answer:
+      "Le guide est revu régulièrement. Cela dit, les prix et horaires des lieux peuvent évoluer : vérifie toujours les informations importantes (billets, horaires d'ouverture) avant ton départ.",
+  },
+  {
+    question: "Est-ce adapté pour un premier voyage ?",
+    answer:
+      "Oui, le guide est justement pensé pour un premier voyage à Rome. Tout est expliqué pas à pas, des transports depuis l'aéroport jusqu'à l'organisation de chaque journée.",
+  },
+  {
+    question: "Puis-je l'imprimer ?",
+    answer:
+      "Bien sûr. Le PDF est conçu pour rester lisible une fois imprimé, pour l'avoir avec toi sans dépendre de ta batterie ou de ta connexion.",
+  },
+];
+
+const days = [
+  "Centre antique : Colisée & Forum",
+  "Vatican & Saint-Pierre",
+  "Trastevere & places baroques",
+  "Quartiers & musées",
+  "Shopping, détente & départ",
+];
+---
+
+<BaseLayout
+  title="Rome en 5 jours — itinéraire complet avec budget 700€"
+  description="Guide PDF Rome en 5 jours : itinéraire jour par jour, budget détaillé 700€, quartiers où dormir, transports, restaurants et checklist imprimable."
+  type="article"
+>
+  <!-- HERO PRODUIT -->
+  <section class="relative overflow-hidden">
+    <div
+      class="pointer-events-none absolute inset-0 -z-10 bg-gradient-to-b from-brand-50/70 via-cream to-cream"
+      aria-hidden="true"
+    >
+    </div>
+    <Container class="py-12 sm:py-16">
+      <div class="grid items-center gap-10 lg:grid-cols-2">
+        <div>
+          <Badge variant="success">● Guide disponible · PDF</Badge>
+          <h1
+            class="mt-4 text-3xl font-extrabold leading-tight text-ink-900 sm:text-4xl"
+          >
+            Rome en 5 jours — itinéraire complet avec budget 700€
+          </h1>
+          <p class="mt-4 text-lg text-ink-700">
+            Un guide PDF clair et complet pour vivre Rome sans stress :
+            planning jour par jour, budget réaliste, logement, transports et
+            checklist imprimable.
+          </p>
+
+          <div class="mt-6 flex flex-wrap items-center gap-4">
+            <span class="text-3xl font-extrabold text-ink-900">{guide.price}</span>
+            <Button href={LINKS.buyRomeGuide} external size="lg" variant="primary">
+              Acheter le guide
+            </Button>
+            <a
+              href={LINKS.freeChecklist}
+              target="_blank"
+              rel="noopener noreferrer"
+              class="text-sm font-semibold text-brand-700 hover:underline"
+            >
+              ou télécharge d'abord la checklist gratuite
+            </a>
+          </div>
+
+          <div class="mt-6 flex flex-wrap gap-2">
+            <Badge variant="neutral">5 jours</Badge>
+            <Badge variant="neutral">≈ 700€</Badge>
+            <Badge variant="neutral">Premier voyage</Badge>
+            <Badge variant="neutral">Imprimable</Badge>
+          </div>
+        </div>
+
+        <div
+          class={`relative flex aspect-[4/3] items-center justify-center rounded-[1.75rem] bg-gradient-to-br ${guide.gradient} shadow-lift`}
+          aria-hidden="true"
+        >
+          <span class="text-8xl drop-shadow">{guide.emoji}</span>
+          <span
+            class="absolute bottom-5 left-5 rounded-xl bg-white/90 px-4 py-2 text-sm font-bold text-ink-900 backdrop-blur"
+          >
+            Guide PDF · 5 jours
+          </span>
+        </div>
+      </div>
+    </Container>
+  </section>
+
+  <!-- CE QUE CONTIENT LE GUIDE -->
+  <section class="py-12 sm:py-16" aria-labelledby="includes-title">
+    <Container>
+      <div class="max-w-2xl">
+        <Badge variant="brand">Contenu du guide</Badge>
+        <h2
+          id="includes-title"
+          class="mt-3 text-2xl font-bold text-ink-900 sm:text-3xl"
+        >
+          Ce que contient le guide
+        </h2>
+      </div>
+      <div class="mt-8 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+        {
+          includes.map((item) => (
+            <Card class="p-6" hover>
+              <span class="text-2xl" aria-hidden="true">
+                {item.emoji}
+              </span>
+              <h3 class="mt-3 text-base font-bold text-ink-900">
+                {item.title}
+              </h3>
+              <p class="mt-1.5 text-sm text-ink-700">{item.text}</p>
+            </Card>
+          ))
+        }
+      </div>
+
+      <Card class="mt-8 p-6">
+        <h3 class="text-base font-bold text-ink-900">
+          Aperçu de l'itinéraire sur 5 jours
+        </h3>
+        <ol class="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
+          {
+            days.map((day, i) => (
+              <li class="rounded-xl bg-brand-50 p-4">
+                <span class="text-xs font-bold text-brand-600">
+                  Jour {i + 1}
+                </span>
+                <p class="mt-1 text-sm font-medium text-ink-900">{day}</p>
+              </li>
+            ))
+          }
+        </ol>
+      </Card>
+    </Container>
+  </section>
+
+  <!-- POUR QUI -->
+  <section class="py-12 sm:py-16" aria-labelledby="forwho-title">
+    <Container>
+      <div class="max-w-2xl">
+        <Badge variant="success">Public cible</Badge>
+        <h2
+          id="forwho-title"
+          class="mt-3 text-2xl font-bold text-ink-900 sm:text-3xl"
+        >
+          Pour qui est ce guide ?
+        </h2>
+      </div>
+      <div class="mt-8 grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
+        {
+          forWho.map((item) => (
+            <Card class="p-6">
+              <span class="text-2xl" aria-hidden="true">
+                {item.emoji}
+              </span>
+              <h3 class="mt-3 text-base font-bold text-ink-900">
+                {item.title}
+              </h3>
+              <p class="mt-1.5 text-sm text-ink-700">{item.text}</p>
+            </Card>
+          ))
+        }
+      </div>
+    </Container>
+  </section>
+
+  <!-- APERÇU DU GUIDE (fausses pages) -->
+  <section class="py-12 sm:py-16" aria-labelledby="preview-title">
+    <Container>
+      <div class="max-w-2xl">
+        <Badge variant="neutral">Aperçu</Badge>
+        <h2
+          id="preview-title"
+          class="mt-3 text-2xl font-bold text-ink-900 sm:text-3xl"
+        >
+          Un aperçu de l'intérieur
+        </h2>
+      </div>
+      <div class="mt-8 grid gap-6 sm:grid-cols-3">
+        {
+          previews.map((page) => (
+            <div class="rounded-2xl bg-surface p-3 ring-1 ring-slate-200/80 shadow-soft">
+              <div
+                class="flex aspect-[3/4] flex-col justify-between rounded-xl bg-gradient-to-br from-slate-50 to-brand-50 p-5"
+                aria-hidden="true"
+              >
+                <span class="text-3xl">{page.emoji}</span>
+                <div>
+                  <div class="h-2 w-3/4 rounded bg-slate-300/70" />
+                  <div class="mt-2 h-2 w-full rounded bg-slate-200/70" />
+                  <div class="mt-2 h-2 w-5/6 rounded bg-slate-200/70" />
+                  <div class="mt-2 h-2 w-2/3 rounded bg-slate-200/70" />
+                </div>
+              </div>
+              <div class="px-2 py-3">
+                <h3 class="text-sm font-bold text-ink-900">{page.title}</h3>
+                <p class="mt-1 text-xs text-ink-500">{page.text}</p>
+              </div>
+            </div>
+          ))
+        }
+      </div>
+      <p class="mt-4 text-xs text-ink-500">
+        Aperçu illustratif du type de contenu et de mise en page du guide.
+      </p>
+    </Container>
+  </section>
+
+  <!-- FAQ -->
+  <section class="py-12 sm:py-16">
+    <Container class="max-w-3xl">
+      <FAQ items={faq} />
+    </Container>
+  </section>
+
+  <!-- CTA FINAL -->
+  <section class="pb-16 sm:pb-20">
+    <Container>
+      <Card class="overflow-hidden bg-gradient-to-br from-brand-600 to-accent-600 p-8 text-center sm:p-12">
+        <h2 class="text-2xl font-bold text-white sm:text-3xl">
+          Prêt à partir à Rome l'esprit léger ?
+        </h2>
+        <p class="mx-auto mt-3 max-w-xl text-brand-50">
+          Télécharge le guide PDF et suis un itinéraire clair, jour par jour,
+          avec un budget maîtrisé.
+        </p>
+        <div class="mt-7 flex flex-col items-center justify-center gap-3 sm:flex-row">
+          <a
+            href={LINKS.buyRomeGuide}
+            target="_blank"
+            rel="noopener noreferrer"
+            class="inline-flex items-center justify-center rounded-full bg-white px-7 py-3.5 text-base font-semibold text-brand-700 shadow-soft transition-all hover:-translate-y-0.5 hover:shadow-lift"
+          >
+            Acheter le guide — {guide.price}
+          </a>
+          <a
+            href={LINKS.freeChecklist}
+            target="_blank"
+            rel="noopener noreferrer"
+            class="inline-flex items-center justify-center rounded-full px-7 py-3.5 text-base font-semibold text-white ring-1 ring-white/40 transition-all hover:bg-white/10"
+          >
+            Checklist gratuite
+          </a>
+        </div>
+      </Card>
+
+      <p
+        class="mx-auto mt-6 max-w-2xl rounded-xl bg-amber-50 px-4 py-3 text-center text-sm text-amber-800 ring-1 ring-amber-200"
+        role="note"
+      >
+        ⚠️ {DISCLAIMER}
+      </p>
+    </Container>
+  </section>
+</BaseLayout>
