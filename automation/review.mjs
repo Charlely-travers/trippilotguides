@@ -293,6 +293,35 @@ async function mistralReview({ blog, guide, social }) {
   };
 }
 
+/* ---------------- Qualité du guide (cohérence durée, densité « à vérifier ») ---------------- */
+
+/** Pénalise un guide trop creux (« à vérifier » en excès) ou aux jours incohérents. */
+function applyGuideChecks(result, guide, idea) {
+  let score = result.score;
+  const weaknesses = [...result.weaknesses];
+
+  // Trop de « à vérifier » => guide insuffisant / trop de fallback
+  const toVerify = (guide.match(/à\s+vérifier/gi) || []).length;
+  if (toVerify > 6) {
+    score = Math.max(0, score - 1);
+    weaknesses.push(`Guide : trop de mentions « à vérifier » (${toVerify}), contenu insuffisant.`);
+  }
+
+  // Jours incohérents avec la durée de l'idée (ex. Jour 5 pour un séjour de 4 jours)
+  const m = String(idea || "").match(/(\d+)\s*jours?/i);
+  const days = m ? parseInt(m[1], 10) : 0;
+  if (days > 0) {
+    const dayNums = [...guide.matchAll(/jour\s+(\d+)/gi)].map((x) => parseInt(x[1], 10));
+    const maxDay = dayNums.length ? Math.max(...dayNums) : 0;
+    if (maxDay > days) {
+      score = Math.max(0, score - 1.5);
+      weaknesses.push(`Guide : jours incohérents (Jour ${maxDay} pour un séjour de ${days} jours).`);
+    }
+  }
+
+  return { ...result, score: round1(score), weaknesses };
+}
+
 /* ---------------- Pénalité d'usage de la recherche ---------------- */
 
 /**
@@ -451,6 +480,9 @@ async function main() {
     // 4) Pénalité forte si la recherche n'est pas exploitée + contrôle sources/à vérifier
     const gen = generatedBySlug.get(path.posix.basename(dir));
     result = applyResearchChecks(result, { blog, guide }, gen);
+
+    // 4b) Qualité du guide : densité « à vérifier » + cohérence des jours avec la durée
+    result = applyGuideChecks(result, guide, gen?.idea || "");
 
     // 5) Détection de troncature / incomplétude (heuristique + marqueurs de complétude)
     const blogMarkerOk = blog.includes(BLOG_MARKER);

@@ -55,6 +55,13 @@ function safeParseJson(raw) {
   }
 }
 
+/** Détecte la durée (nb de jours) à partir de l'idée. 0 si inconnu. */
+function parseDays(idea) {
+  const m = String(idea || "").match(/(\d+)\s*jours?/i);
+  const n = m ? parseInt(m[1], 10) : 0;
+  return n > 0 && n <= 14 ? n : 0;
+}
+
 async function mistralChatFull(messages, { json = true, temperature = 0.4, maxTokens, model } = {}) {
   if (!API_KEY) throw new Error("MISTRAL_API_KEY manquante");
   const useModel = model || MODEL;
@@ -199,63 +206,90 @@ async function generateBlogMarkdown(research) {
   return { markdown, complete: finishReason !== "length" };
 }
 
-/** Plan de guide PDF : 3 appels séparés (évite la troncature), assemblés. */
-async function generateGuidePart(research, instructions, maxTokens) {
+/** Plan de guide PDF : petites parties concises (évite la troncature), assemblées. */
+async function generateGuidePart(research, instructions, maxTokens, wordTarget) {
   const system =
-    "Tu es concepteur de guides de voyage PDF premium pour TripPilot Guides. " +
-    "Tu réponds en Markdown BRUT (pas de JSON, pas de bloc de code englobant).";
+    "Tu es concepteur de guides de voyage PDF pour TripPilot Guides. " +
+    "Style CONCIS et actionnable. RÈGLES STRICTES : aucune introduction, aucun " +
+    "paragraphe marketing, tableaux compacts, UNIQUEMENT les sections demandées, " +
+    `maximum ${wordTarget} mots, et TERMINE toujours par une phrase complète. ` +
+    "Markdown BRUT (pas de JSON, pas de bloc de code englobant).";
   const user =
     "DONNÉES DE RECHERCHE :\n" +
     researchContext(research) +
     "\n\n" +
     instructions +
-    "\nNe mets pas de bloc ```; renvoie directement le Markdown.";
+    "\nSois bref. Ne mets pas de bloc ```; renvoie directement le Markdown.";
   const { content, finishReason } = await mistralChatFull(
     [
       { role: "system", content: system },
       { role: "user", content: user },
     ],
-    { json: false, temperature: 0.5, maxTokens, model: GUIDE_MODEL }
+    { json: false, temperature: 0.4, maxTokens, model: GUIDE_MODEL }
   );
   const md = content
     .trim()
     .replace(/^```(?:markdown)?\s*/i, "")
     .replace(/```$/i, "")
     .trim();
-  return { md, complete: finishReason !== "length" && md.length >= 40, finishReason };
+  return { md, finishReason };
 }
 
 async function generateGuideOutlineMarkdown(research) {
+  const days = parseDays(research.idea);
+  const daysHint = days ? `Respecte EXACTEMENT ${days} jours (pas de Jour ${days + 1}).` : "";
   const defs = [
     {
-      name: "structure/pages/budget",
-      instr:
-        "Rédige UNIQUEMENT, en Markdown :\n" +
-        "## Structure du PDF (sections ordonnées)\n" +
-        "## Pages prévues (sommaire avec numéros de page indicatifs)\n" +
-        "## Budget (≥ 2 tableaux Markdown : par jour ; par poste bas/moyen/confort)",
-      maxTokens: 2200,
-      fb: () => buildGuideFallbackStructure(research),
+      name: "structure-pdf",
+      instr: "Rédige UNIQUEMENT :\n## Structure du PDF (liste ordonnée et compacte des sections)",
+      maxTokens: 1000,
+      words: 200,
+      fb: () => buildGuideFallbackStructurePdf(research),
     },
     {
-      name: "itinéraire/planning/alternatives",
+      name: "pages-prevues",
+      instr: "Rédige UNIQUEMENT :\n## Pages prévues (sommaire avec numéros de page indicatifs, liste compacte)",
+      maxTokens: 1000,
+      words: 200,
+      fb: () => buildGuideFallbackPages(research),
+    },
+    {
+      name: "budget",
       instr:
-        "Rédige UNIQUEMENT, en Markdown :\n" +
-        "## Itinéraire jour par jour (matin / après-midi / soir, détaillé)\n" +
-        "## Planning type d'une journée (tableau Matin / Midi / Après-midi / Soir)\n" +
-        "## Alternatives pluie / fatigue",
-      maxTokens: 3000,
+        "Rédige UNIQUEMENT :\n## Budget\nDeux tableaux Markdown COMPACTS : (1) budget par jour ; " +
+        "(2) budget par poste avec colonnes Bas / Moyen / Confort. Montants indicatifs.",
+      maxTokens: 1800,
+      words: 450,
+      fb: () => buildGuideFallbackBudget(research),
+    },
+    {
+      name: "itinerary",
+      instr:
+        "Rédige UNIQUEMENT :\n## Itinéraire jour par jour (par jour : matin / après-midi / soir, en phrases courtes)\n" +
+        "## Planning type d'une journée (un seul tableau Matin / Midi / Après-midi / Soir)\n" +
+        "## Alternatives pluie / fatigue (liste courte)\n" +
+        daysHint,
+      maxTokens: 2500,
+      words: 850,
       fb: () => buildGuideFallbackItinerary(research),
     },
     {
-      name: "checklist/Canva/liens",
+      name: "checklist-canva",
       instr:
-        "Rédige UNIQUEMENT, en Markdown :\n" +
-        "## Checklist imprimable (cases '- [ ]')\n" +
-        "## Éléments visuels à créer dans Canva (couverture, cartes, icônes, encadrés budget)\n" +
-        "## Liens à vérifier",
-      maxTokens: 2000,
+        "Rédige UNIQUEMENT :\n## Checklist imprimable (cases '- [ ]', liste compacte)\n" +
+        "## Éléments visuels à créer dans Canva (liste courte)",
+      maxTokens: 1500,
+      words: 450,
       fb: () => buildGuideFallbackChecklist(research),
+    },
+    {
+      name: "sources-verification",
+      instr:
+        "Rédige UNIQUEMENT :\n## Liens à vérifier (liste compacte)\n" +
+        "## À vérifier avant le départ (liste courte)",
+      maxTokens: 1200,
+      words: 300,
+      fb: () => buildGuideFallbackSources(research),
     },
   ];
 
@@ -264,10 +298,15 @@ async function generateGuideOutlineMarkdown(research) {
   let complete = true;
   for (const d of defs) {
     try {
-      const { md, complete: ok, finishReason } = await generateGuidePart(research, d.instr, d.maxTokens);
+      const { md, finishReason } = await generateGuidePart(research, d.instr, d.maxTokens, d.words);
+      const ok = finishReason !== "length" && md.length >= 40;
       guideParts.push({ name: d.name, complete: ok, finishReason, maxTokens: d.maxTokens });
       if (ok) {
         parts.push(md);
+      } else if (md && md.length >= 120) {
+        // Partie tronquée mais exploitable : on la garde avec une note de relecture.
+        parts.push(md + "\n\n_⚠️ Section à relire (réponse tronquée)._");
+        complete = false;
       } else {
         parts.push(d.fb());
         complete = false;
@@ -282,38 +321,58 @@ async function generateGuideOutlineMarkdown(research) {
 }
 
 /** Replis locaux du plan de guide (par partie), à partir de la recherche. */
-function buildGuideFallbackStructure(research) {
-  const lines = [];
-  lines.push(`## Structure du PDF`);
-  lines.push(`1. Couverture`);
-  lines.push(`2. Itinéraire jour par jour`);
-  lines.push(`3. Budget`);
-  lines.push(`4. Transports & quartiers`);
-  lines.push(`5. Checklist imprimable`);
-  lines.push(`\n## Pages prévues`);
-  lines.push(`- p.1 Couverture · p.2 Sommaire · p.3+ Itinéraire · Budget · Checklist`);
-  lines.push(`\n## Budget`);
-  lines.push(`| Poste | Bas | Moyen | Confort |`);
-  lines.push(`| --- | --- | --- | --- |`);
-  lines.push(`| Hébergement / nuit | à vérifier | à vérifier | à vérifier |`);
-  lines.push(`| Repas / jour | à vérifier | à vérifier | à vérifier |`);
-  lines.push(`| Transports | à vérifier | à vérifier | à vérifier |`);
-  lines.push(`| Visites | à vérifier | à vérifier | à vérifier |`);
-  return lines.join("\n");
+function buildGuideFallbackStructurePdf() {
+  return [
+    `## Structure du PDF`,
+    `1. Couverture`,
+    `2. Itinéraire jour par jour`,
+    `3. Budget`,
+    `4. Transports & quartiers`,
+    `5. Checklist imprimable`,
+  ].join("\n");
+}
+
+function buildGuideFallbackPages() {
+  return [
+    `## Pages prévues`,
+    `- p.1 Couverture`,
+    `- p.2 Sommaire`,
+    `- p.3+ Itinéraire jour par jour`,
+    `- Budget, transports & quartiers`,
+    `- Checklist imprimable`,
+  ].join("\n");
+}
+
+function buildGuideFallbackBudget() {
+  return [
+    `## Budget`,
+    `| Jour | Indicatif |`,
+    `| --- | --- |`,
+    `| Par jour | à vérifier |`,
+    ``,
+    `| Poste | Bas | Moyen | Confort |`,
+    `| --- | --- | --- | --- |`,
+    `| Hébergement / nuit | à vérifier | à vérifier | à vérifier |`,
+    `| Repas / jour | à vérifier | à vérifier | à vérifier |`,
+  ].join("\n");
 }
 
 function buildGuideFallbackItinerary(research) {
-  const lines = [];
-  const dest = research.destination || research.idea;
-  lines.push(`## Itinéraire jour par jour`);
-  if (research.attractions?.length) {
-    research.attractions.forEach((a, i) => {
-      lines.push(
-        `- **Jour ${i + 1}** : ${a.name}${a.priceIndicatif ? ` (prix indicatif : ${a.priceIndicatif})` : ""}`
+  const days = parseDays(research.idea) || (research.attractions?.length ? Math.min(research.attractions.length, 4) : 3);
+  const attractions = research.attractions?.length ? research.attractions : [];
+  const dest = research.destination || "la destination";
+  const lines = [`## Itinéraire jour par jour`];
+  for (let d = 1; d <= days; d++) {
+    lines.push(`\n### Jour ${d}`);
+    // Répartit les attractions sur le nombre EXACT de jours (round-robin).
+    const dayAttractions = attractions.filter((_, i) => i % days === d - 1);
+    if (dayAttractions.length) {
+      dayAttractions.forEach((a) =>
+        lines.push(`- ${a.name}${a.priceIndicatif ? ` (prix indicatif : ${a.priceIndicatif})` : ""}`)
       );
-    });
-  } else {
-    lines.push(`- À compléter avec les incontournables de ${dest}.`);
+    } else {
+      lines.push(`- À compléter avec les incontournables de ${dest}.`);
+    }
   }
   lines.push(`\n## Planning type d'une journée`);
   lines.push(`| Matin | Midi | Après-midi | Soir |`);
@@ -324,28 +383,38 @@ function buildGuideFallbackItinerary(research) {
   return lines.join("\n");
 }
 
-function buildGuideFallbackChecklist(research) {
-  const lines = [];
-  lines.push(`## Checklist imprimable`);
+function buildGuideFallbackChecklist() {
+  const lines = [`## Checklist imprimable`];
   ["Documents", "Budget et moyens de paiement", "Transport (billets, pass)", "Logement (adresse, check-in)", "Valise", "Applis utiles"].forEach(
     (c) => lines.push(`- [ ] ${c}`)
   );
   lines.push(`\n## Éléments visuels à créer dans Canva`);
-  lines.push(`- Couverture, carte des quartiers, icônes budget, encadrés « à vérifier ».`);
-  lines.push(`\n## Liens à vérifier`);
+  lines.push(`- Couverture, carte des quartiers, icônes budget, encadrés.`);
+  return lines.join("\n");
+}
+
+function buildGuideFallbackSources(research) {
+  const lines = [`## Liens à vérifier`];
   if (research.sources?.length) {
     research.sources.forEach((s) => lines.push(`- ${s.title} : ${s.url}`));
   } else {
     lines.push(`- Sites officiels des attractions, transports et hébergements.`);
   }
+  lines.push(`\n## À vérifier avant le départ`);
+  (research.needsVerification?.length ? research.needsVerification : ["Prix, horaires et conditions d'accès"]).forEach(
+    (n) => lines.push(`- ${n}`)
+  );
   return lines.join("\n");
 }
 
 function buildGuideFallback(research) {
   return [
-    buildGuideFallbackStructure(research),
+    buildGuideFallbackStructurePdf(),
+    buildGuideFallbackPages(),
+    buildGuideFallbackBudget(),
     buildGuideFallbackItinerary(research),
-    buildGuideFallbackChecklist(research),
+    buildGuideFallbackChecklist(),
+    buildGuideFallbackSources(research),
   ].join("\n\n");
 }
 
@@ -537,8 +606,6 @@ async function writeDraftFiles(slug, meta, blog, guide, socialMarkdown, research
     `# Plan de guide PDF — ${meta.title || research.idea}\n\n` +
       "> Brouillon généré automatiquement. `draft: true`. À relire avant toute utilisation.\n\n" +
       `${guide.markdown}\n` +
-      sourcesSection(research) +
-      verificationBox(research) +
       (guide.complete ? `\n\n${GUIDE_MARKER}\n` : ""),
     "utf8"
   );
