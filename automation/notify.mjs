@@ -78,8 +78,20 @@ function buildPayload(summary) {
   ].join(" · ");
   fields.push({ name: "🧠 Modèles Mistral", value: models });
 
-  // Guide parts (parties tronquées)
+  // Blog / Guide parts tronqués
   const generated = Array.isArray(summary?.generated) ? summary.generated : [];
+  const truncatedBlog = generated.flatMap((g) =>
+    (g.blogParts || [])
+      .filter((p) => p.finishReason === "length")
+      .map((p) => `⚠️ ${g.slug} / ${p.name} — tronqué (maxTokens: ${p.maxTokens})`)
+  );
+  if (truncatedBlog.length) {
+    fields.push({
+      name: "✂️ Blog tronqué",
+      value: truncate(truncatedBlog.join("\n"), 1024),
+    });
+  }
+
   const truncatedParts = generated.flatMap((g) =>
     (g.guideParts || [])
       .filter((p) => p.finishReason === "length")

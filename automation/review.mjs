@@ -30,6 +30,7 @@ const ROOT = process.cwd();
 const OUT_DIR = path.join(ROOT, "automation", "output");
 const SUMMARY_FILE = path.join(OUT_DIR, "summary.json");
 const REVIEW_FILE = path.join(OUT_DIR, "review.json");
+const RESEARCH_DIR = path.join(ROOT, "automation", "research");
 
 const API_KEY = process.env.MISTRAL_API_KEY;
 const MODEL = process.env.MISTRAL_MODEL || "mistral-small-latest";
@@ -293,6 +294,46 @@ async function mistralReview({ blog, guide, social }) {
   };
 }
 
+/* ---------------- Qualité du social (claims chiffrés non vérifiés) ---------------- */
+
+/** Lit les nombres présents dans le dossier de recherche d'un slug. */
+async function loadResearchNumbers(slug) {
+  const set = new Set();
+  try {
+    const data = JSON.parse(await fs.readFile(path.join(RESEARCH_DIR, `${slug}.json`), "utf8"));
+    const grab = (s) => (String(s || "").match(/\d+/g) || []).forEach((n) => set.add(n));
+    (data.attractions || []).forEach((a) => grab(a.priceIndicatif));
+    (data.transports || []).forEach(grab);
+    grab(data.angle);
+  } catch {
+    /* pas de recherche : ensemble vide */
+  }
+  return set;
+}
+
+/** Pénalise le social s'il contient des promesses chiffrées agressives ou non sourcées. */
+function applySocialChecks(result, social, researchNumbers) {
+  let score = result.score;
+  const weaknesses = [...result.weaknesses];
+  const flags = [];
+
+  if (/écono\w*[^.\n!?]*?\d+\s*%/i.test(social)) flags.push("% d'économie");
+  if (/moins de\s*\d+\s*(?:€|euros?)/i.test(social)) flags.push("« moins de X€ »");
+  if (/tout faire pour/i.test(social)) flags.push("« tout faire pour »");
+  if (/sans rien (rater|manquer)/i.test(social)) flags.push("« sans rien rater »");
+
+  // Prix précis non présents dans la recherche
+  const prices = [...social.matchAll(/(\d+)\s*€/g)].map((m) => m[1]);
+  const unsourced = prices.filter((p) => !researchNumbers.has(p));
+  if (unsourced.length) flags.push(`prix non sourcé (${unsourced.slice(0, 3).join(", ")}€)`);
+
+  if (flags.length) {
+    score = Math.max(0, score - 1.5);
+    weaknesses.push(`Social : promesses chiffrées non vérifiées (${flags.join(" ; ")}).`);
+  }
+  return { ...result, score: round1(score), weaknesses };
+}
+
 /* ---------------- Qualité du guide (cohérence durée, densité « à vérifier ») ---------------- */
 
 /** Pénalise un guide trop creux (« à vérifier » en excès) ou aux jours incohérents. */
@@ -483,6 +524,10 @@ async function main() {
 
     // 4b) Qualité du guide : densité « à vérifier » + cohérence des jours avec la durée
     result = applyGuideChecks(result, guide, gen?.idea || "");
+
+    // 4c) Qualité du social : promesses chiffrées non vérifiées
+    const researchNumbers = await loadResearchNumbers(path.posix.basename(dir));
+    result = applySocialChecks(result, social, researchNumbers);
 
     // 5) Détection de troncature / incomplétude (heuristique + marqueurs de complétude)
     const blogMarkerOk = blog.includes(BLOG_MARKER);

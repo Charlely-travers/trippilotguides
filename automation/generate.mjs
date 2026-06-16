@@ -167,43 +167,150 @@ async function generateBlogMeta(research) {
   }
 }
 
-/** Article de blog : Markdown BRUT (pas de gros JSON fragile). */
-async function generateBlogMarkdown(research) {
-  const system =
-    "Tu es rédacteur web SEO francophone senior pour TripPilot Guides (guides de voyage PDF). " +
-    "Tu écris un français clair, concret et fiable, orienté conversion mais JAMAIS mensonger. " +
-    "Tu t'appuies UNIQUEMENT sur les données de recherche fournies ; pour toute information " +
-    "absente ou non sourcée, tu restes prudent (« à vérifier », « comptez environ »). " +
-    "Tu réponds en Markdown BRUT (pas de JSON, pas de bloc de code englobant).";
-  const user =
-    "DONNÉES DE RECHERCHE :\n" +
-    researchContext(research) +
-    "\n\n" +
-    "Rédige UNIQUEMENT le corps d'un article de blog en français de 1200 à 1600 mots, en Markdown. " +
-    "Titres ## et ### (PAS de # : le titre est géré ailleurs). Structure, dans cet ordre :\n" +
-    "- Une introduction avec un angle commercial clair (problème du lecteur + promesse).\n" +
-    "- ## Itinéraire jour par jour (matin/après-midi/soir).\n" +
-    "- ## Budget détaillé : tableau Markdown à 3 niveaux (routard / équilibré / confort), montants indicatifs.\n" +
-    "- ## Erreurs à éviter.\n" +
-    "- ## Transports (aéroport et sur place).\n" +
-    "- ## Où dormir (quartiers selon budget).\n" +
-    "- ## Quoi réserver avant de partir.\n\n" +
-    "N'ajoute PAS l'encadré « à vérifier », les sources, les CTA ni le disclaimer : ils seront ajoutés ensuite. " +
-    "Ne mets pas de bloc ```; renvoie directement le Markdown.";
-
-  const { content, finishReason } = await mistralChatFull(
-    [
-      { role: "system", content: system },
-      { role: "user", content: user },
-    ],
-    { json: false, temperature: 0.6, maxTokens: 4000 }
-  );
-  const markdown = content
+/** Nettoie un Markdown (retire un éventuel bloc de code englobant). */
+function cleanMarkdown(content) {
+  return content
     .trim()
     .replace(/^```(?:markdown)?\s*/i, "")
     .replace(/```$/i, "")
     .trim();
-  return { markdown, complete: finishReason !== "length" };
+}
+
+/** Itinéraire court (fallback blog), conscient de la durée. */
+function shortItinerary(research) {
+  const days = parseDays(research.idea) || (research.attractions?.length ? Math.min(research.attractions.length, 4) : 3);
+  const attractions = research.attractions?.length ? research.attractions : [];
+  const dest = research.destination || "la destination";
+  const lines = [];
+  for (let d = 1; d <= days; d++) {
+    const dayAttr = attractions.filter((_, i) => i % days === d - 1);
+    const txt = dayAttr.length ? dayAttr.map((a) => a.name).join(", ") : `incontournables de ${dest}`;
+    lines.push(`- **Jour ${d}** : ${txt}.`);
+  }
+  return lines.join("\n");
+}
+
+/**
+ * Appel Markdown avec UN retry si la réponse est tronquée (finish_reason length).
+ * Le retry demande de réécrire 40% plus court.
+ */
+async function markdownWithRetry(system, user, { maxTokens, model, temperature = 0.5 }) {
+  const first = await mistralChatFull(
+    [
+      { role: "system", content: system },
+      { role: "user", content: user },
+    ],
+    { json: false, temperature, maxTokens, model }
+  );
+  const firstMd = cleanMarkdown(first.content);
+  if (first.finishReason !== "length") {
+    return { md: firstMd, finishReason: first.finishReason, retried: false };
+  }
+  // Retry une seule fois, plus court.
+  const retryUser =
+    user +
+    "\n\nIMPORTANT : ta réponse précédente a été coupée car trop longue. " +
+    "Réécris 40% plus court, garde uniquement l'essentiel, et TERMINE par une phrase complète.";
+  const second = await mistralChatFull(
+    [
+      { role: "system", content: system },
+      { role: "user", content: retryUser },
+    ],
+    { json: false, temperature: Math.max(0.2, temperature - 0.2), maxTokens, model }
+  );
+  const secondMd = cleanMarkdown(second.content);
+  if (second.finishReason !== "length" && secondMd.length >= 40) {
+    return { md: secondMd, finishReason: second.finishReason, retried: true };
+  }
+  // Toujours tronqué : on garde la version la plus complète.
+  return {
+    md: secondMd.length > firstMd.length ? secondMd : firstMd,
+    finishReason: "length",
+    retried: true,
+  };
+}
+
+/** Article de blog : 3 parties concises en Markdown brut (avec retry). */
+async function generateBlogMarkdown(research) {
+  const days = parseDays(research.idea);
+  const daysHint = days ? ` Respecte EXACTEMENT ${days} jours (pas de Jour ${days + 1}).` : "";
+  const system =
+    "Tu es rédacteur web SEO francophone senior pour TripPilot Guides (guides de voyage PDF). " +
+    "Français clair, concret, fiable, orienté conversion mais JAMAIS mensonger. " +
+    "Tu t'appuies UNIQUEMENT sur les données de recherche ; pour toute info absente ou non " +
+    "sourcée, reste prudent (« à vérifier », « comptez environ »). Style CONCIS, phrases courtes. " +
+    "Titres ## et ### (PAS de #). N'ajoute PAS d'encadré « à vérifier », ni sources, ni CTA, ni " +
+    "disclaimer (ajoutés ensuite). TERMINE toujours par une phrase complète. Markdown BRUT.";
+
+  const defs = [
+    {
+      name: "blog-intro-itinerary",
+      instr:
+        "Rédige UNIQUEMENT :\n" +
+        "- Une introduction (2-3 phrases) avec un angle commercial clair (problème du lecteur + promesse).\n" +
+        "## Itinéraire jour par jour (par jour : matin / après-midi / soir, phrases courtes)." +
+        daysHint,
+      maxTokens: 3000,
+      words: 600,
+      fb: () =>
+        `Préparez votre voyage à ${research.destination || "votre destination"} sans stress, avec un plan clair.\n\n` +
+        `## Itinéraire jour par jour\n\n${shortItinerary(research)}`,
+    },
+    {
+      name: "blog-budget-errors",
+      instr:
+        "Rédige UNIQUEMENT :\n" +
+        "## Budget détaillé (un tableau Markdown à 3 niveaux : routard / équilibré / confort, montants indicatifs)\n" +
+        "## Erreurs à éviter (liste courte)",
+      maxTokens: 2500,
+      words: 450,
+      fb: () =>
+        `## Budget détaillé\n\n| Niveau | Indicatif / jour |\n| --- | --- |\n| Routard | à vérifier |\n| Équilibré | à vérifier |\n| Confort | à vérifier |\n\n` +
+        `## Erreurs à éviter\n\n- Sous-estimer les distances et la fatigue.\n- Réserver trop tard.`,
+    },
+    {
+      name: "blog-transport-sleep-booking",
+      instr:
+        "Rédige UNIQUEMENT :\n" +
+        "## Transports (aéroport et sur place, concis)\n" +
+        "## Où dormir (quartiers selon budget)\n" +
+        "## Quoi réserver avant de partir (liste courte)",
+      maxTokens: 2500,
+      words: 450,
+      fb: () =>
+        `## Transports\n\n- Depuis l'aéroport et sur place : à vérifier selon la destination.\n\n` +
+        `## Où dormir\n\n- Quartiers centraux pour un premier séjour.\n\n` +
+        `## Quoi réserver avant de partir\n\n- Hébergement, billets des sites courus, transferts.`,
+    },
+  ];
+
+  const parts = [];
+  const blogParts = [];
+  let complete = true;
+  for (const d of defs) {
+    try {
+      const sys = system.replace("Style CONCIS", `Style CONCIS, maximum ${d.words} mots`);
+      const user = "DONNÉES DE RECHERCHE :\n" + researchContext(research) + "\n\n" + d.instr +
+        "\nNe mets pas de bloc ```; renvoie directement le Markdown.";
+      const { md, finishReason } = await markdownWithRetry(sys, user, { maxTokens: d.maxTokens, model: MODEL, temperature: 0.6 });
+      const ok = finishReason !== "length" && md.length >= 40;
+      blogParts.push({ name: d.name, complete: ok, finishReason, maxTokens: d.maxTokens });
+      if (ok) {
+        parts.push(md);
+      } else if (md && md.length >= 120) {
+        parts.push(md + "\n\n_⚠️ Section à relire (réponse tronquée)._");
+        complete = false;
+      } else {
+        parts.push(d.fb());
+        complete = false;
+      }
+    } catch {
+      blogParts.push({ name: d.name, complete: false, finishReason: "error", maxTokens: d.maxTokens });
+      parts.push(d.fb());
+      complete = false;
+    }
+  }
+  return { markdown: parts.join("\n\n"), complete, blogParts };
 }
 
 /** Plan de guide PDF : petites parties concises (évite la troncature), assemblées. */
@@ -469,13 +576,43 @@ function sanitizeSocialText(md) {
     .replace(/guide\s+gratuit/gi, "guide PDF complet à acheter");
 }
 
+/** Collecte les nombres présents dans la recherche (prix indicatifs, etc.). */
+function collectResearchNumbers(research) {
+  const set = new Set();
+  const grab = (s) => (String(s || "").match(/\d+/g) || []).forEach((n) => set.add(n));
+  (research.attractions || []).forEach((a) => grab(a.priceIndicatif));
+  (research.transports || []).forEach(grab);
+  grab(research.angle);
+  return set;
+}
+
+/** Supprime/atténue les promesses chiffrées non sourcées du social. */
+function sanitizeUnsupportedSocialClaims(md, research) {
+  const allowed = collectResearchNumbers(research);
+  let out = md;
+  // Promesses d'économie en pourcentage
+  out = out.replace(/écono\w*[^.\n!?]*?\d+\s*%/gi, "économiser sur votre budget");
+  // "tout faire pour (moins de) X€"
+  out = out.replace(/tout faire pour\s*(?:moins de\s*)?\d+\s*(?:€|euros?)/gi, "tout organiser avec un budget maîtrisé");
+  // "moins de X€ / par jour"
+  out = out.replace(/moins de\s*\d+\s*(?:€|euros?)(?:\s*\/?\s*(?:par )?jour)?/gi, "avec un budget maîtrisé");
+  // Promesses trop fortes
+  out = out.replace(/sans rien (rater|manquer)/gi, "en profitant de l'essentiel");
+  // Prix précis non présents dans la recherche -> "budget indicatif"
+  out = out.replace(/(\d+)\s*€/g, (m, n) => (allowed.has(n) ? m : "budget indicatif"));
+  return out;
+}
+
 /** Contenus réseaux sociaux : Markdown BRUT (avec normalisation si JSON renvoyé). */
 async function generateSocialMarkdown(research) {
   const system =
     "Tu es social media manager voyage pour TripPilot Guides. " +
     "Accroches en français jouant sur l'émotion/le problème du voyageur. " +
-    "RÈGLE STRICTE : seule la CHECKLIST est gratuite. Le guide PDF complet n'est JAMAIS " +
+    "RÈGLE STRICTE 1 : seule la CHECKLIST est gratuite. Le guide PDF complet n'est JAMAIS " +
     "gratuit ni offert ; il est payant (« guide PDF complet à acheter »). " +
+    "RÈGLE STRICTE 2 : n'invente AUCUN chiffre. N'utilise un prix ou un pourcentage que s'il " +
+    "figure dans les données de recherche. Sinon, écris « budget indicatif » sans chiffre. " +
+    "Pas de promesses du type « économiser 50% », « moins de X€ », « sans rien rater ». " +
     "Tu réponds en Markdown BRUT.";
   const user =
     "DONNÉES DE RECHERCHE :\n" +
@@ -510,7 +647,7 @@ async function generateSocialMarkdown(research) {
     md = raw;
   }
   md = md.replace(/^```(?:markdown)?\s*/i, "").replace(/```$/i, "").trim();
-  return sanitizeSocialText(md);
+  return sanitizeUnsupportedSocialClaims(sanitizeSocialText(md), research);
 }
 
 /* ---------------- Assemblage déterministe ---------------- */
@@ -730,6 +867,7 @@ async function main() {
         blogComplete: blog.complete,
         guideComplete: guide.complete,
         guideModel: GUIDE_MODEL,
+        blogParts: blog.blogParts || [],
         guideParts: guide.guideParts || [],
       });
       summary.generatedFiles.push(...files);
