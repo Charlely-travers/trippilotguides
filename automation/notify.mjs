@@ -70,6 +70,18 @@ function buildPayload(summary) {
     fields.push({ name: "📝 Brouillons générés", value: "Aucun." });
   }
 
+  // Recherche web
+  const research = summary?.research;
+  if (research) {
+    const ok = (research.succeeded || 0) > 0;
+    const total = research.totalSources || 0;
+    const value =
+      `${ok ? "✅ OK" : "🚫 KO"} · Méthode : ${research.method || "n/a"} · ` +
+      `Recherches : ${research.succeeded || 0}/${research.requested || 0} · ` +
+      `Sources : \`${total}\``;
+    fields.push({ name: "🔍 Recherche web", value: truncate(value, 1024) });
+  }
+
   // Build
   fields.push({
     name: "🏗️ Build",
@@ -80,21 +92,33 @@ function buildPayload(summary) {
   // Review qualité des brouillons
   const review = summary?.review;
   if (review && Array.isArray(review.items) && review.items.length) {
+    const publishable = Number(review.publishCandidateCount || 0);
     const header =
       `Score moyen : \`${review.averageScore}/10\` · ` +
-      `À améliorer : \`${review.needsImprovementCount}\` · ` +
+      `🚀 Publiables : \`${publishable}\` · ` +
+      `⚠️ À améliorer : \`${review.needsImprovementCount}\` · ` +
       `Méthode : ${review.method}`;
     fields.push({ name: "🔎 Review IA", value: truncate(header, 1024) });
 
+    // Message clair si aucun brouillon n'est publiable
+    fields.push({
+      name: "🚦 Publication",
+      value:
+        publishable > 0
+          ? `✅ ${publishable} brouillon(s) candidat(s) à la publication (score ≥ 9). À relire avant mise en ligne.`
+          : "🚫 Aucun brouillon publiable pour l'instant (aucun score ≥ 9). Relecture/amélioration nécessaire.",
+    });
+
+    const icon = (s) =>
+      s === "publish_candidate" ? "🚀" : s === "ok" ? "✅" : "⚠️";
     const lines = review.items
       .slice(0, 5)
       .map((it) => {
-        const icon = it.status === "ok" ? "✅" : "⚠️";
         const weak =
-          it.status !== "ok" && it.weaknesses?.length
+          it.status !== "publish_candidate" && it.weaknesses?.length
             ? `\n   _${truncate(it.weaknesses[0], 90)}_`
             : "";
-        return `${icon} ${truncate(it.slug, 50)} — \`${it.score}/10\` (${it.status})${weak}`;
+        return `${icon(it.status)} ${truncate(it.slug, 50)} — \`${it.score}/10\` (${it.status})${weak}`;
       })
       .join("\n");
     fields.push({

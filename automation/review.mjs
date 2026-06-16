@@ -35,7 +35,18 @@ const API_KEY = process.env.MISTRAL_API_KEY;
 const MODEL = process.env.MISTRAL_MODEL || "mistral-small-latest";
 const API_URL = "https://api.mistral.ai/v1/chat/completions";
 
-const PASS_THRESHOLD = 7; // < 7 => needs_improvement
+// Seuils de statut sur 10 :
+//   < 8  -> needs_improvement
+//   >= 8 -> ok
+//   >= 9 -> publish_candidate
+const OK_THRESHOLD = 8;
+const PUBLISH_THRESHOLD = 9;
+
+function statusFromScore(score) {
+  if (score >= PUBLISH_THRESHOLD) return "publish_candidate";
+  if (score >= OK_THRESHOLD) return "ok";
+  return "needs_improvement";
+}
 
 function round1(n) {
   return Math.round(n * 10) / 10;
@@ -231,6 +242,51 @@ async function mistralReview({ blog, guide, social }) {
   };
 }
 
+/* ---------------- Pénalité d'usage de la recherche ---------------- */
+
+/**
+ * Pénalise fortement un brouillon qui n'exploite pas les données de recherche,
+ * et vérifie la présence de sources et de liens/points « à vérifier ».
+ */
+function applyResearchChecks(result, { blog, guide }, gen) {
+  const all = `${blog}\n${guide}`;
+  const sourcesPresent =
+    (gen?.sourcesCount || 0) > 0 || /##\s*Sources[\s\S]*\]\(https?:\/\//i.test(all);
+  const verifyPresent = /à\s+vérifier/i.test(all);
+  // « recherche utilisée » = generate a consommé un dossier research ET le
+  // brouillon reflète les points à vérifier.
+  const researchUsed = !!gen?.researchUsed && verifyPresent;
+
+  let score = result.score;
+  const weaknesses = [...result.weaknesses];
+
+  if (!researchUsed) {
+    score = Math.min(score, 4); // pénalité forte
+    weaknesses.unshift(
+      "Aucune donnée de recherche utilisée : fiabilité non démontrée (ni sources ni « à vérifier »)."
+    );
+  }
+  if (!sourcesPresent) {
+    score = Math.max(0, score - 1.5);
+    weaknesses.push("Aucune source vérifiable citée.");
+  }
+  if (!verifyPresent) {
+    score = Math.max(0, score - 1);
+    weaknesses.push("Encadré / liens « à vérifier » absents.");
+  }
+
+  return {
+    score: round1(score),
+    checks: {
+      ...result.checks,
+      researchUsed,
+      sourcesPresent,
+      verifyLinksPresent: verifyPresent,
+    },
+    weaknesses: weaknesses.slice(0, 8),
+  };
+}
+
 /* ---------------- Orchestration ---------------- */
 
 function groupByDraft(generatedFiles) {
@@ -260,6 +316,9 @@ async function main() {
   const generatedFiles = Array.isArray(summary.generatedFiles)
     ? summary.generatedFiles
     : [];
+  const generatedBySlug = new Map(
+    (Array.isArray(summary.generated) ? summary.generated : []).map((g) => [g.slug, g])
+  );
   const useMistral = !!API_KEY;
 
   const review = {
@@ -296,7 +355,11 @@ async function main() {
       result = heuristicReview({ blog, guide, social });
     }
 
-    const status = result.score < PASS_THRESHOLD ? "needs_improvement" : "ok";
+    // Pénalité forte si la recherche n'est pas exploitée + contrôle sources/à vérifier
+    const gen = generatedBySlug.get(path.posix.basename(dir));
+    result = applyResearchChecks(result, { blog, guide }, gen);
+
+    const status = statusFromScore(result.score);
     if (status === "needs_improvement") review.needsImprovementCount++;
 
     review.items.push({
@@ -317,6 +380,9 @@ async function main() {
         review.items.reduce((s, i) => s + i.score, 0) / review.items.length
       )
     : 0;
+  review.publishCandidateCount = review.items.filter(
+    (i) => i.status === "publish_candidate"
+  ).length;
 
   await fs.writeFile(REVIEW_FILE, JSON.stringify(review, null, 2), "utf8");
 
@@ -325,6 +391,7 @@ async function main() {
     method: review.method,
     averageScore: review.averageScore,
     needsImprovementCount: review.needsImprovementCount,
+    publishCandidateCount: review.publishCandidateCount,
     items: review.items.map((i) => ({
       slug: i.slug,
       draft: i.draft,
@@ -342,7 +409,8 @@ async function main() {
   console.log(`Méthode : ${review.method}`);
   console.log(`Brouillons évalués : ${review.items.length}`);
   console.log(`Score moyen : ${review.averageScore}/10`);
-  console.log(`À améliorer : ${review.needsImprovementCount}`);
+  console.log(`Candidats à la publication (>=9) : ${review.publishCandidateCount}`);
+  console.log(`À améliorer (<8) : ${review.needsImprovementCount}`);
   for (const i of review.items) {
     console.log(`  - ${i.slug} : ${i.score}/10 (${i.status})`);
   }

@@ -12,10 +12,11 @@
     "build": "astro build",
     "preview": "astro preview",
     "astro": "astro",
+    "automation:research": "node automation/research.mjs",
     "automation:generate": "node automation/generate.mjs",
     "automation:review": "node automation/review.mjs",
     "automation:notify": "node automation/notify.mjs",
-    "automation:all": "node automation/generate.mjs && node automation/review.mjs && npm run build && node automation/notify.mjs"
+    "automation:all": "node automation/research.mjs && node automation/generate.mjs && node automation/review.mjs && npm run build && node automation/notify.mjs"
   },
   "dependencies": {
     "@astrojs/sitemap": "^3.7.3",

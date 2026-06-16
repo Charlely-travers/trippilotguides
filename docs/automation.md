@@ -8,19 +8,37 @@ artefact à relire.
 ## Ce qu'elle fait
 
 1. Lit une liste d'idées dans [`automation/ideas.json`](../automation/ideas.json).
-2. **Score** chaque idée avec l'API **Mistral** (potentiel SEO, monétisation, facilité).
-3. **Génère des brouillons** pour les idées les mieux notées :
-   - un article de blog (`blog.md`, avec `draft: true`),
-   - un plan de guide PDF (`guide-outline.md`),
-   - des posts pour réseaux sociaux (`social.md`).
-4. **Relit et note** chaque brouillon sur 10 (`review.mjs`) : contenu pas trop
-   générique, CTA présents, disclaimer prix/horaires, infos incertaines marquées
-   « à vérifier », structure H1/H2, potentiel SEO et potentiel de vente PDF.
-   Un brouillon noté `< 7` est marqué `needs_improvement`. Repli **heuristique**
-   automatique si `MISTRAL_API_KEY` est absente.
+2. **Score** chaque idée (Mistral) puis **recherche le web** pour les idées
+   retenues (`research.mjs`) et écrit un dossier de recherche structuré par idée
+   dans `automation/research/<slug>.json` (destination, angle, sources, attractions
+   avec prix indicatifs/URLs, transports, quartiers, restaurants, points
+   d'attention, mots-clés SEO/Pinterest, `needsVerification`).
+   Architecture à 3 niveaux avec repli : **`web_search`** (Mistral Conversations
+   API + outil web_search) → **`model_only`** (modèle seul, tout à vérifier) →
+   **`offline`** (squelette sans clé API).
+3. **Génère des brouillons** riches **à partir des données de recherche** :
+   - un article de blog long (1200-1600 mots) : intro à angle commercial,
+     itinéraire jour par jour, budget bas/moyen/confort, erreurs à éviter,
+     transports, où dormir, quoi réserver, **encadré « ⚠️ À vérifier avant le
+     départ »** (issu de `needsVerification`), **CTA checklist** + **CTA guide
+     PDF**, **section Sources**, disclaimer (`blog.md`, `draft: true`),
+   - un plan de production de guide PDF (`guide-outline.md`) : structure du PDF,
+     pages, tableaux budget, planning matin/midi/après-midi/soir, alternatives
+     pluie/fatigue, checklist imprimable, liens à vérifier, visuels Canva,
+   - des contenus réseaux sociaux (`social.md`) : 10 idées Pinterest, 10 hooks
+     TikTok/Reels, 5 scripts courts (angle émotionnel + CTA).
+   La génération **évite toute affirmation certaine non sourcée**.
+4. **Relit et note** chaque brouillon sur 10 (`review.mjs`). Statuts :
+   `needs_improvement` (< 8), `ok` (≥ 8), `publish_candidate` (≥ 9).
+   **Pénalité forte si la recherche n'est pas exploitée** (score plafonné), et
+   contrôle de la présence de **sources** et de **liens « à vérifier »**. Repli
+   **heuristique** automatique si `MISTRAL_API_KEY` est absente.
 5. Lance `npm run build` pour vérifier que le site compile toujours.
-6. Envoie un **résumé Discord** : idées scorées, **scores de review**, fichiers
-   générés, erreurs, statut du build.
+6. Envoie un **résumé Discord** : état de la **recherche** (OK/KO + nombre de
+   sources), idées scorées, **review** (score moyen, statut, candidats publiables
+   ou message « aucun brouillon publiable »), fichiers générés, erreurs, build.
+
+Pipeline : **research → generate → review → build → notify**.
 
 ## Principes de sécurité
 
@@ -49,7 +67,8 @@ artefact à relire.
 Voir [`.env.example`](../.env.example) :
 
 - `MISTRAL_MODEL` (défaut `mistral-small-latest`)
-- `GENERATE_COUNT` (nombre d'idées transformées en brouillons, défaut `1`)
+- `MISTRAL_RESEARCH_MODEL` (modèle de recherche web, défaut = `MISTRAL_MODEL`)
+- `GENERATE_COUNT` (nombre d'idées recherchées puis transformées en brouillons, défaut `1`)
 
 ## Lancer le workflow
 
@@ -70,12 +89,13 @@ nvm use 22
 export MISTRAL_API_KEY="votre_cle"
 export DISCORD_WEBHOOK_URL="votre_webhook"   # optionnel en local
 
-npm run automation:generate   # scoring + brouillons -> automation/drafts + summary.json
+npm run automation:research   # recherche web -> automation/research/*.json + summary.json
+npm run automation:generate   # brouillons (depuis la recherche) -> automation/drafts
 npm run automation:review     # note les brouillons /10 -> review.json + summary.review
 npm run build                 # vérifie la compilation
 BUILD_STATUS=success npm run automation:notify   # envoie le rapport Discord
 
-# ou tout enchaîner (generate -> review -> build -> notify) :
+# ou tout enchaîner (research -> generate -> review -> build -> notify) :
 npm run automation:all
 ```
 
@@ -96,13 +116,30 @@ Les brouillons apparaissent dans `automation/drafts/<slug>/` :
 | Fichier | Rôle |
 | --- | --- |
 | `automation/ideas.json` | Liste d'idées en entrée |
-| `automation/generate.mjs` | Scoring Mistral + génération des brouillons |
-| `automation/review.mjs` | Relecture + note /10 des brouillons (IA ou heuristique) |
+| `automation/research.mjs` | Recherche web structurée (web_search → modèle → hors-ligne) |
+| `automation/generate.mjs` | Génération des brouillons à partir de la recherche |
+| `automation/review.mjs` | Relecture + note /10 (pénalise si recherche non utilisée) |
 | `automation/notify.mjs` | Envoi du rapport Discord |
-| `automation/output/summary.json` | Résumé machine (généré, inclut `review`) |
+| `automation/research/` | Dossiers de recherche par idée (généré) |
+| `automation/output/summary.json` | Résumé machine (généré, inclut `research` + `review`) |
 | `automation/output/review.json` | Détail de la relecture (généré) |
 | `automation/drafts/` | Brouillons générés (jamais publiés) |
 | `.github/workflows/automation.yml` | Workflow GitHub Actions manuel |
+
+## Recherche web (Mistral `web_search`)
+
+`research.mjs` utilise l'API **Conversations** de Mistral (beta) avec l'outil
+intégré `web_search` :
+
+```
+POST https://api.mistral.ai/v1/conversations
+{ "model": "mistral-small-latest", "inputs": "…", "tools": [{ "type": "web_search" }] }
+```
+
+Les sources réelles sont extraites des chunks `tool_reference` de la réponse.
+Si l'API/outil n'est pas disponible, le script bascule automatiquement sur une
+recherche basée modèle (`model_only`, tout marqué à vérifier), puis sur un
+squelette `offline` sans clé — sans jamais interrompre le pipeline.
 
 ## Limites de la V1
 
