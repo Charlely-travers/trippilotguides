@@ -70,6 +70,20 @@ function buildPayload(summary) {
     fields.push({ name: "📝 Brouillons générés", value: "Aucun." });
   }
 
+  // Guide parts (parties tronquées)
+  const generated = Array.isArray(summary?.generated) ? summary.generated : [];
+  const truncatedParts = generated.flatMap((g) =>
+    (g.guideParts || [])
+      .filter((p) => p.finishReason === "length")
+      .map((p) => `⚠️ ${g.slug} / ${p.name} — tronqué (maxTokens: ${p.maxTokens})`)
+  );
+  if (truncatedParts.length) {
+    fields.push({
+      name: "✂️ Guide tronqué",
+      value: truncate(truncatedParts.join("\n"), 1024),
+    });
+  }
+
   // Recherche web
   const research = summary?.research;
   if (research) {

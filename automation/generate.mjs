@@ -28,6 +28,7 @@ const DRAFTS_DIR = path.join(ROOT, "automation", "drafts");
 
 const API_KEY = process.env.MISTRAL_API_KEY;
 const MODEL = process.env.MISTRAL_MODEL || "mistral-small-latest";
+const GUIDE_MODEL = process.env.MISTRAL_GUIDE_MODEL || MODEL;
 const API_URL = "https://api.mistral.ai/v1/chat/completions";
 
 const DISCLAIMER =
@@ -54,8 +55,9 @@ function safeParseJson(raw) {
   }
 }
 
-async function mistralChatFull(messages, { json = true, temperature = 0.4, maxTokens } = {}) {
+async function mistralChatFull(messages, { json = true, temperature = 0.4, maxTokens, model } = {}) {
   if (!API_KEY) throw new Error("MISTRAL_API_KEY manquante");
+  const useModel = model || MODEL;
   const res = await fetch(API_URL, {
     method: "POST",
     headers: {
@@ -63,7 +65,7 @@ async function mistralChatFull(messages, { json = true, temperature = 0.4, maxTo
       Authorization: `Bearer ${API_KEY}`,
     },
     body: JSON.stringify({
-      model: MODEL,
+      model: useModel,
       temperature,
       messages,
       ...(maxTokens ? { max_tokens: maxTokens } : {}),
@@ -213,52 +215,57 @@ async function generateGuidePart(research, instructions, maxTokens) {
       { role: "system", content: system },
       { role: "user", content: user },
     ],
-    { json: false, temperature: 0.5, maxTokens }
+    { json: false, temperature: 0.5, maxTokens, model: GUIDE_MODEL }
   );
   const md = content
     .trim()
     .replace(/^```(?:markdown)?\s*/i, "")
     .replace(/```$/i, "")
     .trim();
-  return { md, complete: finishReason !== "length" && md.length >= 40 };
+  return { md, complete: finishReason !== "length" && md.length >= 40, finishReason };
 }
 
 async function generateGuideOutlineMarkdown(research) {
   const defs = [
     {
+      name: "structure/pages/budget",
       instr:
         "Rédige UNIQUEMENT, en Markdown :\n" +
         "## Structure du PDF (sections ordonnées)\n" +
         "## Pages prévues (sommaire avec numéros de page indicatifs)\n" +
         "## Budget (≥ 2 tableaux Markdown : par jour ; par poste bas/moyen/confort)",
-      maxTokens: 1500,
+      maxTokens: 2200,
       fb: () => buildGuideFallbackStructure(research),
     },
     {
+      name: "itinéraire/planning/alternatives",
       instr:
         "Rédige UNIQUEMENT, en Markdown :\n" +
         "## Itinéraire jour par jour (matin / après-midi / soir, détaillé)\n" +
         "## Planning type d'une journée (tableau Matin / Midi / Après-midi / Soir)\n" +
         "## Alternatives pluie / fatigue",
-      maxTokens: 1800,
+      maxTokens: 3000,
       fb: () => buildGuideFallbackItinerary(research),
     },
     {
+      name: "checklist/Canva/liens",
       instr:
         "Rédige UNIQUEMENT, en Markdown :\n" +
         "## Checklist imprimable (cases '- [ ]')\n" +
         "## Éléments visuels à créer dans Canva (couverture, cartes, icônes, encadrés budget)\n" +
         "## Liens à vérifier",
-      maxTokens: 1200,
+      maxTokens: 2000,
       fb: () => buildGuideFallbackChecklist(research),
     },
   ];
 
   const parts = [];
+  const guideParts = [];
   let complete = true;
   for (const d of defs) {
     try {
-      const { md, complete: ok } = await generateGuidePart(research, d.instr, d.maxTokens);
+      const { md, complete: ok, finishReason } = await generateGuidePart(research, d.instr, d.maxTokens);
+      guideParts.push({ name: d.name, complete: ok, finishReason, maxTokens: d.maxTokens });
       if (ok) {
         parts.push(md);
       } else {
@@ -266,11 +273,12 @@ async function generateGuideOutlineMarkdown(research) {
         complete = false;
       }
     } catch {
+      guideParts.push({ name: d.name, complete: false, finishReason: "error", maxTokens: d.maxTokens });
       parts.push(d.fb());
       complete = false;
     }
   }
-  return { markdown: parts.join("\n\n"), complete };
+  return { markdown: parts.join("\n\n"), complete, guideParts };
 }
 
 /** Replis locaux du plan de guide (par partie), à partir de la recherche. */
@@ -654,6 +662,8 @@ async function main() {
         needsVerificationCount: data.needsVerification?.length || 0,
         blogComplete: blog.complete,
         guideComplete: guide.complete,
+        guideModel: GUIDE_MODEL,
+        guideParts: guide.guideParts || [],
       });
       summary.generatedFiles.push(...files);
     } catch (err) {
