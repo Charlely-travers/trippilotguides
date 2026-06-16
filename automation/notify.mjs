@@ -70,6 +70,14 @@ function buildPayload(summary) {
     fields.push({ name: "📝 Brouillons générés", value: "Aucun." });
   }
 
+  // Modèles utilisés
+  const models = [
+    `Blog/Social : \`${summary?.model || process.env.MISTRAL_MODEL || "n/a"}\``,
+    `Recherche : \`${summary?.researchModel || process.env.MISTRAL_RESEARCH_MODEL || "n/a"}\``,
+    `Guide : \`${(Array.isArray(summary?.generated) && summary.generated[0]?.guideModel) || process.env.MISTRAL_GUIDE_MODEL || "n/a"}\``,
+  ].join(" · ");
+  fields.push({ name: "🧠 Modèles Mistral", value: models });
+
   // Guide parts (parties tronquées)
   const generated = Array.isArray(summary?.generated) ? summary.generated : [];
   const truncatedParts = generated.flatMap((g) =>
@@ -186,7 +194,7 @@ function buildPayload(summary) {
         description: truncate(description, 4000),
         color,
         fields,
-        footer: { text: `Modèle : ${summary?.model || "n/a"}` },
+        footer: { text: "TripPilot Automation" },
         timestamp: new Date().toISOString(),
       },
     ],

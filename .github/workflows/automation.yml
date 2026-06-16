@@ -8,10 +8,6 @@ on:
         description: "Nombre d'idées (les mieux notées) pour lesquelles générer des brouillons"
         required: false
         default: "1"
-      model:
-        description: "Modèle Mistral à utiliser"
-        required: false
-        default: "mistral-small-latest"
 
 permissions:
   contents: read
@@ -19,6 +15,16 @@ permissions:
 jobs:
   content-automation:
     runs-on: ubuntu-latest
+
+    # Variables d'environnement propagées à TOUTES les étapes du job.
+    env:
+      MISTRAL_API_KEY: ${{ secrets.MISTRAL_API_KEY }}
+      DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
+      MISTRAL_MODEL: ${{ vars.MISTRAL_MODEL || 'mistral-small-latest' }}
+      MISTRAL_RESEARCH_MODEL: ${{ vars.MISTRAL_RESEARCH_MODEL || 'mistral-small-latest' }}
+      MISTRAL_GUIDE_MODEL: ${{ vars.MISTRAL_GUIDE_MODEL || 'mistral-medium-latest' }}
+      GENERATE_COUNT: ${{ github.event.inputs.generate_count }}
+
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -36,31 +42,18 @@ jobs:
       - name: Research (Mistral web_search)
         id: research
         continue-on-error: true
-        env:
-          MISTRAL_API_KEY: ${{ secrets.MISTRAL_API_KEY }}
-          MISTRAL_MODEL: ${{ github.event.inputs.model }}
-          GENERATE_COUNT: ${{ github.event.inputs.generate_count }}
         run: node automation/research.mjs
 
-      # 2) Scoring Mistral + génération de brouillons (draft: true) à partir de la recherche.
-      #    continue-on-error : on veut toujours lancer le build et notifier.
+      # 2) Génération de brouillons (draft: true) à partir de la recherche.
       - name: Generate drafts (Mistral)
         id: generate
         continue-on-error: true
-        env:
-          MISTRAL_API_KEY: ${{ secrets.MISTRAL_API_KEY }}
-          MISTRAL_MODEL: ${{ github.event.inputs.model }}
-          GENERATE_COUNT: ${{ github.event.inputs.generate_count }}
         run: node automation/generate.mjs
 
       # 3) Relecture qualité des brouillons (note /10, statut, points faibles).
-      #    Repli heuristique automatique si MISTRAL_API_KEY absente.
       - name: Review drafts
         id: review
         continue-on-error: true
-        env:
-          MISTRAL_API_KEY: ${{ secrets.MISTRAL_API_KEY }}
-          MISTRAL_MODEL: ${{ github.event.inputs.model }}
         run: node automation/review.mjs
 
       # 4) Build du site statique (ne dépend pas des brouillons).
@@ -82,16 +75,15 @@ jobs:
           if-no-files-found: ignore
           retention-days: 14
 
-      # 6) Notification Discord (recherche, idées scorées, review, fichiers, erreurs, build).
+      # 6) Notification Discord (recherche, modèles, review, fichiers, erreurs, build).
       - name: Notify Discord
         if: always()
         env:
-          DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
           BUILD_STATUS: ${{ steps.build.outcome }}
           RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
         run: node automation/notify.mjs
 
-      # 6) Si le build a échoué, marquer le job en échec (après la notif).
+      # 7) Si le build a échoué, marquer le job en échec (après la notif).
       - name: Fail if build failed
         if: steps.build.outcome == 'failure'
         run: |
