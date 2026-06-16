@@ -5,6 +5,9 @@ pubDate: "2026-06-16"
 emoji: "🏰"
 gradient: "from-brand-500 via-accent-500 to-accent-600"
 readingTime: "9 min"
+destination: "Cracovie"
+guideSlug: "cracovie"
+checklistSlug: "cracovie"
 draft: false
 ---
 
@@ -140,4 +143,3 @@ Ce programme équilibré vous permet de voir l’essentiel de Cracovie à petit 
 
 
 <!-- TRIPILOT_COMPLETE_BLOG -->
-

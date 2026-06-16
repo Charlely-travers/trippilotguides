@@ -17,6 +17,7 @@
  * Aucune dépendance externe : `fetch` natif (Node 18+).
  */
 
+import "./lib/load-env.mjs";
 import fs from "node:fs/promises";
 import path from "node:path";
 

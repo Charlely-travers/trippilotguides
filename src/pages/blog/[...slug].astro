@@ -6,8 +6,9 @@ import Container from "@/components/Container.astro";
 import Badge from "@/components/Badge.astro";
 import Button from "@/components/Button.astro";
 import Card from "@/components/Card.astro";
-import { LINKS, DISCLAIMER, SITE } from "@/consts";
-import { getGuide } from "@/data/guides";
+import { DISCLAIMER, SITE } from "@/consts";
+import { guides as legacyGuides } from "@/data/guides";
+import { resolveBlogCtas } from "@/lib/destination-ctas.mjs";
 
 export const getStaticPaths = (async () => {
   const posts = await getCollection("blog");
@@ -21,7 +22,30 @@ export const getStaticPaths = (async () => {
 
 const { post } = Astro.props;
 const { Content } = await render(post);
-const guide = getGuide("rome-5-jours-budget-700")!;
+
+const publishedGuideEntries = (await getCollection("guides"))
+  .filter((entry) => !entry.data.draft)
+  .map((entry) => ({
+    slug: entry.id,
+    title: entry.data.title,
+    price: entry.data.price,
+  }));
+
+const publishedChecklistEntries = (await getCollection("checklists"))
+  .filter((entry) => !entry.data.draft)
+  .map((entry) => ({
+    slug: entry.id,
+    title: entry.data.title,
+  }));
+
+const ctas = resolveBlogCtas({
+  postId: post.id,
+  postData: post.data,
+  publishedGuides: publishedGuideEntries,
+  publishedChecklists: publishedChecklistEntries,
+  legacyGuides,
+  legacyChecklistHref: "/checklist-rome-gratuite",
+});
 
 const dateLabel = post.data.pubDate.toLocaleDateString("fr-FR", {
   day: "numeric",
@@ -64,7 +88,6 @@ const breadcrumbSchema = {
   jsonLd={[articleSchema, breadcrumbSchema]}
 >
   <article>
-    {/* En-tête article */}
     <header class="relative overflow-hidden">
       <div class="pointer-events-none absolute inset-0 -z-10 bg-mesh" aria-hidden="true"></div>
       <Container class="py-12 sm:py-16">
@@ -90,24 +113,21 @@ const breadcrumbSchema = {
 
     <Container class="pb-8">
       <div class="mx-auto max-w-3xl">
-        {/* CTA checklist en haut */}
         <div
           class="mb-10 flex flex-col gap-3 rounded-2xl border border-brand-100 bg-brand-50 p-5 sm:flex-row sm:items-center sm:justify-between"
         >
           <p class="text-sm font-medium text-ink-900">
-            🎁 Reçois la checklist gratuite avant de partir à Rome.
+            Prépare ton voyage à {ctas.destination} avec le bon contenu, au bon moment.
           </p>
-          <Button href={LINKS.freeChecklist} external variant="primary">
-            Télécharger la checklist
+          <Button href={ctas.top.href} external={ctas.top.external} variant="primary">
+            {ctas.top.label}
           </Button>
         </div>
 
-        {/* Contenu Markdown */}
         <div class="prose-article">
           <Content />
         </div>
 
-        {/* Disclaimer */}
         <p
           class="mt-10 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800"
           role="note"
@@ -115,26 +135,35 @@ const breadcrumbSchema = {
           ⚠️ {DISCLAIMER}
         </p>
 
-        {/* CTA guide complet */}
         <Card class="mt-10 overflow-hidden">
           <div class="grid items-stretch gap-0 sm:grid-cols-[1fr_1.4fr]">
             <div
-              class={`relative flex min-h-44 items-center justify-center overflow-hidden bg-gradient-to-br ${guide.gradient} p-8`}
+              class={`relative flex min-h-44 items-center justify-center overflow-hidden bg-gradient-to-br ${post.data.gradient} p-8`}
               aria-hidden="true"
             >
-              <span class="text-6xl drop-shadow">{guide.emoji}</span>
+              <span class="text-6xl drop-shadow">{post.data.emoji}</span>
             </div>
             <div class="p-7">
-              <Badge variant="success">Guide complet</Badge>
+              <Badge variant={ctas.guide.available ? "success" : "soft"}>
+                {ctas.guide.available ? "Guide complet" : "Produit en préparation"}
+              </Badge>
               <h2 class="mt-3 font-display text-xl font-bold text-ink-900">
-                {guide.title}
+                {ctas.guide.title}
               </h2>
-              <p class="mt-2 text-sm text-ink-700">{guide.excerpt}</p>
+              <p class="mt-2 text-sm text-ink-700">
+                {
+                  ctas.guide.available
+                    ? "Itinéraire jour par jour, budget détaillé et checklist imprimable."
+                    : `Le produit payant pour ${ctas.destination} n'est pas encore public. En attendant, explore les guides déjà disponibles.`
+                }
+              </p>
               <div class="mt-5 flex flex-wrap items-center gap-3">
-                <Button href={`/guides/${guide.slug}`} variant="primary">
-                  Voir le guide
+                <Button href={ctas.guide.href} variant="primary">
+                  {ctas.guide.label}
                 </Button>
-                <span class="font-display font-bold text-ink-900">{guide.price}</span>
+                {ctas.guide.price && (
+                  <span class="font-display font-bold text-ink-900">{ctas.guide.price}</span>
+                )}
               </div>
             </div>
           </div>

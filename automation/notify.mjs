@@ -8,6 +8,7 @@
  * Aucune dépendance externe (fetch natif).
  */
 
+import "./lib/load-env.mjs";
 import fs from "node:fs/promises";
 import path from "node:path";
 
@@ -139,7 +140,7 @@ function buildPayload(summary) {
       name: "🚦 Publication",
       value:
         publishable > 0
-          ? `✅ ${publishable} brouillon(s) candidat(s) à la publication (score ≥ 9). À relire avant mise en ligne.`
+          ? `✅ ${publishable} brouillon(s) candidat(s) à l'auto-publication blog (score ≥ 9).`
           : "🚫 Aucun brouillon publiable pour l'instant (aucun score ≥ 9). Relecture/amélioration nécessaire.",
     });
 
@@ -192,9 +193,14 @@ function buildPayload(summary) {
   if (productize && productize.count > 0) {
     const prods = (productize.products || [])
       .map(
-        (p) =>
-          `📦 **${p.slug}** (score: ${p.score}) — ${p.files.length} fichiers\n` +
-          `   ⚠️ TODO : ${p.todoLinks.join(", ")}`
+        (p) => {
+          const missing = Array.isArray(p.missingLinks) && p.missingLinks.length
+            ? `\n   ⚠️ Liens manquants : ${p.missingLinks.join(", ")}`
+            : "";
+          const pins = Number.isFinite(Number(p.pinCount)) ? ` · ${p.pinCount} pins` : "";
+          const payment = p.paymentLinkCreated ? " · Stripe link OK" : "";
+          return `📦 **${p.slug}** (score: ${p.score}) — ${p.status || "pack"}${pins}${payment}${missing}`;
+        }
       )
       .join("\n");
     fields.push({
@@ -202,13 +208,11 @@ function buildPayload(summary) {
       value: truncate(prods, 1024),
     });
     fields.push({
-      name: "👤 Prochaine action humaine",
+      name: "💶 Monétisation",
       value:
-        "1. Télécharger l'artefact `automation-output`\n" +
-        "2. Remplacer les `TODO_*` par les vrais liens (Gumroad, Tally)\n" +
-        "3. Relire les contenus\n" +
-        "4. Passer `draft: false` dans src/content/\n" +
-        "5. `npm run build` + commit/push",
+        "Les articles validés sont publiés automatiquement. " +
+        "Ajoute `STRIPE_SECRET_KEY` pour créer les liens de paiement automatiquement, ou `DEFAULT_BUY_LINK` pour forcer un lien manuel. " +
+        "Ajoute `DEFAULT_CHECKLIST_FORM_LINK` pour rendre les checklists publiques.",
     });
   } else if (productize) {
     fields.push({
@@ -225,8 +229,8 @@ function buildPayload(summary) {
   });
 
   const description =
-    "Exécution de l'automatisation de contenu (scoring + brouillons). " +
-    "**Aucune publication automatique** : les brouillons sont en `draft: true` et disponibles en artefact." +
+    "Exécution de l'automatisation de contenu V2. " +
+    "**Auto-publish blog actif** : Stripe peut créer les liens d'achat si `STRIPE_SECRET_KEY` est configuré." +
     (RUN_URL ? `\n[Voir l'exécution](${RUN_URL})` : "");
 
   return {

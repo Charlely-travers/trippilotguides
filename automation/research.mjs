@@ -18,6 +18,7 @@
  * Ne publie rien, ne déplace rien vers src/content. Aucune dépendance externe.
  */
 
+import "./lib/load-env.mjs";
 import fs from "node:fs/promises";
 import path from "node:path";
 

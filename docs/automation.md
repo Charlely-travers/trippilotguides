@@ -1,149 +1,141 @@
-# Automatisation de contenu — V1
+# Automatisation de contenu - V2
 
-Cette automatisation aide à **préparer** du contenu pour TripPilot Guides à
-partir d'une liste d'idées de voyage. Elle **ne publie jamais rien
-automatiquement** : tout est produit en brouillon (`draft: true`) et fourni en
-artefact à relire.
+TripPilot V2 suit le modele de l'article Mr AI Cash : contenu gratuit pour attirer du trafic, produit guide payant, checklist gratuite pour capturer des emails.
 
-## Ce qu'elle fait
+## Ce que fait le pipeline
 
-1. Lit une liste d'idées dans [`automation/ideas.json`](../automation/ideas.json).
-2. **Score** chaque idée (Mistral) puis **recherche le web** pour les idées
-   retenues (`research.mjs`) et écrit un dossier de recherche structuré par idée
-   dans `automation/research/<slug>.json` (destination, angle, sources, attractions
-   avec prix indicatifs/URLs, transports, quartiers, restaurants, points
-   d'attention, mots-clés SEO/Pinterest, `needsVerification`).
-   Architecture à 3 niveaux avec repli : **`web_search`** (Mistral Conversations
-   API + outil web_search) → **`model_only`** (modèle seul, tout à vérifier) →
-   **`offline`** (squelette sans clé API).
-3. **Génère des brouillons** riches **à partir des données de recherche** :
-   - un article de blog long (1200-1600 mots) : intro à angle commercial,
-     itinéraire jour par jour, budget bas/moyen/confort, erreurs à éviter,
-     transports, où dormir, quoi réserver, **encadré « ⚠️ À vérifier avant le
-     départ »** (issu de `needsVerification`), **CTA checklist** + **CTA guide
-     PDF**, **section Sources**, disclaimer (`blog.md`, `draft: true`),
-   - un plan de production de guide PDF (`guide-outline.md`) : structure du PDF,
-     pages, tableaux budget, planning matin/midi/après-midi/soir, alternatives
-     pluie/fatigue, checklist imprimable, liens à vérifier, visuels Canva,
-   - des contenus réseaux sociaux (`social.md`) : 10 idées Pinterest, 10 hooks
-     TikTok/Reels, 5 scripts courts (angle émotionnel + CTA).
-   La génération **évite toute affirmation certaine non sourcée**.
-4. **Relit et note** chaque brouillon sur 10 (`review.mjs`). Statuts :
-   `needs_improvement` (< 8), `ok` (≥ 8), `publish_candidate` (≥ 9).
-   **Pénalité forte si la recherche n'est pas exploitée** (score plafonné), et
-   contrôle de la présence de **sources** et de **liens « à vérifier »**. Repli
-   **heuristique** automatique si `MISTRAL_API_KEY` est absente.
-5. Lance `npm run build` pour vérifier que le site compile toujours.
-6. Envoie un **résumé Discord** : état de la **recherche** (OK/KO + nombre de
-   sources), idées scorées, **review** (score moyen, statut, candidats publiables
-   ou message « aucun brouillon publiable »), fichiers générés, erreurs, build.
+1. Lit `automation/ideas.json`.
+2. Score les idees et produit une recherche structuree dans `automation/research/`.
+3. Genere trois brouillons par destination dans `automation/drafts/<slug>/` :
+   - `blog.md`
+   - `guide-outline.md`
+   - `social.md`
+4. Relit les brouillons avec `review.mjs`.
+5. Si un brouillon est `publish_candidate` avec un score `>= AUTO_PUBLISH_MIN_SCORE` :
+   - publie l'article dans `src/content/blog/<slug>.md` avec `draft: false`;
+   - cree automatiquement un Stripe Payment Link si `STRIPE_SECRET_KEY` est configure et que `DEFAULT_BUY_LINK` est vide;
+   - prepare `src/content/guides/<slug>.md` comme page de vente publique, sans publier le contenu complet du guide;
+   - prepare `src/content/checklists/<slug>.md`;
+   - genere un pack dans `automation/products/<slug>/`;
+   - genere des pins Pinterest SVG/PNG dans `automation/products/<slug>/pins/`;
+   - copie les pins publics dans `public/pins/<slug>/`;
+   - rend le PDF de livraison dans `public/delivery/<slug>-<token>/guide.pdf` si Playwright est installe.
+6. Lance les tests et le build.
+7. En GitHub Actions, commit/push les contenus site generes (`src/content`, `public/pins`, `public/delivery`) si les tests et le build passent.
+8. Publie les pins sur Pinterest si `PINTEREST_ACCESS_TOKEN` et `PINTEREST_BOARD_ID` sont configures.
+9. Envoie un rapport Discord si `DISCORD_WEBHOOK_URL` est configure.
 
-Pipeline : **research → generate → review → build → notify**.
+## Regle importante
 
-## Principes de sécurité
+Les articles peuvent etre publies automatiquement pour construire le trafic.
 
-- **Aucune publication automatique.** Les brouillons sont écrits dans
-  `automation/drafts/` — un dossier **hors de `src/content/`** — donc ils ne
-  sont ni inclus dans le build ni mis en ligne.
-- Le site possède en plus un champ `draft` dans le schéma du blog : un article
-  avec `draft: true` n'est ni listé ni rendu, même s'il est placé dans
-  `src/content/blog/`.
-- Le workflow ne committe rien et ne pousse rien. Les brouillons sont
-  récupérables via l'**artefact** `automation-output` de l'exécution.
-- En cas d'absence de clé ou d'erreur Mistral, le build et la notification
-  s'exécutent quand même (les erreurs sont remontées dans le rapport Discord).
+Les pages guide/checklist ne deviennent publiques que si les vrais liens sont configures ou crees automatiquement :
 
-## Configuration
+- `STRIPE_SECRET_KEY` pour creer un lien de paiement Stripe automatiquement.
+- `DEFAULT_BUY_LINK` si tu veux forcer un lien d'achat manuel.
+- `DEFAULT_CHECKLIST_FORM_LINK` pour la checklist/email.
+- ou `INTERNAL_LEAD_MAGNET=true` avec `RESEND_API_KEY` pour utiliser le formulaire interne `/api/lead-magnet`.
 
-### Secrets GitHub (Settings → Secrets and variables → Actions)
+Si le lien d'achat est absent et que Stripe n'est pas configure, le guide reste en `draft: true`.
+Si le lien checklist est absent, la checklist reste en `draft: true`.
+Le site ne montre donc pas de page de vente cassee ni de faux lien Gumroad/Tally.
 
-| Secret | Rôle |
+Le contenu complet du guide reste dans le pack interne `automation/products/<slug>/guide.md`.
+La page publique `src/content/guides/<slug>.md` est une page de vente avec le bouton d'achat.
+
+## Livraison apres paiement
+
+Le webhook Stripe est pret dans `api/stripe-webhook.js`.
+
+Pour l'activer en production :
+
+1. Heberge le site sur une plateforme qui supporte les fonctions `/api/*` (par exemple Vercel).
+2. Configure un webhook Stripe vers `https://ton-domaine.com/api/stripe-webhook`.
+3. Ecoute l'evenement `checkout.session.completed`.
+4. Ajoute `STRIPE_WEBHOOK_SECRET`, `RESEND_API_KEY`, `FULFILLMENT_FROM_EMAIL` et `GUIDE_DELIVERY_BASE_URL` dans les secrets/variables de production.
+
+Le webhook verifie la signature Stripe, lit le slug produit dans les metadata Stripe, puis envoie par email le lien du PDF de livraison.
+
+## Checklist gratuite sans Tally
+
+Si tu ne veux pas creer de formulaire Tally/Brevo, active :
+
+```env
+INTERNAL_LEAD_MAGNET=true
+RESEND_API_KEY=...
+LEAD_MAGNET_FROM_EMAIL=TripPilot Guides <hello@trippilotguides.com>
+```
+
+Les checklists generees pointeront vers `/api/lead-magnet?slug=<destination>`.
+Le endpoint envoie le lien de checklist par email via Resend.
+
+## Variables
+
+| Variable | Role |
 | --- | --- |
-| `MISTRAL_API_KEY` | Clé API Mistral (obligatoire pour le scoring/génération) |
-| `DISCORD_WEBHOOK_URL` | Webhook du salon Discord pour le rapport |
-
-### Variables optionnelles
-
-Voir [`.env.example`](../.env.example) :
-
-- `MISTRAL_MODEL` (défaut `mistral-small-latest`)
-- `MISTRAL_RESEARCH_MODEL` (modèle de recherche web, défaut = `MISTRAL_MODEL`)
-- `GENERATE_COUNT` (nombre d'idées recherchées puis transformées en brouillons, défaut `1`)
-
-## Lancer le workflow
-
-1. Onglet **Actions** du dépôt GitHub.
-2. Workflow **« Automatisation contenu (V1) »**.
-3. Bouton **Run workflow** (déclenchement manuel `workflow_dispatch`).
-4. Renseigner éventuellement `generate_count` et `model`, puis lancer.
-5. À la fin : consulter le message Discord et télécharger l'artefact
-   `automation-output` pour relire les brouillons.
+| `MISTRAL_API_KEY` | Generation et scoring IA |
+| `MISTRAL_MODEL` | Modele blog/social |
+| `MISTRAL_RESEARCH_MODEL` | Modele recherche |
+| `MISTRAL_GUIDE_MODEL` | Modele guide |
+| `GENERATE_COUNT` | Nombre d'idees generees par run |
+| `AUTO_PUBLISH_MIN_SCORE` | Seuil de publication, defaut `9` |
+| `SITE_URL` | URL publique du site |
+| `DEFAULT_BUY_LINK` | Lien d'achat manuel, prioritaire si fourni |
+| `STRIPE_SECRET_KEY` | Cle Stripe pour creer les Payment Links automatiquement |
+| `STRIPE_WEBHOOK_SECRET` | Secret webhook Stripe pour verifier les paiements |
+| `AUTO_CREATE_STRIPE_PAYMENT_LINKS` | Active/desactive Stripe auto, defaut actif si cle presente |
+| `STRIPE_PAYMENT_LINK_PRICE_CENTS` | Prix par guide en centimes, defaut `900` |
+| `STRIPE_PAYMENT_LINK_CURRENCY` | Devise Stripe, defaut `eur` |
+| `STRIPE_PAYMENT_LINK_AUTOMATIC_TAX` | Active Stripe automatic tax si ton compte est configure |
+| `STRIPE_PAYMENT_LINK_ALLOW_PROMO_CODES` | Autorise les codes promo Stripe |
+| `DEFAULT_CHECKLIST_FORM_LINK` | Lien Tally/MailerLite/Brevo de la checklist |
+| `INTERNAL_LEAD_MAGNET` | Utilise `/api/lead-magnet` au lieu d'un formulaire externe |
+| `RESEND_API_KEY` | Envoi email guide/checklist via Resend |
+| `GUIDE_DELIVERY_BASE_URL` | Base URL des PDFs payants |
+| `PINTEREST_ACCESS_TOKEN` | Token Pinterest API v5 |
+| `PINTEREST_BOARD_ID` | Board Pinterest de publication |
+| `PINTEREST_MAX_PINS_PER_PRODUCT` | Nombre de pins postes par produit |
+| `DISCORD_WEBHOOK_URL` | Rapport Discord |
 
 ## Lancer en local
 
 ```bash
-# Node 22 requis (Astro 6)
-nvm use 22
+npm ci
+npm run automation:research
+npm run automation:generate
+npm run automation:review
+npm run automation:productize
+npm run automation:render-pdfs
+npm test
+npm run build
+npm run automation:pinterest
+```
 
-# Variables (PowerShell / bash) ou fichier .env exporté
-export MISTRAL_API_KEY="votre_cle"
-export DISCORD_WEBHOOK_URL="votre_webhook"   # optionnel en local
+Ou tout lancer :
 
-npm run automation:research   # recherche web -> automation/research/*.json + summary.json
-npm run automation:generate   # brouillons (depuis la recherche) -> automation/drafts
-npm run automation:review     # note les brouillons /10 -> review.json + summary.review
-npm run build                 # vérifie la compilation
-BUILD_STATUS=success npm run automation:notify   # envoie le rapport Discord
-
-# ou tout enchaîner (research -> generate -> review -> build -> notify) :
+```bash
 npm run automation:all
 ```
 
-Les brouillons apparaissent dans `automation/drafts/<slug>/` :
-`blog.md`, `guide-outline.md`, `social.md`.
+Sans `MISTRAL_API_KEY`, la recherche bascule en mode offline et la generation est ignoree. C'est normal pour verifier que le pipeline ne casse pas.
 
-## Promouvoir un brouillon en article publié
+Pour verifier que tes variables ne sont pas des placeholders :
 
-1. Relire et corriger `automation/drafts/<slug>/blog.md`.
-2. Le déplacer dans `src/content/blog/<slug>.md`.
-3. Vérifier le frontmatter (titre, description, `pubDate`, `emoji`, `gradient`,
-   `readingTime`).
-4. Passer `draft: true` à `draft: false` (ou retirer la ligne).
-5. `npm run build` puis commit/push manuel.
-
-## Fichiers
-
-| Fichier | Rôle |
-| --- | --- |
-| `automation/ideas.json` | Liste d'idées en entrée |
-| `automation/research.mjs` | Recherche web structurée (web_search → modèle → hors-ligne) |
-| `automation/generate.mjs` | Génération des brouillons à partir de la recherche |
-| `automation/review.mjs` | Relecture + note /10 (pénalise si recherche non utilisée) |
-| `automation/notify.mjs` | Envoi du rapport Discord |
-| `automation/research/` | Dossiers de recherche par idée (généré) |
-| `automation/output/summary.json` | Résumé machine (généré, inclut `research` + `review`) |
-| `automation/output/review.json` | Détail de la relecture (généré) |
-| `automation/drafts/` | Brouillons générés (jamais publiés) |
-| `.github/workflows/automation.yml` | Workflow GitHub Actions manuel |
-
-## Recherche web (Mistral `web_search`)
-
-`research.mjs` utilise l'API **Conversations** de Mistral (beta) avec l'outil
-intégré `web_search` :
-
-```
-POST https://api.mistral.ai/v1/conversations
-{ "model": "mistral-small-latest", "inputs": "…", "tools": [{ "type": "web_search" }] }
+```bash
+npm run automation:check-readiness
 ```
 
-Les sources réelles sont extraites des chunks `tool_reference` de la réponse.
-Si l'API/outil n'est pas disponible, le script bascule automatiquement sur une
-recherche basée modèle (`model_only`, tout marqué à vérifier), puis sur un
-squelette `offline` sans clé — sans jamais interrompre le pipeline.
+## GitHub Actions
 
-## Limites de la V1
+Le workflow `.github/workflows/automation.yml` se lance :
 
-- Pas de publication ni de commit automatique (volontaire).
-- Les contenus générés par IA doivent être **relus** : prix, horaires et faits
-  doivent être vérifiés avant toute mise en ligne.
-- Un seul appel de scoring + un appel de génération par idée (coût maîtrisé).
+- manuellement avec `workflow_dispatch`;
+- automatiquement chaque lundi matin.
+
+Le job a `contents: write` pour pouvoir committer les contenus publies. Il ne commit que si `npm test` et `npm run build` passent. Les packs `automation/products` restent disponibles en artefact GitHub Actions pour eviter de gonfler le depot avec les sources internes.
+
+## Prochaine phase
+
+La V2 genere les assets Pinterest localement, peut creer les liens de paiement Stripe automatiquement, peut rendre les PDFs et peut poster sur Pinterest via API.
+
+Restent obligatoirement manuels une seule fois : creer/activer les comptes externes (Stripe, Resend, Pinterest), recuperer les vraies cles, configurer le webhook Stripe dans le dashboard et remplacer tous les placeholders (`ton-site.com`, `sk_test_...`, etc.).

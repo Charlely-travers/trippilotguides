@@ -23,6 +23,7 @@
  * Aucune dépendance externe (fetch natif).
  */
 
+import "./lib/load-env.mjs";
 import fs from "node:fs/promises";
 import path from "node:path";
 

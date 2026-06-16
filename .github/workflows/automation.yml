@@ -1,29 +1,48 @@
-name: Automatisation contenu (V1)
+name: Automatisation contenu (V2)
 
-# Déclenchement MANUEL uniquement. Aucune publication automatique.
 on:
   workflow_dispatch:
     inputs:
       generate_count:
-        description: "Nombre d'idées (les mieux notées) pour lesquelles générer des brouillons"
+        description: "Nombre d'idees a transformer en contenu"
         required: false
         default: "1"
+  schedule:
+    # Weekly run: enough to grow traffic without burning API credits too fast.
+    - cron: "17 7 * * 1"
 
 permissions:
-  contents: read
+  contents: write
 
 jobs:
   content-automation:
     runs-on: ubuntu-latest
 
-    # Variables d'environnement propagées à TOUTES les étapes du job.
     env:
       MISTRAL_API_KEY: ${{ secrets.MISTRAL_API_KEY }}
       DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
       MISTRAL_MODEL: ${{ vars.MISTRAL_MODEL || 'mistral-small-latest' }}
       MISTRAL_RESEARCH_MODEL: ${{ vars.MISTRAL_RESEARCH_MODEL || 'mistral-small-latest' }}
       MISTRAL_GUIDE_MODEL: ${{ vars.MISTRAL_GUIDE_MODEL || 'mistral-medium-latest' }}
-      GENERATE_COUNT: ${{ github.event.inputs.generate_count }}
+      GENERATE_COUNT: ${{ github.event.inputs.generate_count || '1' }}
+      AUTO_PUBLISH_MIN_SCORE: ${{ vars.AUTO_PUBLISH_MIN_SCORE || '9' }}
+      DEFAULT_BUY_LINK: ${{ secrets.DEFAULT_BUY_LINK }}
+      STRIPE_SECRET_KEY: ${{ secrets.STRIPE_SECRET_KEY }}
+      AUTO_CREATE_STRIPE_PAYMENT_LINKS: ${{ vars.AUTO_CREATE_STRIPE_PAYMENT_LINKS || 'true' }}
+      STRIPE_PAYMENT_LINK_PRICE_CENTS: ${{ vars.STRIPE_PAYMENT_LINK_PRICE_CENTS || '900' }}
+      STRIPE_PAYMENT_LINK_CURRENCY: ${{ vars.STRIPE_PAYMENT_LINK_CURRENCY || 'eur' }}
+      STRIPE_PAYMENT_LINK_AUTOMATIC_TAX: ${{ vars.STRIPE_PAYMENT_LINK_AUTOMATIC_TAX || 'false' }}
+      STRIPE_PAYMENT_LINK_ALLOW_PROMO_CODES: ${{ vars.STRIPE_PAYMENT_LINK_ALLOW_PROMO_CODES || 'false' }}
+      DEFAULT_CHECKLIST_FORM_LINK: ${{ secrets.DEFAULT_CHECKLIST_FORM_LINK }}
+      INTERNAL_LEAD_MAGNET: ${{ vars.INTERNAL_LEAD_MAGNET || 'false' }}
+      RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
+      FULFILLMENT_FROM_EMAIL: ${{ vars.FULFILLMENT_FROM_EMAIL || 'TripPilot Guides <hello@trippilotguides.com>' }}
+      LEAD_MAGNET_FROM_EMAIL: ${{ vars.LEAD_MAGNET_FROM_EMAIL || 'TripPilot Guides <hello@trippilotguides.com>' }}
+      GUIDE_DELIVERY_BASE_URL: ${{ vars.GUIDE_DELIVERY_BASE_URL || 'https://trippilotguides.com/delivery' }}
+      PINTEREST_ACCESS_TOKEN: ${{ secrets.PINTEREST_ACCESS_TOKEN }}
+      PINTEREST_BOARD_ID: ${{ secrets.PINTEREST_BOARD_ID }}
+      PINTEREST_MAX_PINS_PER_PRODUCT: ${{ vars.PINTEREST_MAX_PINS_PER_PRODUCT || '3' }}
+      SITE_URL: ${{ vars.SITE_URL || 'https://trippilotguides.com' }}
 
     steps:
       - name: Checkout
@@ -38,38 +57,77 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      # 1) Recherche web structurée (Mistral web_search -> modèle -> hors-ligne).
-      - name: Research (Mistral web_search)
+      - name: Install Playwright Chromium
+        run: npx playwright install --with-deps chromium
+
+      - name: Research
         id: research
         continue-on-error: true
         run: node automation/research.mjs
 
-      # 2) Génération de brouillons (draft: true) à partir de la recherche.
-      - name: Generate drafts (Mistral)
+      - name: Generate drafts
         id: generate
         continue-on-error: true
         run: node automation/generate.mjs
 
-      # 3) Relecture qualité des brouillons (note /10, statut, points faibles).
       - name: Review drafts
         id: review
         continue-on-error: true
         run: node automation/review.mjs
 
-      # 4) Productize — crée les packs business pour les publish_candidates.
-      - name: Productize
+      - name: Productize and render pins
         id: productize
         continue-on-error: true
         run: node automation/productize.mjs
 
-      # 5) Build du site statique (ne dépend pas des brouillons).
+      - name: Render delivery PDFs
+        id: delivery
+        continue-on-error: true
+        run: node automation/render-delivery-pdfs.mjs
+
+      - name: Test
+        id: test
+        continue-on-error: true
+        run: npm test
+
       - name: Build site
         id: build
         continue-on-error: true
         run: npm run build
 
-      # 6) Brouillons + recherche + résumé + review + products disponibles en artefact.
-      - name: Upload drafts & summary
+      - name: Commit generated content
+        if: steps.build.outcome == 'success' && steps.test.outcome == 'success'
+        run: |
+          git config user.name "TripPilot Automation"
+          git config user.email "actions@github.com"
+          git add src/content automation/published-pins.json package.json package-lock.json
+          [ -d public/pins ] && git add public/pins
+          [ -d public/delivery ] && git add public/delivery
+          if git diff --cached --quiet; then
+            echo "No generated content changes to commit."
+          else
+            git commit -m "chore: auto-publish TripPilot content"
+            git push
+          fi
+
+      - name: Publish Pinterest pins
+        id: pinterest
+        if: steps.build.outcome == 'success' && steps.test.outcome == 'success'
+        continue-on-error: true
+        run: node automation/publish-pinterest.mjs
+
+      - name: Commit Pinterest state
+        if: steps.pinterest.outcome == 'success'
+        run: |
+          git add automation/published-pins.json
+          if git diff --cached --quiet; then
+            echo "No Pinterest state changes to commit."
+          else
+            git commit -m "chore: record published Pinterest pins"
+            git push
+          fi
+
+      - name: Upload automation output
         if: always()
         uses: actions/upload-artifact@v4
         with:
@@ -82,7 +140,6 @@ jobs:
           if-no-files-found: ignore
           retention-days: 14
 
-      # 7) Notification Discord.
       - name: Notify Discord
         if: always()
         env:
@@ -90,9 +147,14 @@ jobs:
           RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
         run: node automation/notify.mjs
 
-      # 8) Si le build a échoué, marquer le job en échec (après la notif).
+      - name: Fail if tests failed
+        if: steps.test.outcome == 'failure'
+        run: |
+          echo "Tests failed."
+          exit 1
+
       - name: Fail if build failed
         if: steps.build.outcome == 'failure'
         run: |
-          echo "Le build a échoué."
+          echo "Build failed."
           exit 1

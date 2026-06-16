@@ -20,6 +20,7 @@ export const getStaticPaths = (async () => {
 const { entry } = Astro.props;
 const { Content } = await render(entry);
 const { title, description, destination, emoji, gradient, formLink, guideSlug } = entry.data;
+const isInternalForm = formLink.startsWith("/api/");
 ---
 
 <BaseLayout title={title} description={description}>
@@ -33,7 +34,12 @@ const { title, description, destination, emoji, gradient, formLink, guideSlug } 
             {title}
           </h1>
           <p class="mt-5 text-lg text-ink-700">{description}</p>
-          <form class="mt-7 flex flex-col gap-3 sm:flex-row" action={formLink} method="get" target="_blank">
+          <form
+            class="mt-7 flex flex-col gap-3 sm:flex-row"
+            action={formLink}
+            method={isInternalForm ? "post" : "get"}
+            target={isInternalForm ? undefined : "_blank"}
+          >
             <label for="email" class="sr-only">Votre adresse email</label>
             <input id="email" name="email" type="email" autocomplete="email" placeholder="ton@email.com" class="w-full rounded-full border border-slate-200 bg-surface px-5 py-3.5 text-ink-900 placeholder:text-ink-400 focus:border-brand-400 focus:outline-none focus:ring-2 focus:ring-brand-200 sm:max-w-xs" />
             <Button type="submit" size="lg" variant="primary" class="shrink-0">Recevoir la checklist</Button>
