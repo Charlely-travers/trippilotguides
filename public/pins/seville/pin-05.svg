@@ -14,13 +14,13 @@
   <rect width="1000" height="1500" fill="url(#glow)"/>
   <rect x="54" y="54" width="892" height="1392" rx="46" fill="none" stroke="#ffffff" stroke-opacity="0.38" stroke-width="3"/>
   <text x="80" y="160" font-size="36" font-weight="800" fill="#ffffff" opacity="0.9">TripPilot Guides</text>
-  <text x="80" y="246" font-size="48" font-weight="800" fill="#d1fae5">Lisbonne</text>
-  <text x="80" y="560" font-size="78" font-weight="800" fill="#ffffff">&quot;Les ruelles</text>
-<text x="80" y="652" font-size="78" font-weight="800" fill="#ffffff">pavées de</text>
-<text x="80" y="744" font-size="78" font-weight="800" fill="#ffffff">Lisbonne : 3</text>
+  <text x="80" y="246" font-size="48" font-weight="800" fill="#d1fae5">Séville</text>
+  <text x="80" y="560" font-size="78" font-weight="800" fill="#ffffff">*Triana, le</text>
+<text x="80" y="652" font-size="78" font-weight="800" fill="#ffffff">quartier où la</text>
+<text x="80" y="744" font-size="78" font-weight="800" fill="#ffffff">flamenco danse</text>
   <rect x="80" y="910" width="210" height="8" rx="4" fill="#ffffff" opacity="0.8"/>
-  <text x="80" y="1050" font-size="34" font-weight="700" fill="#eef2ff">&quot;Les ruelles pavées de</text>
-<text x="80" y="1092" font-size="34" font-weight="700" fill="#eef2ff">Lisbonne : 3 erreurs à</text>
+  <text x="80" y="1050" font-size="34" font-weight="700" fill="#eef2ff">*Triana, le quartier où la</text>
+<text x="80" y="1092" font-size="34" font-weight="700" fill="#eef2ff">flamenco danse dans vos</text>
   <text x="80" y="1308" font-size="30" font-weight="700" fill="#ffffff" opacity="0.9">Itinéraire · budget · checklist</text>
-  <text x="80" y="1370" font-size="24" font-weight="600" fill="#e0e7ff">https://www.trippilotguides.com/blog/lisbonne</text>
+  <text x="80" y="1370" font-size="24" font-weight="600" fill="#e0e7ff">https://www.trippilotguides.com/blog/seville</text>
 </svg>
