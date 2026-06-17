@@ -1,12 +1,15 @@
 ---
+import { getCollection } from "astro:content";
 import BaseLayout from "@/layouts/BaseLayout.astro";
 import Container from "@/components/Container.astro";
 import Badge from "@/components/Badge.astro";
 import GuideCard from "@/components/GuideCard.astro";
 import CTASection from "@/components/CTASection.astro";
-import { guides } from "@/data/guides";
+import { mergeGuidesWithCollection } from "@/data/guides";
 import { SITE } from "@/consts";
 
+const collectionEntries = await getCollection("guides");
+const guides = mergeGuidesWithCollection(collectionEntries);
 const available = guides.filter((g) => g.status === "available").length;
 
 const itemListSchema = {
@@ -31,7 +34,7 @@ const itemListSchema = {
     <div class="pointer-events-none absolute inset-0 -z-10 bg-mesh" aria-hidden="true"></div>
     <Container class="py-16 sm:py-20">
       <div class="max-w-2xl">
-        <Badge variant="soft" class="shadow-soft">{available} guide disponible · plus à venir</Badge>
+        <Badge variant="soft" class="shadow-soft">{available} guide{available > 1 ? "s" : ""} disponible{available > 1 ? "s" : ""} · plus à venir</Badge>
         <h1 class="mt-4 font-display text-3xl font-extrabold tracking-tight text-ink-900 sm:text-5xl">
           Nos guides de voyage
         </h1>
@@ -53,6 +56,8 @@ const itemListSchema = {
 
   <CTASection
     title="Une destination t'intéresse ?"
-    text="Récupère la checklist gratuite pour Rome et sois prévenu dès qu'un nouveau guide sort."
+    text="Récupère la checklist gratuite et sois prévenu dès qu'un nouveau guide sort."
+    primaryLabel="Voir les checklists"
+    primaryHref="/checklists"
   />
 </BaseLayout>

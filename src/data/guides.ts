@@ -1,30 +1,36 @@
-/** Données locales des guides de voyage. */
+/**
+ * Données des guides de voyage.
+ *
+ * Source unique de vérité pour la liste de guides affichée sur /guides.
+ * Les guides publiés dans la content collection (src/content/guides/) sont
+ * automatiquement fusionnés ici au build-time pour éviter les doublons.
+ *
+ * Pour ajouter une destination, il suffit de créer un fichier .md dans
+ * src/content/guides/ avec draft: false — elle apparaîtra automatiquement.
+ */
 
 export type GuideStatus = "available" | "coming-soon";
 
 export interface Guide {
-  /** Identifiant utilisé dans l'URL (/guides/<slug>). */
   slug: string;
   destination: string;
-  /** Titre marketing complet. */
   title: string;
   duration: string;
-  /** Budget indicatif affiché sur la carte. */
   budget: string;
-  /** Public cible. */
   audience: string;
   status: GuideStatus;
-  /** Prix affiché (placeholder). */
   price: string;
-  /** Couleur de dégradé pour le visuel (clé Tailwind/CSS). */
   gradient: string;
-  /** Emoji/illustration de secours quand pas d'image. */
   emoji: string;
-  /** Courte accroche. */
   excerpt: string;
 }
 
-export const guides: Guide[] = [
+/**
+ * Guides "statiques" qui ne sont pas encore dans la content collection.
+ * Dès qu'un guide passe dans src/content/guides/ avec draft: false,
+ * il est automatiquement ajouté à la liste via mergeWithCollection().
+ */
+export const staticGuides: Guide[] = [
   {
     slug: "rome-5-jours-budget-700",
     destination: "Rome",
@@ -106,7 +112,66 @@ export const guides: Guide[] = [
   },
 ];
 
-export const getGuide = (slug: string): Guide | undefined =>
-  guides.find((g) => g.slug === slug);
+/**
+ * Fusionne les guides statiques avec les entrées de la content collection.
+ * Les guides de la collection (non-draft) remplacent les statiques par slug
+ * et passent automatiquement en status "available".
+ */
+export function mergeGuidesWithCollection(
+  collectionEntries: Array<{
+    id: string;
+    data: {
+      title: string;
+      description: string;
+      destination: string;
+      duration: string;
+      budget: string;
+      price: string;
+      emoji: string;
+      gradient: string;
+      draft: boolean;
+    };
+  }>
+): Guide[] {
+  const merged = new Map<string, Guide>();
 
-export const featuredGuide = guides[0];
+  // D'abord les statiques
+  for (const g of staticGuides) {
+    merged.set(g.slug, g);
+  }
+
+  // Puis les entrées de la collection (écrasent si même slug)
+  for (const entry of collectionEntries) {
+    if (entry.data.draft) continue;
+    const slug = entry.id;
+    const existing = merged.get(slug);
+    merged.set(slug, {
+      slug,
+      destination: entry.data.destination,
+      title: entry.data.title,
+      duration: entry.data.duration || existing?.duration || "",
+      budget: entry.data.budget || existing?.budget || "",
+      audience: existing?.audience || "Voyageurs curieux",
+      status: "available",
+      price: entry.data.price || existing?.price || "9€",
+      gradient: entry.data.gradient || existing?.gradient || "from-brand-500 to-accent-600",
+      emoji: entry.data.emoji || existing?.emoji || "📍",
+      excerpt: entry.data.description || existing?.excerpt || "",
+    });
+  }
+
+  // Trier : disponibles d'abord, puis par destination
+  return Array.from(merged.values()).sort((a, b) => {
+    if (a.status === "available" && b.status !== "available") return -1;
+    if (a.status !== "available" && b.status === "available") return 1;
+    return a.destination.localeCompare(b.destination);
+  });
+}
+
+/** Raccourci rétro-compatible (utilisé dans les pages qui n'ont pas accès à getCollection) */
+export const guides = staticGuides;
+
+export const getGuide = (slug: string): Guide | undefined =>
+  staticGuides.find((g) => g.slug === slug);
+
+export const featuredGuide = staticGuides[0];

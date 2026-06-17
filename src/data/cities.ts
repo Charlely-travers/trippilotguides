@@ -73,17 +73,34 @@ export const cityImages: Record<string, CityVisuals> = {
 export const fallbackImage = unsplash("photo-1488646953014-85cb44e25828");
 
 export function getCityImage(slug: string): CityVisuals {
-  // Normalise le slug pour matcher les clés
-  const key = slug
-    .toLowerCase()
-    .replace(/[^a-z-]/g, "")
-    .replace(/-\d+.*$/, "") // "rome-5-jours-budget-700" -> "rome"
-    .trim();
-  return (
-    cityImages[key] || {
-      hero: fallbackImage,
-      card: fallbackImage,
-      credit: "Photo on Unsplash",
-    }
-  );
+  // Normalise le slug pour matcher les clés du dictionnaire.
+  // Stratégie : on essaie le slug exact, puis on extrait le premier segment
+  // (nom de ville) en coupant au premier tiret suivi d'un chiffre ou d'un mot-clé courant.
+  const normalized = slug.toLowerCase().trim();
+
+  // Essai direct
+  if (cityImages[normalized]) return cityImages[normalized];
+
+  // Retire les suffixes numériques et descriptifs :
+  // "rome-5-jours-budget-700" → "rome"
+  // "lisbonne-4-jours" → "lisbonne"
+  // "new-york-5-jours" → "new-york"
+  const key = normalized
+    .replace(/-\d+[-a-z0-9]*$/, "") // "lisbonne-4-jours" → "lisbonne" (chiffre suivi de mots)
+    .replace(/-(?:jours?|budget|itineraire|guide|complet|gratuit[e]?).*$/, ""); // mots-clé descriptifs
+
+  if (cityImages[key]) return cityImages[key];
+
+  // Dernière tentative : prendre le premier mot (ou les deux premiers pour "new-york")
+  const parts = normalized.split("-");
+  for (let i = parts.length; i >= 1; i--) {
+    const candidate = parts.slice(0, i).join("-");
+    if (cityImages[candidate]) return cityImages[candidate];
+  }
+
+  return {
+    hero: fallbackImage,
+    card: fallbackImage,
+    credit: "Photo on Unsplash",
+  };
 }

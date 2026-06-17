@@ -6,6 +6,8 @@ import Container from "@/components/Container.astro";
 import Badge from "@/components/Badge.astro";
 import Button from "@/components/Button.astro";
 import { DISCLAIMER } from "@/consts";
+import { getCityImage } from "@/data/cities";
+import { AlertTriangle } from "lucide-astro";
 
 export const getStaticPaths = (async () => {
   const entries = await getCollection("checklists");
@@ -19,7 +21,8 @@ export const getStaticPaths = (async () => {
 
 const { entry } = Astro.props;
 const { Content } = await render(entry);
-const { title, description, destination, emoji, gradient, formLink, guideSlug } = entry.data;
+const { title, description, destination, gradient, formLink, guideSlug } = entry.data;
+const city = getCityImage(destination.toLowerCase());
 const isInternalForm = formLink.startsWith("/api/");
 ---
 
@@ -46,8 +49,14 @@ const isInternalForm = formLink.startsWith("/api/");
           </form>
           <p class="mt-3 text-sm text-ink-500">Pas de spam. Désinscription en un clic.</p>
         </div>
-        <div class={`relative flex aspect-[4/3] items-center justify-center overflow-hidden rounded-[1.75rem] bg-gradient-to-br ${gradient} shadow-glow`} aria-hidden="true">
-          <span class="text-8xl drop-shadow">{emoji}</span>
+        <div class="relative aspect-[4/3] overflow-hidden rounded-[1.75rem] shadow-glow">
+          <img
+            src={city.hero}
+            alt={`Vue de ${destination}`}
+            class="h-full w-full object-cover"
+            loading="eager"
+          />
+          <div class="absolute inset-0 bg-gradient-to-t from-black/30 to-transparent"></div>
         </div>
       </div>
     </Container>
@@ -65,7 +74,8 @@ const isInternalForm = formLink.startsWith("/api/");
         </div>
       )}
       <p class="mx-auto mt-6 max-w-2xl rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-center text-sm text-amber-800" role="note">
-        ⚠️ {DISCLAIMER}
+        <AlertTriangle class="mr-1 inline h-4 w-4 text-amber-600" />
+        {DISCLAIMER}
       </p>
     </Container>
   </section>

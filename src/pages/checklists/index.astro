@@ -1,0 +1,90 @@
+---
+import { getCollection } from "astro:content";
+import BaseLayout from "@/layouts/BaseLayout.astro";
+import Container from "@/components/Container.astro";
+import Badge from "@/components/Badge.astro";
+import Card from "@/components/Card.astro";
+import Button from "@/components/Button.astro";
+import CTASection from "@/components/CTASection.astro";
+import { getCityImage } from "@/data/cities";
+import { ClipboardCheck, MapPin, Download } from "lucide-astro";
+
+const checklists = (await getCollection("checklists"))
+  .filter((c) => !c.data.draft)
+  .sort((a, b) => a.data.destination.localeCompare(b.data.destination));
+---
+
+<BaseLayout
+  title="Checklists gratuites avant de partir en voyage"
+  description="Téléchargez gratuitement une checklist PDF pour préparer votre voyage sans rien oublier : documents, budget, transport, logement et valise."
+>
+  <section class="relative overflow-hidden">
+    <div class="pointer-events-none absolute inset-0 -z-10 bg-mesh" aria-hidden="true"></div>
+    <Container class="py-16 sm:py-20">
+      <div class="max-w-2xl">
+        <Badge variant="soft" class="shadow-soft">
+          {checklists.length} checklist{checklists.length > 1 ? "s" : ""} disponible{checklists.length > 1 ? "s" : ""}
+        </Badge>
+        <h1 class="mt-4 font-display text-3xl font-extrabold tracking-tight text-ink-900 sm:text-5xl">
+          Checklists gratuites
+        </h1>
+        <p class="mt-4 text-lg text-ink-700">
+          Téléchargez une checklist PDF pour préparer votre voyage sans rien oublier.
+          Documents, budget, transport, logement et valise : tout y est.
+        </p>
+      </div>
+    </Container>
+  </section>
+
+  <section class="pb-16 sm:pb-20">
+    <Container>
+      <div class="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+        {checklists.map((checklist) => {
+          const city = getCityImage(checklist.data.destination.toLowerCase());
+          return (
+            <article class="group flex flex-col overflow-hidden rounded-2xl border border-slate-200/80 bg-surface shadow-card transition-all duration-300 hover:-translate-y-1.5 hover:border-brand-200 hover:shadow-lift">
+              <div class="relative h-44 overflow-hidden">
+                <img
+                  src={city.card}
+                  alt={`Vue de ${checklist.data.destination}`}
+                  class="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
+                  loading="lazy"
+                />
+                <div class="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent"></div>
+                <div class="absolute bottom-3 left-4">
+                  <h3 class="font-display text-lg font-bold text-white drop-shadow">
+                    {checklist.data.destination}
+                  </h3>
+                </div>
+                <div class="absolute right-3 top-3">
+                  <Badge variant="success">Gratuit</Badge>
+                </div>
+              </div>
+              <div class="flex flex-1 flex-col p-5">
+                <p class="text-sm text-ink-700">{checklist.data.description}</p>
+                <div class="mt-4 flex items-center gap-2 text-sm text-ink-500">
+                  <ClipboardCheck class="h-4 w-4" />
+                  <span>PDF · Checklist complète</span>
+                </div>
+                <div class="mt-5 border-t border-slate-100 pt-4">
+                  <Button href={`/checklists/${checklist.id}`} variant="primary" size="md">
+                    Télécharger
+                  </Button>
+                </div>
+              </div>
+            </article>
+          );
+        })}
+      </div>
+    </Container>
+  </section>
+
+  <CTASection
+    title="Besoin d'un itinéraire complet ?"
+    text="Nos guides PDF vont plus loin : planning jour par jour, budget détaillé, quartiers et transports."
+    primaryLabel="Voir les guides"
+    primaryHref="/guides"
+    secondaryLabel=""
+    secondaryHref=""
+  />
+</BaseLayout>

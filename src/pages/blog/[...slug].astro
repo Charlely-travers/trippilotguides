@@ -8,6 +8,8 @@ import Button from "@/components/Button.astro";
 import Card from "@/components/Card.astro";
 import { DISCLAIMER, SITE } from "@/consts";
 import { guides as legacyGuides } from "@/data/guides";
+import { getCityImage } from "@/data/cities";
+import { AlertTriangle } from "lucide-astro";
 import { resolveBlogCtas } from "@/lib/destination-ctas.mjs";
 
 export const getStaticPaths = (async () => {
@@ -44,7 +46,7 @@ const ctas = resolveBlogCtas({
   publishedGuides: publishedGuideEntries,
   publishedChecklists: publishedChecklistEntries,
   legacyGuides,
-  legacyChecklistHref: "/checklist-rome-gratuite",
+  legacyChecklistHref: "/checklists",
 });
 
 const dateLabel = post.data.pubDate.toLocaleDateString("fr-FR", {
@@ -132,16 +134,23 @@ const breadcrumbSchema = {
           class="mt-10 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800"
           role="note"
         >
-          ⚠️ {DISCLAIMER}
+          <AlertTriangle class="mr-1 inline h-4 w-4 text-amber-600" />
+          {DISCLAIMER}
         </p>
 
         <Card class="mt-10 overflow-hidden">
           <div class="grid items-stretch gap-0 sm:grid-cols-[1fr_1.4fr]">
             <div
-              class={`relative flex min-h-44 items-center justify-center overflow-hidden bg-gradient-to-br ${post.data.gradient} p-8`}
+              class="relative min-h-44 overflow-hidden"
               aria-hidden="true"
             >
-              <span class="text-6xl drop-shadow">{post.data.emoji}</span>
+              <img
+                src={getCityImage(post.id).card}
+                alt=""
+                class="absolute inset-0 h-full w-full object-cover"
+                loading="lazy"
+              />
+              <div class="absolute inset-0 bg-gradient-to-r from-transparent to-black/10"></div>
             </div>
             <div class="p-7">
               <Badge variant={ctas.guide.available ? "success" : "soft"}>

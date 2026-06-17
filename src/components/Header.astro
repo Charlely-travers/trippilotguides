@@ -6,7 +6,7 @@ const nav = [
   { label: "Accueil", href: "/" },
   { label: "Guides", href: "/guides" },
   { label: "Blog", href: "/blog" },
-  { label: "Checklist gratuite", href: "/checklist-rome-gratuite" },
+  { label: "Checklists", href: "/checklists" },
 ];
 
 const path = Astro.url.pathname;
@@ -51,10 +51,10 @@ const isActive = (href: string) =>
     </nav>
 
     <a
-      href="/checklist-rome-gratuite"
+      href="/checklists"
       class="hidden rounded-full bg-gradient-to-br from-brand-600 to-accent-600 px-4 py-2 text-sm font-semibold text-white shadow-soft ring-1 ring-inset ring-white/10 transition-all hover:-translate-y-0.5 hover:shadow-lift sm:inline-flex"
     >
-      Checklist gratuite
+      Checklists gratuites
     </a>
 
     {/* Menu mobile (CSS only via <details>) */}
@@ -80,10 +80,10 @@ const isActive = (href: string) =>
           ))
         }
         <a
-          href="/checklist-rome-gratuite"
+          href="/checklists"
           class="mt-1 block rounded-xl bg-gradient-to-br from-brand-600 to-accent-600 px-4 py-2.5 text-center text-sm font-semibold text-white"
         >
-          Checklist gratuite
+          Checklists gratuites
         </a>
       </div>
     </details>

@@ -7,30 +7,46 @@ import Card from "@/components/Card.astro";
 import FAQ from "@/components/FAQ.astro";
 import { LINKS, DISCLAIMER, SITE } from "@/consts";
 import { getGuide } from "@/data/guides";
+import { getCityImage } from "@/data/cities";
+import {
+  CalendarDays,
+  Euro,
+  Building2,
+  TrainFront,
+  UtensilsCrossed,
+  AlertTriangle,
+  CheckSquare,
+  Globe,
+  Luggage,
+  Compass,
+  Landmark,
+  FileText,
+} from "lucide-astro";
 
 const guide = getGuide("rome-5-jours-budget-700")!;
+const city = getCityImage(guide.slug);
 
 const includes = [
-  { title: "Itinéraire matin / après-midi / soir", text: "Chaque journée découpée en trois temps pour profiter sans courir.", emoji: "📅" },
-  { title: "Budget détaillé", text: "Hébergement, repas, transports et visites estimés poste par poste.", emoji: "💶" },
-  { title: "Quartiers recommandés", text: "Où dormir selon ton budget et tes envies, avec les zones à éviter.", emoji: "🏨" },
-  { title: "Transports", text: "Aéroport, métro, bus et déplacements à pied expliqués simplement.", emoji: "🚇" },
-  { title: "Restaurants et pauses", text: "Des adresses et des types de lieux pour bien manger sans se ruiner.", emoji: "🍝" },
-  { title: "Erreurs à éviter", text: "Les pièges classiques d'un premier voyage à Rome.", emoji: "⚠️" },
-  { title: "Checklist imprimable", text: "Une liste claire à cocher avant de partir.", emoji: "✅" },
+  { title: "Itinéraire matin / après-midi / soir", text: "Chaque journée découpée en trois temps pour profiter sans courir.", Icon: CalendarDays },
+  { title: "Budget détaillé", text: "Hébergement, repas, transports et visites estimés poste par poste.", Icon: Euro },
+  { title: "Quartiers recommandés", text: "Où dormir selon ton budget et tes envies, avec les zones à éviter.", Icon: Building2 },
+  { title: "Transports", text: "Aéroport, métro, bus et déplacements à pied expliqués simplement.", Icon: TrainFront },
+  { title: "Restaurants et pauses", text: "Des adresses et des types de lieux pour bien manger sans se ruiner.", Icon: UtensilsCrossed },
+  { title: "Erreurs à éviter", text: "Les pièges classiques d'un premier voyage à Rome.", Icon: AlertTriangle },
+  { title: "Checklist imprimable", text: "Une liste claire à cocher avant de partir.", Icon: CheckSquare },
 ];
 
 const forWho = [
-  { title: "Premier voyage à Rome", text: "Tout est expliqué simplement, aucune expérience requise.", emoji: "🌍" },
-  { title: "Couple ou solo", text: "Un itinéraire adaptable que tu voyages à deux ou seul.", emoji: "🧳" },
-  { title: "Budget maîtrisé", text: "Pensé autour d'un budget réaliste d'environ 700€.", emoji: "💶" },
-  { title: "Envie d'un planning simple", text: "Tu veux profiter, pas passer des heures à organiser.", emoji: "🧭" },
+  { title: "Premier voyage à Rome", text: "Tout est expliqué simplement, aucune expérience requise.", Icon: Globe },
+  { title: "Couple ou solo", text: "Un itinéraire adaptable que tu voyages à deux ou seul.", Icon: Luggage },
+  { title: "Budget maîtrisé", text: "Pensé autour d'un budget réaliste d'environ 700€.", Icon: Euro },
+  { title: "Envie d'un planning simple", text: "Tu veux profiter, pas passer des heures à organiser.", Icon: Compass },
 ];
 
 const previews = [
-  { title: "Jour 1 — Centre historique", text: "Colisée, Forum romain et soirée dans le Trastevere.", emoji: "🏛️" },
-  { title: "Budget détaillé", text: "Tableau clair des dépenses jour par jour pour ≈ 700€.", emoji: "💶" },
-  { title: "Checklist départ", text: "Documents, valise et applis utiles à cocher avant le vol.", emoji: "✅" },
+  { title: "Jour 1 — Centre historique", text: "Colisée, Forum romain et soirée dans le Trastevere.", Icon: Landmark },
+  { title: "Budget détaillé", text: "Tableau clair des dépenses jour par jour pour ≈ 700€.", Icon: Euro },
+  { title: "Checklist départ", text: "Documents, valise et applis utiles à cocher avant le vol.", Icon: CheckSquare },
 ];
 
 const faq = [
@@ -122,7 +138,7 @@ const faqSchema = {
               Acheter le guide (bientôt)
             </Button>
             <a
-              href={LINKS.freeChecklist}
+              href="/checklists/rome"
               class="text-sm font-semibold text-brand-700 hover:underline"
             >
               ou téléchargez d'abord la checklist gratuite
@@ -138,14 +154,15 @@ const faqSchema = {
         </div>
 
         <div
-          class={`relative flex aspect-[4/3] items-center justify-center overflow-hidden rounded-[1.75rem] bg-gradient-to-br ${guide.gradient} shadow-glow`}
-          aria-hidden="true"
+          class="relative aspect-[4/3] overflow-hidden rounded-[1.75rem] shadow-glow"
         >
-          <div
-            class="absolute inset-0 opacity-30 mix-blend-overlay"
-            style="background-image: radial-gradient(circle at 25% 15%, rgba(255,255,255,.6), transparent 45%);"
-          ></div>
-          <span class="text-8xl drop-shadow">{guide.emoji}</span>
+          <img
+            src={city.hero}
+            alt={`Vue de Rome`}
+            class="h-full w-full object-cover"
+            loading="eager"
+          />
+          <div class="absolute inset-0 bg-gradient-to-t from-black/30 to-transparent"></div>
           <span
             class="absolute bottom-5 left-5 rounded-xl bg-white/90 px-4 py-2 text-sm font-bold text-ink-900 backdrop-blur"
           >
@@ -169,8 +186,8 @@ const faqSchema = {
         {
           includes.map((item) => (
             <Card class="p-6" hover>
-              <span class="text-2xl" aria-hidden="true">
-                {item.emoji}
+              <span class="flex h-10 w-10 items-center justify-center rounded-xl bg-brand-50 text-brand-600" aria-hidden="true">
+                <item.Icon class="h-5 w-5" />
               </span>
               <h3 class="mt-3 font-display text-base font-bold text-ink-900">
                 {item.title}
@@ -212,8 +229,8 @@ const faqSchema = {
         {
           forWho.map((item) => (
             <Card class="p-6" hover>
-              <span class="text-2xl" aria-hidden="true">
-                {item.emoji}
+              <span class="flex h-10 w-10 items-center justify-center rounded-xl bg-brand-50 text-brand-600" aria-hidden="true">
+                <item.Icon class="h-5 w-5" />
               </span>
               <h3 class="mt-3 font-display text-base font-bold text-ink-900">
                 {item.title}
@@ -243,7 +260,9 @@ const faqSchema = {
                 class="flex aspect-[3/4] flex-col justify-between rounded-xl bg-gradient-to-br from-slate-50 to-brand-50 p-5"
                 aria-hidden="true"
               >
-                <span class="text-3xl">{page.emoji}</span>
+                <span class="flex h-12 w-12 items-center justify-center rounded-xl bg-brand-100 text-brand-600">
+                  <page.Icon class="h-6 w-6" />
+                </span>
                 <div>
                   <div class="h-2 w-3/4 rounded bg-slate-300/70" />
                   <div class="mt-2 h-2 w-full rounded bg-slate-200/70" />
@@ -296,7 +315,7 @@ const faqSchema = {
             Acheter le guide — {guide.price} (bientôt)
           </a>
           <a
-            href={LINKS.freeChecklist}
+            href="/checklists/rome"
             class="inline-flex items-center justify-center rounded-full px-7 py-3.5 text-[0.95rem] font-semibold text-white ring-1 ring-white/40 transition-all hover:bg-white/10"
           >
             Checklist gratuite
@@ -308,7 +327,8 @@ const faqSchema = {
         class="mx-auto mt-6 max-w-2xl rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-center text-sm text-amber-800"
         role="note"
       >
-        ⚠️ {DISCLAIMER}
+        <AlertTriangle class="mr-1 inline h-4 w-4 text-amber-600" />
+        {DISCLAIMER}
       </p>
     </Container>
   </section>

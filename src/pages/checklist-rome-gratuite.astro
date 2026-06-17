@@ -6,16 +6,27 @@ import Button from "@/components/Button.astro";
 import Card from "@/components/Card.astro";
 import { LINKS, DISCLAIMER } from "@/consts";
 import { getGuide } from "@/data/guides";
+import { getCityImage } from "@/data/cities";
+import {
+  FileCheck,
+  Euro,
+  TrainFront,
+  Building2,
+  Luggage,
+  Smartphone,
+  AlertTriangle,
+} from "lucide-astro";
 
 const guide = getGuide("rome-5-jours-budget-700")!;
+const city = getCityImage("rome");
 
 const checklistItems = [
-  { title: "Documents", text: "Passeport/CNI, billets, réservations, assurance.", emoji: "🪪" },
-  { title: "Budget", text: "Espèces, carte sans frais, répartition par jour.", emoji: "💶" },
-  { title: "Transport", text: "Trajet aéroport, tickets de métro, applis utiles.", emoji: "🚇" },
-  { title: "Logement", text: "Adresse, horaires de check-in, contact de l'hôte.", emoji: "🏨" },
-  { title: "Valise", text: "Tenues selon la météo, chaussures de marche, chargeurs.", emoji: "🧳" },
-  { title: "Applis utiles", text: "Cartes hors-ligne, transports, traduction.", emoji: "📱" },
+  { title: "Documents", text: "Passeport/CNI, billets, réservations, assurance.", Icon: FileCheck },
+  { title: "Budget", text: "Espèces, carte sans frais, répartition par jour.", Icon: Euro },
+  { title: "Transport", text: "Trajet aéroport, tickets de métro, applis utiles.", Icon: TrainFront },
+  { title: "Logement", text: "Adresse, horaires de check-in, contact de l'hôte.", Icon: Building2 },
+  { title: "Valise", text: "Tenues selon la météo, chaussures de marche, chargeurs.", Icon: Luggage },
+  { title: "Applis utiles", text: "Cartes hors-ligne, transports, traduction.", Icon: Smartphone },
 ];
 ---
 
@@ -65,14 +76,15 @@ const checklistItems = [
         </div>
 
         <div
-          class="relative flex aspect-[4/3] items-center justify-center overflow-hidden rounded-[1.75rem] bg-gradient-to-br from-emerald-400 via-teal-400 to-cyan-500 shadow-glow"
-          aria-hidden="true"
+          class="relative aspect-[4/3] overflow-hidden rounded-[1.75rem] shadow-glow"
         >
-          <div
-            class="absolute inset-0 opacity-30 mix-blend-overlay"
-            style="background-image: radial-gradient(circle at 25% 15%, rgba(255,255,255,.6), transparent 45%);"
-          ></div>
-          <span class="text-8xl drop-shadow">📝</span>
+          <img
+            src={city.hero}
+            alt="Vue de Rome"
+            class="h-full w-full object-cover"
+            loading="eager"
+          />
+          <div class="absolute inset-0 bg-gradient-to-t from-black/30 to-transparent"></div>
         </div>
       </div>
     </Container>
@@ -91,8 +103,8 @@ const checklistItems = [
         {
           checklistItems.map((item) => (
             <Card class="p-6" hover>
-              <span class="text-2xl" aria-hidden="true">
-                {item.emoji}
+              <span class="flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-50 text-emerald-600" aria-hidden="true">
+                <item.Icon class="h-5 w-5" />
               </span>
               <h3 class="mt-3 font-display text-base font-bold text-ink-900">
                 {item.title}
@@ -127,25 +139,18 @@ const checklistItems = [
               <Button href={`/guides/${guide.slug}`} size="lg" variant="primary">
                 Découvrir le guide
               </Button>
-              <a
-                href={LINKS.buyRomeGuide}
-                target="_blank"
-                rel="noopener noreferrer"
-                class="text-sm font-semibold text-brand-700 hover:underline"
-              >
-                Acheter directement
-              </a>
             </div>
           </div>
           <div
-            class={`relative flex min-h-60 items-center justify-center overflow-hidden bg-gradient-to-br ${guide.gradient} p-10`}
-            aria-hidden="true"
+            class="relative min-h-60 overflow-hidden"
           >
-            <div
-              class="absolute inset-0 opacity-30 mix-blend-overlay"
-              style="background-image: radial-gradient(circle at 25% 15%, rgba(255,255,255,.6), transparent 45%);"
-            ></div>
-            <span class="text-8xl drop-shadow">{guide.emoji}</span>
+            <img
+              src={city.card}
+              alt="Vue de Rome"
+              class="absolute inset-0 h-full w-full object-cover"
+              loading="lazy"
+            />
+            <div class="absolute inset-0 bg-gradient-to-l from-transparent to-black/10"></div>
           </div>
         </div>
       </Card>
@@ -154,7 +159,8 @@ const checklistItems = [
         class="mx-auto mt-6 max-w-2xl rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-center text-sm text-amber-800"
         role="note"
       >
-        ⚠️ {DISCLAIMER}
+        <AlertTriangle class="mr-1 inline h-4 w-4 text-amber-600" />
+        {DISCLAIMER}
       </p>
     </Container>
   </section>
