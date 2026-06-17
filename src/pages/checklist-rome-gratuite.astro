@@ -41,10 +41,10 @@ const checklistItems = [
 
           <form
             class="mt-7 flex flex-col gap-3 sm:flex-row"
-            action={LINKS.freeChecklist}
-            method="get"
-            target="_blank"
+            action="/api/lead-magnet"
+            method="post"
           >
+            <input type="hidden" name="slug" value="rome-5-jours-budget-700" />
             <label for="email" class="sr-only">Votre adresse email</label>
             <input
               id="email"

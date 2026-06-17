@@ -69,8 +69,9 @@ async function main() {
     const folder = deliveryFolderName(slug, product.deliveryToken || "");
     const targetDir = path.join(PUBLIC_DELIVERY_DIR, folder);
     await fs.mkdir(targetDir, { recursive: true });
-    const targetPdf = path.join(targetDir, "guide.pdf");
 
+    // Render guide PDF
+    const targetPdf = path.join(targetDir, "guide.pdf");
     await page.setContent(
       markdownToDeliveryHtml({
         title: product.title || slug,
@@ -84,6 +85,25 @@ async function main() {
       printBackground: true,
     });
     rendered.push(path.relative(ROOT, targetPdf).replace(/\\/g, "/"));
+
+    // Render checklist PDF (free lead magnet)
+    const checklistMd = await readSafe(path.join(productDir, "checklist.md"));
+    if (checklistMd) {
+      const checklistPdf = path.join(targetDir, "checklist.pdf");
+      await page.setContent(
+        markdownToDeliveryHtml({
+          title: `Checklist gratuite — ${product.title || slug}`,
+          markdown: checklistMd,
+        }),
+        { waitUntil: "networkidle" }
+      );
+      await page.pdf({
+        path: checklistPdf,
+        format: "A4",
+        printBackground: true,
+      });
+      rendered.push(path.relative(ROOT, checklistPdf).replace(/\\/g, "/"));
+    }
   }
 
   await browser.close();
