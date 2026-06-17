@@ -28,9 +28,9 @@ export const cityImages: Record<string, CityVisuals> = {
     credit: "Photo by Daniel Adventures on Unsplash",
   },
   barcelone: {
-    hero: unsplash("photo-1583422409516-2895a77efed6"),
-    card: unsplash("photo-1583422409516-2895a77efed6", 600),
-    credit: "Photo by Aventures Espagne on Unsplash",
+    hero: unsplash("photo-1539037116277-4db20889f2d4"),
+    card: unsplash("photo-1539037116277-4db20889f2d4", 600),
+    credit: "Photo by Enes on Unsplash",
   },
   londres: {
     hero: unsplash("photo-1513635269975-59663e0ac1ad"),
@@ -53,8 +53,13 @@ export const cityImages: Record<string, CityVisuals> = {
     credit: "Photo by Nick Karvounis on Unsplash",
   },
   seville: {
-    hero: unsplash("photo-1515443961218-a51367888e4b"),
-    card: unsplash("photo-1515443961218-a51367888e4b", 600),
+    hero: unsplash("photo-1509030142996-4db2f6907fba"),
+    card: unsplash("photo-1509030142996-4db2f6907fba", 600),
+    credit: "Photo by Joan Oger on Unsplash",
+  },
+  séville: {
+    hero: unsplash("photo-1509030142996-4db2f6907fba"),
+    card: unsplash("photo-1509030142996-4db2f6907fba", 600),
     credit: "Photo by Joan Oger on Unsplash",
   },
   cracovie: {

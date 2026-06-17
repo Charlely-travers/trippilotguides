@@ -140,6 +140,7 @@ h4,
 .prose-article > p:first-of-type {
   font-size: 1.18rem;
   color: var(--color-ink-800);
+  line-height: 1.7;
 }
 .prose-article h2 {
   color: var(--color-ink-900);
@@ -148,6 +149,7 @@ h4,
   margin-top: 2.75rem;
   margin-bottom: 0.85rem;
   scroll-margin-top: 6rem;
+  font-family: var(--font-display, "Plus Jakarta Sans", system-ui, sans-serif);
 }
 .prose-article h3 {
   color: var(--color-ink-900);
@@ -155,6 +157,7 @@ h4,
   font-weight: 700;
   margin-top: 1.85rem;
   margin-bottom: 0.6rem;
+  font-family: var(--font-display, "Plus Jakarta Sans", system-ui, sans-serif);
 }
 .prose-article p {
   margin-bottom: 1.15rem;
@@ -204,6 +207,63 @@ h4,
 }
 .prose-article a:hover {
   color: var(--color-accent-600);
+}
+/* Tables */
+.prose-article table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 1.5rem 0;
+  font-size: 0.9rem;
+  border-radius: 0.75rem;
+  overflow: hidden;
+  border: 1px solid var(--color-slate-200, #e2e8f0);
+}
+.prose-article thead {
+  background: linear-gradient(135deg, var(--color-brand-50, #eff6ff), var(--color-brand-100, #dbeafe));
+}
+.prose-article th {
+  padding: 0.75rem 1rem;
+  text-align: left;
+  font-weight: 600;
+  color: var(--color-ink-900);
+  font-size: 0.85rem;
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+  border-bottom: 2px solid var(--color-brand-200, #bfdbfe);
+}
+.prose-article td {
+  padding: 0.65rem 1rem;
+  border-bottom: 1px solid var(--color-slate-100, #f1f5f9);
+  color: var(--color-ink-700);
+}
+.prose-article tbody tr:last-child td {
+  border-bottom: none;
+}
+.prose-article tbody tr:hover {
+  background-color: var(--color-brand-50, #eff6ff);
+}
+/* Blockquotes */
+.prose-article blockquote {
+  margin: 1.5rem 0;
+  padding: 1rem 1.25rem;
+  border-left: 4px solid var(--color-brand-400, #60a5fa);
+  background: var(--color-brand-50, #eff6ff);
+  border-radius: 0 0.75rem 0.75rem 0;
+  color: var(--color-ink-800);
+  font-size: 0.95rem;
+}
+.prose-article blockquote p {
+  margin-bottom: 0.5rem;
+}
+.prose-article blockquote p:last-child {
+  margin-bottom: 0;
+}
+/* Horizontal rule */
+.prose-article hr {
+  margin: 2.5rem 0;
+  border: none;
+  height: 2px;
+  background: linear-gradient(90deg, transparent, var(--color-brand-200, #bfdbfe), transparent);
 }
 
 /* ---------- Accessibilité : focus visible homogène ---------- */

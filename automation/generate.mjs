@@ -146,16 +146,19 @@ async function generateBlogMeta(research) {
         {
           role: "system",
           content:
-            "Tu génères des métadonnées SEO en français. Réponds STRICTEMENT en JSON.",
+            "Tu génères des métadonnées SEO en français pour un blog voyage premium. " +
+            "Les titres doivent être accrocheurs et spécifiques (avec chiffres, durée, budget si pertinent). " +
+            "Les descriptions doivent donner envie de cliquer. Réponds STRICTEMENT en JSON.",
         },
         {
           role: "user",
           content:
             `Sujet : "${research.idea}" (destination : ${research.destination}).\n` +
-            'Renvoie {"title": string (55-65 car.), "description": string (140-160 car.), "emoji": string (un emoji)}.',
+            "Renvoie {\"title\": string (50-70 car., accrocheur avec chiffre ou angle précis), " +
+            "\"description\": string (140-160 car., qui donne envie de lire l'article)}.",
         },
       ],
-      { temperature: 0.4, maxTokens: 300 }
+      { temperature: 0.5, maxTokens: 300 }
     );
     const parsed = safeParseJson(content);
     return {
@@ -236,23 +239,32 @@ async function generateBlogMarkdown(research) {
   const days = parseDays(research.idea);
   const daysHint = days ? ` Respecte EXACTEMENT ${days} jours (pas de Jour ${days + 1}).` : "";
   const system =
-    "Tu es rédacteur web SEO francophone senior pour TripPilot Guides (guides de voyage PDF). " +
-    "Français clair, concret, fiable, orienté conversion mais JAMAIS mensonger. " +
-    "Tu t'appuies UNIQUEMENT sur les données de recherche ; pour toute info absente ou non " +
-    "sourcée, reste prudent (« à vérifier », « comptez environ »). Style CONCIS, phrases courtes. " +
-    "Titres ## et ### (PAS de #). N'ajoute PAS d'encadré « à vérifier », ni sources, ni CTA, ni " +
-    "disclaimer (ajoutés ensuite). TERMINE toujours par une phrase complète. Markdown BRUT.";
+    "Tu es rédacteur voyage senior pour TripPilot Guides, un média premium de guides de voyage PDF. " +
+    "STYLE : prose fluide et engageante, comme un ami expérimenté qui raconte. Phrases variées " +
+    "(pas uniquement courtes). Utilise des transitions naturelles, des anecdotes concrètes et " +
+    "des conseils actionnables. Le lecteur doit se projeter dans le voyage.\n" +
+    "QUALITÉ : contenu de niveau magazine (Lonely Planet, Routard haut de gamme). Pas de " +
+    "listes plates ennuyeuses — chaque jour raconte une mini-histoire.\n" +
+    "FIABILITÉ : appuie-toi sur les données de recherche. Pour toute info non sourcée, " +
+    "reste prudent (« comptez environ », « à vérifier »).\n" +
+    "FORMAT : Titres ## et ### uniquement (PAS de #). N'ajoute PAS de disclaimer, sources " +
+    "ni CTA (ajoutés automatiquement). TERMINE toujours par une phrase complète. Markdown BRUT.\n" +
+    "OBJECTIF : que le lecteur se dise « ce site sait de quoi il parle, je vais acheter le guide ».";
 
   const defs = [
     {
       name: "blog-intro-itinerary",
       instr:
         "Rédige UNIQUEMENT :\n" +
-        "- Une introduction (2-3 phrases) avec un angle commercial clair (problème du lecteur + promesse).\n" +
-        "## Itinéraire jour par jour (par jour : matin / après-midi / soir, phrases courtes)." +
+        "- Une introduction captivante (3-4 phrases) : pose le décor, crée l'envie avec une image " +
+        "mentale du voyage (un lieu, une ambiance, un moment). Enchaîne avec la promesse de l'article.\n" +
+        "## Itinéraire jour par jour\n" +
+        "Pour CHAQUE jour : un titre évocateur (### Jour X — Nom de l'ambiance), puis matin / " +
+        "après-midi / soir avec des mini-paragraphes narratifs (pas juste des bullet points). " +
+        "Glisse des tips pratiques et des estimations de prix quand disponibles." +
         daysHint,
       maxTokens: 3000,
-      words: 600,
+      words: 700,
       fb: () =>
         `Préparez votre voyage à ${research.destination || "votre destination"} sans stress, avec un plan clair.\n\n` +
         `## Itinéraire jour par jour\n\n${shortItinerary(research)}`,
@@ -261,27 +273,37 @@ async function generateBlogMarkdown(research) {
       name: "blog-budget-errors",
       instr:
         "Rédige UNIQUEMENT :\n" +
-        "## Budget détaillé (un tableau Markdown à 3 niveaux : routard / équilibré / confort, montants indicatifs)\n" +
-        "## Erreurs à éviter (liste courte)",
+        "## Budget détaillé\n" +
+        "Un paragraphe d'intro qui contextualise (« Voici à quoi ressemble un budget réaliste... »), " +
+        "puis un tableau Markdown à 3 niveaux (routard / équilibré / confort) avec colonnes : poste, " +
+        "fourchette basse, fourchette haute. Ajoute une phrase de conseil après le tableau.\n\n" +
+        "## Les erreurs qui gâchent un premier voyage\n" +
+        "5-7 erreurs concrètes avec explication courte (pas juste un mot). Ton vécu et direct, " +
+        "comme si tu prévenais un ami.",
       maxTokens: 2500,
-      words: 450,
+      words: 500,
       fb: () =>
         `## Budget détaillé\n\n| Niveau | Indicatif / jour |\n| --- | --- |\n| Routard | à vérifier |\n| Équilibré | à vérifier |\n| Confort | à vérifier |\n\n` +
-        `## Erreurs à éviter\n\n- Sous-estimer les distances et la fatigue.\n- Réserver trop tard.`,
+        `## Les erreurs qui gâchent un premier voyage\n\n- Sous-estimer les distances et la fatigue.\n- Réserver trop tard.`,
     },
     {
       name: "blog-transport-sleep-booking",
       instr:
         "Rédige UNIQUEMENT :\n" +
-        "## Transports (aéroport et sur place, concis)\n" +
-        "## Où dormir (quartiers selon budget)\n" +
-        "## Quoi réserver avant de partir (liste courte)",
+        "## Se déplacer sur place\n" +
+        "Comment aller de l'aéroport au centre, quel pass transport prendre, et les astuces " +
+        "locales. Style direct et pratique.\n\n" +
+        "## Où dormir (et où éviter)\n" +
+        "Les quartiers recommandés selon le budget et le style de voyage. Mentionne 2-3 quartiers " +
+        "avec leur ambiance et fourchette de prix.\n\n" +
+        "## À réserver avant de partir\n" +
+        "Liste priorisée de ce qui se réserve en avance vs sur place.",
       maxTokens: 2500,
-      words: 450,
+      words: 500,
       fb: () =>
-        `## Transports\n\n- Depuis l'aéroport et sur place : à vérifier selon la destination.\n\n` +
-        `## Où dormir\n\n- Quartiers centraux pour un premier séjour.\n\n` +
-        `## Quoi réserver avant de partir\n\n- Hébergement, billets des sites courus, transferts.`,
+        `## Se déplacer sur place\n\n- Depuis l'aéroport et sur place : à vérifier selon la destination.\n\n` +
+        `## Où dormir (et où éviter)\n\n- Quartiers centraux pour un premier séjour.\n\n` +
+        `## À réserver avant de partir\n\n- Hébergement, billets des sites courus, transferts.`,
     },
   ];
 
@@ -656,23 +678,38 @@ function cleanAwkwardSocialPhrases(md) {
 /** Contenus réseaux sociaux : Markdown BRUT (avec normalisation si JSON renvoyé). */
 async function generateSocialMarkdown(research) {
   const system =
-    "Tu es social media manager voyage pour TripPilot Guides. " +
-    "Accroches en français jouant sur l'émotion/le problème du voyageur. " +
-    "RÈGLE STRICTE 1 : seule la CHECKLIST est gratuite. Le guide PDF complet n'est JAMAIS " +
-    "gratuit ni offert ; il est payant (« guide PDF complet à acheter »). " +
-    "RÈGLE STRICTE 2 : n'invente AUCUN chiffre. N'utilise un prix ou un pourcentage que s'il " +
-    "figure dans les données de recherche. Sinon, écris « budget indicatif » sans chiffre. " +
-    "Pas de promesses du type « économiser 50% », « moins de X€ », « sans rien rater ». " +
+    "Tu es directeur créatif social media pour TripPilot Guides, une marque premium de guides de voyage PDF. " +
+    "Ton style : aspirationnel, concret et émotionnel. Tu crées du contenu qui STOPPE le scroll sur Pinterest. " +
+    "RÈGLES STRICTES :\n" +
+    "1. Seule la CHECKLIST est gratuite. Le guide PDF complet est payant.\n" +
+    "2. N'invente AUCUN chiffre non présent dans les données de recherche.\n" +
+    "3. Pas de promesses vagues (« économiser 50% », « sans rien rater »).\n" +
+    "4. Chaque titre Pinterest DOIT donner envie de cliquer en jouant sur : la curiosité, la peur de mal faire, " +
+    "le gain de temps, ou l'émotion du voyage.\n" +
+    "5. Les titres Pinterest font 6-10 mots MAX, percutants, avec UN angle précis.\n" +
     "Tu réponds en Markdown BRUT.";
   const user =
     "DONNÉES DE RECHERCHE :\n" +
     researchContext(research) +
     "\n\n" +
-    "Rédige UNIQUEMENT, en Markdown, ces trois sections :\n" +
-    "## 📌 Idées Pinterest (10)\n(liste numérotée de 10 titres d'épingles avec hashtags)\n\n" +
-    "## 🎬 Hooks TikTok / Reels (10)\n(liste numérotée de 10 accroches qui stoppent le scroll)\n\n" +
-    "## 📝 Scripts courts (5)\n(5 scripts de 15-30s : accroche + corps + CTA vers la checklist gratuite ou le guide PDF complet à acheter)\n\n" +
-    "Angle émotionnel/problème. Ne promets jamais un guide gratuit. Ne mets pas de bloc ```; renvoie directement le Markdown.";
+    "Rédige ces trois sections :\n\n" +
+    "## Idées Pinterest (10)\n" +
+    "10 titres d'épingles COURTS et PERCUTANTS (format liste numérotée).\n" +
+    "Chaque titre : 6-10 mots, UN angle précis, donne envie de sauvegarder.\n" +
+    "Exemples de formats qui marchent :\n" +
+    "- « [Ville] : [X] erreurs que tout le monde fait »\n" +
+    "- « Mon itinéraire [X] jours à [Ville] (testé) »\n" +
+    "- « [Ville] avec [budget] : c'est possible »\n" +
+    "- « Où dormir à [Ville] selon ton budget »\n" +
+    "- « [Ville] : le quartier que personne ne connaît »\n" +
+    "Ajoute 3-5 hashtags pertinents après chaque titre.\n\n" +
+    "## Hooks TikTok / Reels (10)\n" +
+    "10 accroches de 1-2 phrases qui créent de la tension/curiosité.\n" +
+    "Formats : question provocante, « Si tu pars à [Ville]... », contre-intuition, storytelling.\n\n" +
+    "## Scripts courts (5)\n" +
+    "5 scripts de 15-30s : hook émotionnel + valeur concrète + CTA.\n" +
+    "CTA = checklist gratuite OU guide PDF complet (payant).\n\n" +
+    "Ne mets pas de bloc ```; renvoie directement le Markdown.";
 
   const raw = (
     await mistralChat(

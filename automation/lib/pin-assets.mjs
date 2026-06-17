@@ -104,41 +104,70 @@ function svgTextLines(text, maxChars = 17) {
 export function renderPinSvg(pin) {
   const overlayLines = svgTextLines(pin.overlayText || pin.title);
   const titleLines = svgTextLines(pin.title, 28).slice(0, 2);
+  const dest = escapeXml(pin.destination || "Voyage");
   const overlay = overlayLines
     .map(
       (line, index) =>
-        `<text x="80" y="${560 + index * 92}" font-size="78" font-weight="800" fill="#ffffff">${escapeXml(line)}</text>`
+        `<text x="500" y="${620 + index * 100}" font-size="82" font-weight="800" fill="#ffffff" text-anchor="middle" font-family="system-ui,-apple-system,sans-serif">${escapeXml(line)}</text>`
     )
     .join("\n");
   const title = titleLines
     .map(
       (line, index) =>
-        `<text x="80" y="${1050 + index * 42}" font-size="34" font-weight="700" fill="#eef2ff">${escapeXml(line)}</text>`
+        `<text x="500" y="${1080 + index * 44}" font-size="32" font-weight="600" fill="#f1f5f9" text-anchor="middle" font-family="system-ui,-apple-system,sans-serif">${escapeXml(line)}</text>`
     )
     .join("\n");
 
   return `<svg xmlns="http://www.w3.org/2000/svg" width="${PIN_WIDTH}" height="${PIN_HEIGHT}" viewBox="0 0 ${PIN_WIDTH} ${PIN_HEIGHT}">
   <defs>
-    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
-      <stop offset="0" stop-color="#4f46e5"/>
-      <stop offset="0.55" stop-color="#8b5cf6"/>
+    <linearGradient id="bg" x1="0" y1="0" x2="0.4" y2="1">
+      <stop offset="0" stop-color="#1e1b4b"/>
+      <stop offset="0.5" stop-color="#312e81"/>
       <stop offset="1" stop-color="#0f766e"/>
     </linearGradient>
-    <radialGradient id="glow" cx="0.22" cy="0.08" r="0.9">
-      <stop offset="0" stop-color="#ffffff" stop-opacity="0.28"/>
-      <stop offset="1" stop-color="#ffffff" stop-opacity="0"/>
+    <linearGradient id="accent" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#818cf8"/>
+      <stop offset="1" stop-color="#34d399"/>
+    </linearGradient>
+    <radialGradient id="glow" cx="0.5" cy="0.35" r="0.6">
+      <stop offset="0" stop-color="#818cf8" stop-opacity="0.15"/>
+      <stop offset="1" stop-color="#818cf8" stop-opacity="0"/>
     </radialGradient>
+    <filter id="shadow" x="-10%" y="-10%" width="120%" height="120%">
+      <feDropShadow dx="0" dy="4" stdDeviation="6" flood-color="#000000" flood-opacity="0.3"/>
+    </filter>
   </defs>
+
+  <!-- Fond principal -->
   <rect width="${PIN_WIDTH}" height="${PIN_HEIGHT}" fill="url(#bg)"/>
   <rect width="${PIN_WIDTH}" height="${PIN_HEIGHT}" fill="url(#glow)"/>
-  <rect x="54" y="54" width="892" height="1392" rx="46" fill="none" stroke="#ffffff" stroke-opacity="0.38" stroke-width="3"/>
-  <text x="80" y="160" font-size="36" font-weight="800" fill="#ffffff" opacity="0.9">TripPilot Guides</text>
-  <text x="80" y="246" font-size="48" font-weight="800" fill="#d1fae5">${escapeXml(pin.destination || "Voyage")}</text>
+
+  <!-- Éléments décoratifs -->
+  <circle cx="850" cy="200" r="180" fill="#818cf8" opacity="0.08"/>
+  <circle cx="150" cy="1300" r="220" fill="#34d399" opacity="0.06"/>
+  <rect x="70" y="440" width="860" height="520" rx="32" fill="#ffffff" fill-opacity="0.05" stroke="#ffffff" stroke-opacity="0.12" stroke-width="1.5"/>
+
+  <!-- Logo & branding (haut) -->
+  <rect x="70" y="70" width="180" height="44" rx="22" fill="#ffffff" fill-opacity="0.15"/>
+  <text x="110" y="100" font-size="22" font-weight="700" fill="#ffffff" font-family="system-ui,-apple-system,sans-serif" opacity="0.95">TripPilot</text>
+
+  <!-- Destination badge -->
+  <rect x="70" y="160" width="${Math.min(dest.length * 28 + 60, 500)}" height="64" rx="32" fill="url(#accent)" opacity="0.9"/>
+  <text x="100" y="202" font-size="36" font-weight="800" fill="#ffffff" font-family="system-ui,-apple-system,sans-serif">${dest}</text>
+
+  <!-- Texte principal (overlay) -->
   ${overlay}
-  <rect x="80" y="910" width="210" height="8" rx="4" fill="#ffffff" opacity="0.8"/>
+
+  <!-- Séparateur -->
+  <rect x="380" y="980" width="240" height="5" rx="3" fill="url(#accent)" opacity="0.7"/>
+
+  <!-- Sous-titre -->
   ${title}
-  <text x="80" y="1308" font-size="30" font-weight="700" fill="#ffffff" opacity="0.9">Itinéraire · budget · checklist</text>
-  <text x="80" y="1370" font-size="24" font-weight="600" fill="#e0e7ff">${escapeXml(pin.url || "trippilotguides.com")}</text>
+
+  <!-- Footer -->
+  <rect x="70" y="1280" width="860" height="140" rx="24" fill="#ffffff" fill-opacity="0.08"/>
+  <text x="500" y="1340" font-size="28" font-weight="700" fill="#e0e7ff" text-anchor="middle" font-family="system-ui,-apple-system,sans-serif">Itinéraire · Budget · Checklist</text>
+  <text x="500" y="1388" font-size="22" font-weight="600" fill="#94a3b8" text-anchor="middle" font-family="system-ui,-apple-system,sans-serif">${escapeXml(pin.url || "trippilotguides.com")}</text>
 </svg>`;
 }
 
