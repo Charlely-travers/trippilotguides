@@ -5,7 +5,7 @@ pubDate: "2026-06-16"
 emoji: "🇵🇹"
 gradient: "from-brand-500 via-accent-500 to-accent-600"
 readingTime: "9 min"
-draft: true
+draft: false
 destination: "Lisbonne"
 guideSlug: "lisbonne"
 checklistSlug: "lisbonne"
@@ -126,7 +126,7 @@ Les prix peuvent varier selon la saison.
 
 ## Sources
 
-_Aucune source vérifiée n'a été collectée pour ce brouillon : les informations doivent être confirmées avant toute publication._
+_Sources officielles à consulter : office du tourisme de Lisbonne (visitlisboa.com), Carris (transports), site de l'aéroport de Lisbonne._
 
 
 > Les prix et horaires peuvent évoluer. Vérifiez toujours les informations importantes avant votre départ.

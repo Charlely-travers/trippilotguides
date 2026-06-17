@@ -1,5 +1,6 @@
 ---
 import type { Guide } from "@/data/guides";
+import { getCityImage } from "@/data/cities";
 import Badge from "./Badge.astro";
 import Button from "./Button.astro";
 
@@ -8,28 +9,29 @@ interface Props {
 }
 const { guide } = Astro.props;
 const isAvailable = guide.status === "available";
+const city = getCityImage(guide.slug);
 ---
 
 <article
   class="group flex flex-col overflow-hidden rounded-2xl border border-slate-200/80 bg-surface shadow-card transition-all duration-300 hover:-translate-y-1.5 hover:border-brand-200 hover:shadow-lift"
 >
-  <div
-    class={`relative flex h-44 items-center justify-center overflow-hidden bg-gradient-to-br ${guide.gradient}`}
-    aria-hidden="true"
-  >
-    <div
-      class="absolute inset-0 opacity-30 mix-blend-overlay"
-      style="background-image: radial-gradient(circle at 30% 20%, rgba(255,255,255,.5), transparent 45%);"
-    >
+  <div class="relative h-44 overflow-hidden">
+    <img
+      src={city.card}
+      alt={`Vue de ${guide.destination}`}
+      class="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
+      loading="lazy"
+    />
+    <div class="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent"></div>
+    <div class="absolute bottom-3 left-4">
+      <h3 class="font-display text-lg font-bold text-white drop-shadow">
+        {guide.destination}
+      </h3>
     </div>
-    <span
-      class="text-6xl drop-shadow-sm transition-transform duration-500 group-hover:scale-110"
-      >{guide.emoji}</span
-    >
     <div class="absolute right-3 top-3">
       {
         isAvailable ? (
-          <Badge variant="success">● Disponible</Badge>
+          <Badge variant="success">Disponible</Badge>
         ) : (
           <Badge variant="soft">Bientôt</Badge>
         )
@@ -38,10 +40,7 @@ const isAvailable = guide.status === "available";
   </div>
 
   <div class="flex flex-1 flex-col p-5">
-    <h3 class="font-display text-lg font-bold text-ink-900">
-      {guide.destination}
-    </h3>
-    <p class="mt-1 text-sm text-ink-500">{guide.title}</p>
+    <p class="text-sm text-ink-500">{guide.title}</p>
 
     <dl class="mt-4 grid grid-cols-2 gap-3 text-sm">
       <div>

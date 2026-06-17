@@ -122,7 +122,7 @@ export default async function handler(req, res) {
 
   const redirectUrl =
     process.env.LEAD_MAGNET_SUCCESS_URL ||
-    `${String(process.env.SITE_URL || "").replace(/\/$/, "")}/checklists/${encodeURIComponent(slug)}?sent=1`;
+    `${String(process.env.SITE_URL || "https://www.trippilotguides.com").replace(/\/$/, "")}/checklist-rome-gratuite?sent=1`;
   res.writeHead(303, { Location: redirectUrl });
   res.end();
 }

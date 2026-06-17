@@ -27,13 +27,13 @@ export const LINKS = {
   email: "hello@trippilotguides.com",
 } as const;
 
-/** Informations société / éditeur (pages légales). À compléter. */
+/** Informations éditeur (pages légales). */
 export const COMPANY = {
-  legalName: "[À COMPLÉTER — nom de l'éditeur / micro-entreprise]",
-  status: "[À COMPLÉTER — ex. Micro-entrepreneur]",
-  siret: "[À COMPLÉTER — n° SIRET]",
-  address: "[À COMPLÉTER — adresse postale]",
-  publicationManager: "[À COMPLÉTER — nom du directeur de la publication]",
+  legalName: "Personne physique",
+  status: "Éditeur particulier (non-commercial)",
+  siret: "Non applicable",
+  address: "Non applicable",
+  publicationManager: "Éditeur du site TripPilot Guides",
   host: {
     name: "Vercel Inc.",
     address: "340 S Lemon Ave #4133, Walnut, CA 91789, USA",

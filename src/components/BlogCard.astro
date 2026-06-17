@@ -1,29 +1,31 @@
 ---
+import { getCityImage } from "@/data/cities";
 import Badge from "./Badge.astro";
 
 interface Props {
   href: string;
   title: string;
   description: string;
-  emoji: string;
-  gradient: string;
+  /** Slug ou nom de ville pour l'image */
+  citySlug?: string;
   readingTime: string;
 }
-const { href, title, description, emoji, gradient, readingTime } = Astro.props;
+const { href, title, description, citySlug = "", readingTime } = Astro.props;
+const city = getCityImage(citySlug || href.split("/").pop() || "");
 ---
 
 <article
   class="group flex flex-col overflow-hidden rounded-2xl border border-slate-200/80 bg-surface shadow-card transition-all duration-300 hover:-translate-y-1.5 hover:border-brand-200 hover:shadow-lift"
 >
   <a href={href} class="flex flex-1 flex-col">
-    <div
-      class={`relative flex h-36 items-center justify-center overflow-hidden bg-gradient-to-br ${gradient}`}
-      aria-hidden="true"
-    >
-      <span
-        class="text-4xl drop-shadow-sm transition-transform duration-500 group-hover:scale-110"
-        >{emoji}</span
-      >
+    <div class="relative h-36 overflow-hidden">
+      <img
+        src={city.card}
+        alt=""
+        class="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
+        loading="lazy"
+      />
+      <div class="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent"></div>
     </div>
     <div class="flex flex-1 flex-col p-5">
       <Badge variant="neutral" class="self-start">Article · {readingTime}</Badge>
@@ -38,7 +40,7 @@ const { href, title, description, emoji, gradient, readingTime } = Astro.props;
       >
         Lire l'article
         <span class="transition-transform duration-200 group-hover:translate-x-1"
-          >→</span
+          >&rarr;</span
         >
       </span>
     </div>

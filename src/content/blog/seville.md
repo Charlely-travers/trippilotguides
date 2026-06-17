@@ -5,7 +5,7 @@ pubDate: "2026-06-16"
 emoji: "🇪🇸"
 gradient: "from-brand-500 via-accent-500 to-accent-600"
 readingTime: "9 min"
-draft: true
+draft: false
 destination: "Séville"
 guideSlug: "seville"
 checklistSlug: "seville"
