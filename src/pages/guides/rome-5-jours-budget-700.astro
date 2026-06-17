@@ -118,16 +118,14 @@ const faqSchema = {
 
           <div class="mt-7 flex flex-wrap items-center gap-4">
             <span class="font-display text-3xl font-extrabold text-ink-900">{guide.price}</span>
-            <Button href={LINKS.buyRomeGuide} external size="lg" variant="primary">
-              Acheter le guide
+            <Button href="/contact" size="lg" variant="primary">
+              Acheter le guide (bientôt)
             </Button>
             <a
               href={LINKS.freeChecklist}
-              target="_blank"
-              rel="noopener noreferrer"
               class="text-sm font-semibold text-brand-700 hover:underline"
             >
-              ou télécharge d'abord la checklist gratuite
+              ou téléchargez d'abord la checklist gratuite
             </a>
           </div>
 
@@ -292,17 +290,13 @@ const faqSchema = {
         </p>
         <div class="relative mt-7 flex flex-col items-center justify-center gap-3 sm:flex-row">
           <a
-            href={LINKS.buyRomeGuide}
-            target="_blank"
-            rel="noopener noreferrer"
+            href="/contact"
             class="inline-flex items-center justify-center rounded-full bg-white px-7 py-3.5 text-[0.95rem] font-semibold text-brand-700 shadow-soft transition-all hover:-translate-y-0.5 hover:shadow-lift"
           >
-            Acheter le guide — {guide.price}
+            Acheter le guide — {guide.price} (bientôt)
           </a>
           <a
             href={LINKS.freeChecklist}
-            target="_blank"
-            rel="noopener noreferrer"
             class="inline-flex items-center justify-center rounded-full px-7 py-3.5 text-[0.95rem] font-semibold text-white ring-1 ring-white/40 transition-all hover:bg-white/10"
           >
             Checklist gratuite

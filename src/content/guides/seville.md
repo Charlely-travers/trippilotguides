@@ -9,7 +9,7 @@ emoji: "📍"
 gradient: "from-brand-500 via-accent-500 to-accent-600"
 buyLink: "https://buy.stripe.com/test_14A8wP5o2e9wco6bTCeUU00"
 checklistLink: "/checklists/seville"
-draft: false
+draft: true
 ---
 
 ## Ce que contient le guide

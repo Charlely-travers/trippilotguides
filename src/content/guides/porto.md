@@ -9,7 +9,7 @@ emoji: "📍"
 gradient: "from-brand-500 via-accent-500 to-accent-600"
 buyLink: "https://buy.stripe.com/test_aFa7sLbMq2qO0FoaPyeUU01"
 checklistLink: "/checklists/porto"
-draft: false
+draft: true
 ---
 
 ## Ce que contient le guide

@@ -19,10 +19,10 @@ export const SITE = {
 
 /** Liens externes — à remplacer par les vrais. */
 export const LINKS = {
-  // Achat du guide Rome (Gumroad / Etsy / Payhip)
-  buyRomeGuide: "https://gumroad.com/l/rome-guide-placeholder",
-  // Formulaire de capture d'email pour la checklist gratuite (Tally / MailerLite)
-  freeChecklist: "https://tally.so/r/placeholder",
+  // Achat du guide Rome — pointe vers la page guide pour l'instant
+  buyRomeGuide: "/guides/rome-5-jours-budget-700",
+  // Checklist gratuite — page interne
+  freeChecklist: "/checklist-rome-gratuite",
   // Contact
   email: "hello@trippilotguides.com",
 } as const;
@@ -35,8 +35,8 @@ export const COMPANY = {
   address: "[À COMPLÉTER — adresse postale]",
   publicationManager: "[À COMPLÉTER — nom du directeur de la publication]",
   host: {
-    name: "[À COMPLÉTER — hébergeur, ex. Netlify, Vercel, OVH]",
-    address: "[À COMPLÉTER — adresse de l'hébergeur]",
+    name: "Vercel Inc.",
+    address: "340 S Lemon Ave #4133, Walnut, CA 91789, USA",
   },
 } as const;
 

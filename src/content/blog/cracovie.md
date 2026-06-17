@@ -8,7 +8,7 @@ readingTime: "9 min"
 destination: "Cracovie"
 guideSlug: "cracovie"
 checklistSlug: "cracovie"
-draft: false
+draft: true
 ---
 
 ## **Cracovie en 3 jours : plongez dans l’histoire sans vous ruiner**
