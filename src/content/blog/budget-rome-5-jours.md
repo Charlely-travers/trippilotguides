@@ -2,6 +2,7 @@
 title: "Quel budget prévoir pour 5 jours à Rome ?"
 description: "Estimation détaillée du budget pour 5 jours à Rome : vol, logement, repas, transports et visites. Combien prévoir et comment voyager autour de 700€."
 pubDate: 2026-05-30
+destination: "Rome"
 emoji: "💶"
 gradient: "from-emerald-400 via-teal-400 to-cyan-500"
 readingTime: "7 min"

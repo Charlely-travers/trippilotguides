@@ -2,6 +2,7 @@
 title: "Rome en 5 jours : itinéraire complet pour un premier voyage"
 description: "Un itinéraire clair de 5 jours à Rome pour un premier voyage : que voir chaque jour, dans quel ordre, et comment organiser ses journées sans stress."
 pubDate: 2026-05-28
+destination: "Rome"
 emoji: "🏛️"
 gradient: "from-rose-400 via-amber-400 to-orange-500"
 readingTime: "8 min"

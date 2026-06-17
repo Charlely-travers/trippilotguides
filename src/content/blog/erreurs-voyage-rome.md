@@ -2,6 +2,7 @@
 title: "Les erreurs à éviter lors d'un premier voyage à Rome"
 description: "Les erreurs les plus fréquentes lors d'un premier voyage à Rome et comment les éviter : billets, arnaques, horaires, code vestimentaire et organisation."
 pubDate: 2026-06-05
+destination: "Rome"
 emoji: "⚠️"
 gradient: "from-orange-400 via-red-400 to-rose-500"
 readingTime: "7 min"

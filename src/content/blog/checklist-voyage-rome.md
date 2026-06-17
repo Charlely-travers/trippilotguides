@@ -2,6 +2,7 @@
 title: "Checklist voyage Rome : quoi préparer avant de partir"
 description: "La checklist complète pour préparer votre voyage à Rome : documents, budget, valise, transports, logement et applis utiles. Ne rien oublier avant le départ."
 pubDate: 2026-06-08
+destination: "Rome"
 emoji: "✅"
 gradient: "from-brand-500 via-accent-500 to-accent-600"
 readingTime: "6 min"

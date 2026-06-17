@@ -229,7 +229,7 @@ const posts = (await getCollection("blog"))
               href={`/blog/${post.id}`}
               title={post.data.title}
               description={post.data.description}
-              citySlug={post.id}
+              citySlug={post.data.destination || post.id}
               readingTime={post.data.readingTime}
             />
           ))

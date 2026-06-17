@@ -2,6 +2,7 @@
 title: "Où dormir à Rome pour visiter facilement ?"
 description: "Guide des meilleurs quartiers où dormir à Rome selon votre budget et votre style : centre historique, Monti, Trastevere, Termini ou Prati. Avantages et conseils."
 pubDate: 2026-06-02
+destination: "Rome"
 emoji: "🏨"
 gradient: "from-slate-400 via-indigo-400 to-blue-500"
 readingTime: "7 min"

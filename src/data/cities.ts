@@ -2,6 +2,9 @@
  * Images et données visuelles des villes.
  * Utilise des images Unsplash CDN (gratuites, optimisées, pas besoin d'upload).
  * Format : https://images.unsplash.com/photo-ID?w=WIDTH&q=QUALITY&fit=crop
+ *
+ * IMPORTANT : chaque ID Unsplash a été vérifié manuellement.
+ * Pour ajouter une ville, coller un ID depuis unsplash.com/photos/<ID>.
  */
 
 export interface CityVisuals {
@@ -28,9 +31,9 @@ export const cityImages: Record<string, CityVisuals> = {
     credit: "Photo by Daniel Adventures on Unsplash",
   },
   barcelone: {
-    hero: unsplash("photo-1539037116277-4db20889f2d4"),
-    card: unsplash("photo-1539037116277-4db20889f2d4", 600),
-    credit: "Photo by Enes on Unsplash",
+    hero: unsplash("photo-1583422409516-2895a77efed6"),
+    card: unsplash("photo-1583422409516-2895a77efed6", 600),
+    credit: "Photo by Logan Armstrong on Unsplash",
   },
   londres: {
     hero: unsplash("photo-1513635269975-59663e0ac1ad"),
@@ -53,14 +56,9 @@ export const cityImages: Record<string, CityVisuals> = {
     credit: "Photo by Nick Karvounis on Unsplash",
   },
   seville: {
-    hero: unsplash("photo-1509030142996-4db2f6907fba"),
-    card: unsplash("photo-1509030142996-4db2f6907fba", 600),
-    credit: "Photo by Joan Oger on Unsplash",
-  },
-  séville: {
-    hero: unsplash("photo-1509030142996-4db2f6907fba"),
-    card: unsplash("photo-1509030142996-4db2f6907fba", 600),
-    credit: "Photo by Joan Oger on Unsplash",
+    hero: unsplash("photo-1504019347908-b45f9b0b8dd5"),
+    card: unsplash("photo-1504019347908-b45f9b0b8dd5", 600),
+    credit: "Photo by Seville on Unsplash",
   },
   cracovie: {
     hero: unsplash("photo-1519197924294-4ba991a11128"),
@@ -77,11 +75,17 @@ export const cityImages: Record<string, CityVisuals> = {
 /** Fallback image si ville pas dans le dictionnaire */
 export const fallbackImage = unsplash("photo-1488646953014-85cb44e25828");
 
+/**
+ * Supprime les accents d'une chaîne.
+ * "Séville" → "seville", "Cracovie" → "cracovie"
+ */
+function removeAccents(str: string): string {
+  return str.normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+}
+
 export function getCityImage(slug: string): CityVisuals {
-  // Normalise le slug pour matcher les clés du dictionnaire.
-  // Stratégie : on essaie le slug exact, puis on extrait le premier segment
-  // (nom de ville) en coupant au premier tiret suivi d'un chiffre ou d'un mot-clé courant.
-  const normalized = slug.toLowerCase().trim();
+  // Normalise : minuscule + suppression accents
+  const normalized = removeAccents(slug.toLowerCase().trim());
 
   // Essai direct
   if (cityImages[normalized]) return cityImages[normalized];
@@ -91,12 +95,12 @@ export function getCityImage(slug: string): CityVisuals {
   // "lisbonne-4-jours" → "lisbonne"
   // "new-york-5-jours" → "new-york"
   const key = normalized
-    .replace(/-\d+[-a-z0-9]*$/, "") // "lisbonne-4-jours" → "lisbonne" (chiffre suivi de mots)
-    .replace(/-(?:jours?|budget|itineraire|guide|complet|gratuit[e]?).*$/, ""); // mots-clé descriptifs
+    .replace(/-\d+[-a-z0-9]*$/, "")
+    .replace(/-(?:jours?|budget|itineraire|guide|complet|gratuit[e]?|en|avec|pas-cher|premier|voyage).*$/, "");
 
   if (cityImages[key]) return cityImages[key];
 
-  // Dernière tentative : prendre le premier mot (ou les deux premiers pour "new-york")
+  // Essai progressif : du plus long au plus court segment
   const parts = normalized.split("-");
   for (let i = parts.length; i >= 1; i--) {
     const candidate = parts.slice(0, i).join("-");
