@@ -13,8 +13,8 @@ export const SITE = {
     "Guides de voyage PDF complets : planning jour par jour, budget détaillé, quartiers où dormir, transports, checklist et conseils pratiques. Préparez votre voyage sans stress.",
   locale: "fr_FR",
   lang: "fr",
-  /** Image Open Graph par défaut (placeholder SVG généré localement). */
-  ogImage: "/og-image.svg",
+  /** Image Open Graph par défaut. */
+  ogImage: "/logo.png",
 } as const;
 
 /** Liens externes — à remplacer par les vrais. */
