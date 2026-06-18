@@ -2,10 +2,35 @@
 import { defineConfig } from "astro/config";
 import sitemap from "@astrojs/sitemap";
 
-// Remplace cette URL par ton domaine définitif (utile pour le SEO / sitemap / canonical).
-// Tailwind CSS v4 est intégré via PostCSS (voir postcss.config.mjs) pour
-// rester compatible avec le moteur Vite/Rolldown d'Astro 6.
+/**
+ * Plugin rehype : enveloppe chaque <table> dans <div class="table-scroll">
+ * pour un scroll horizontal propre sur mobile.
+ */
+function rehypeWrapTables() {
+  return (tree) => {
+    const visit = (node) => {
+      if (!node || !Array.isArray(node.children)) return;
+      node.children = node.children.map((child) => {
+        if (child.type === "element" && child.tagName === "table") {
+          return {
+            type: "element",
+            tagName: "div",
+            properties: { className: ["table-scroll"] },
+            children: [child],
+          };
+        }
+        visit(child);
+        return child;
+      });
+    };
+    visit(tree);
+  };
+}
+
 export default defineConfig({
   site: "https://trippilotguides.com",
   integrations: [sitemap()],
+  markdown: {
+    rehypePlugins: [rehypeWrapTables],
+  },
 });

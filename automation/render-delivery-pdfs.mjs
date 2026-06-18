@@ -66,6 +66,16 @@ async function main() {
     const guideMd = await readSafe(path.join(productDir, "guide.md"));
     if (!guideMd) continue;
 
+    // Charge la photo de la ville en data URI pour la couverture.
+    let coverImage = "";
+    try {
+      const imgPath = path.join(ROOT, "public", "images", "cities", `${slug}-hero.webp`);
+      const buf = await fs.readFile(imgPath);
+      coverImage = `data:image/webp;base64,${buf.toString("base64")}`;
+    } catch {
+      coverImage = "";
+    }
+
     const folder = deliveryFolderName(slug, product.deliveryToken || "");
     const targetDir = path.join(PUBLIC_DELIVERY_DIR, folder);
     await fs.mkdir(targetDir, { recursive: true });
@@ -78,6 +88,7 @@ async function main() {
         destination: product.destination || "",
         markdown: guideMd,
         kind: "guide",
+        coverImage,
       }),
       { waitUntil: "networkidle" }
     );

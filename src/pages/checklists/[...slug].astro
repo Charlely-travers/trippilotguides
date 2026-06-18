@@ -59,13 +59,15 @@ const formAction = isInternalForm ? "/api/lead-magnet" : formLink;
           <div
             id="lead-success"
             hidden
-            class="mt-7 flex items-start gap-3 rounded-2xl border border-emerald-200 bg-emerald-50 p-5"
+            class="mt-7 flex items-start gap-4 rounded-2xl border border-emerald-200 bg-gradient-to-br from-emerald-50 to-white p-5 shadow-soft"
           >
-            <svg class="mt-0.5 h-6 w-6 shrink-0 text-emerald-600" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+            <span class="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-emerald-100 text-emerald-600">
+              <svg class="h-6 w-6" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4 13a8 8 0 0 1 7-7.94"/><path d="M22 6 12 13 9 10"/><path d="M22 6v6a8 8 0 0 1-15.5 2.8"/></svg>
+            </span>
             <div>
-              <p class="font-display font-bold text-ink-900">C'est envoyé ! Vérifie ta boîte mail 📬</p>
+              <p class="font-display text-base font-bold text-ink-900">C'est envoyé ! Vérifie ta boîte mail</p>
               <p class="mt-1 text-sm text-ink-700">
-                Ta checklist arrive dans quelques secondes (pense à regarder les spams).
+                Ta checklist arrive dans quelques secondes (pense à regarder les courriers indésirables).
                 En attendant, découvre le <a href={`/guides/${guideSlug || entry.id}`} class="font-semibold text-brand-700 hover:underline">guide complet</a>.
               </p>
             </div>
@@ -118,10 +120,16 @@ const formAction = isInternalForm ? "/api/lead-magnet" : formLink;
           btn.innerHTML = "Envoi…";
         }
         try {
+          // IMPORTANT : envoyer en urlencoded (l'API ne parse pas le multipart).
+          const params = new URLSearchParams();
+          new FormData(form).forEach((value, key) => params.append(key, String(value)));
           const res = await fetch(form.action, {
             method: "POST",
-            headers: { Accept: "application/json" },
-            body: new FormData(form),
+            headers: {
+              Accept: "application/json",
+              "Content-Type": "application/x-www-form-urlencoded",
+            },
+            body: params.toString(),
           });
           if (!res.ok) throw new Error("send_failed");
           form.hidden = true;

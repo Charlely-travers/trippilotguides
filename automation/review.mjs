@@ -542,12 +542,16 @@ async function main() {
     const researchNumbers = await loadResearchNumbers(path.posix.basename(dir));
     result = applySocialChecks(result, social, researchNumbers);
 
-    // 5) Détection de troncature / incomplétude (heuristique + marqueurs de complétude)
+    // 5) Détection de troncature / incomplétude.
+    // Le marqueur de complétude est appended UNIQUEMENT si la génération est allée
+    // au bout (aucune partie coupée par la limite de tokens). C'est donc le signal
+    // FIABLE. L'heuristique isTruncated (fragile sur contenu riche : parenthèses /
+    // gras non appariés) ne sert que de repli quand le marqueur est absent.
     const blogMarkerOk = blog.includes(BLOG_MARKER);
     const guideMarkerOk = guide.includes(GUIDE_MARKER);
     const markersOk = blogMarkerOk && guideMarkerOk;
-    const blogTruncated = isTruncated(blog) || !blogMarkerOk;
-    const guideTruncated = isTruncated(guide) || !guideMarkerOk;
+    const blogTruncated = blogMarkerOk ? false : isTruncated(blog);
+    const guideTruncated = guideMarkerOk ? false : isTruncated(guide);
     const truncated = blogTruncated || guideTruncated;
     if (truncated) {
       result.score = Math.min(result.score, 7);

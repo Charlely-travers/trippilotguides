@@ -224,11 +224,14 @@ function markdownBodyToHtml(markdown) {
 
 /* ---------------- Template PDF ---------------- */
 
-export function markdownToDeliveryHtml({ title, destination = "", markdown, kind = "guide" }) {
+export function markdownToDeliveryHtml({ title, destination = "", markdown, kind = "guide", coverImage = "" }) {
   const cleaned = kind === "guide" ? cleanGuideMarkdown(markdown) : stripFrontmatter(markdown);
   const body = markdownBodyToHtml(cleaned);
   const kicker = kind === "guide" ? "Guide de voyage PDF" : "Checklist de préparation";
   const dest = destination || "";
+  const coverPhoto = coverImage
+    ? `<div class="cover-photo" style="background-image:url('${coverImage}')"></div>`
+    : "";
 
   return `<!doctype html>
 <html lang="fr">
@@ -261,6 +264,21 @@ export function markdownToDeliveryHtml({ title, destination = "", markdown, kind
         page-break-after: always;
         overflow: hidden;
       }
+      .cover-photo {
+        position: absolute;
+        inset: 0;
+        background-size: cover;
+        background-position: center;
+        opacity: 0.55;
+        z-index: 0;
+      }
+      .cover-overlay {
+        position: absolute;
+        inset: 0;
+        background: linear-gradient(160deg, rgba(49,46,129,0.82) 0%, rgba(109,40,217,0.72) 50%, rgba(15,118,110,0.85) 100%);
+        z-index: 1;
+      }
+      .cover-brand, .cover-center, .cover-foot { position: relative; z-index: 2; }
       .cover::before {
         content: "";
         position: absolute;
@@ -268,25 +286,18 @@ export function markdownToDeliveryHtml({ title, destination = "", markdown, kind
         width: 140mm; height: 140mm;
         border-radius: 50%;
         background: rgba(255,255,255,0.08);
+        z-index: 1;
       }
-      .cover::after {
-        content: "";
-        position: absolute;
-        bottom: -50mm; left: -30mm;
-        width: 120mm; height: 120mm;
-        border-radius: 50%;
-        background: rgba(255,255,255,0.06);
-      }
-      .cover-brand { position: relative; font-size: 16px; font-weight: 800; letter-spacing: 0.5px; opacity: 0.95; }
-      .cover-center { position: relative; }
+      .cover-brand { font-size: 16px; font-weight: 800; letter-spacing: 0.5px; opacity: 0.95; }
+      .cover-center { }
       .cover-kicker {
         display: inline-block;
         font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 3px;
         background: rgba(255,255,255,0.18); padding: 6px 16px; border-radius: 999px; margin-bottom: 18px;
       }
-      .cover-title { font-size: 44px; line-height: 1.1; font-weight: 800; margin: 0 0 14px; }
-      .cover-dest { font-size: 20px; font-weight: 600; opacity: 0.92; }
-      .cover-foot { position: relative; font-size: 12px; opacity: 0.85; }
+      .cover-title { font-size: 44px; line-height: 1.1; font-weight: 800; margin: 0 0 14px; text-shadow: 0 2px 12px rgba(0,0,0,0.25); }
+      .cover-dest { font-size: 20px; font-weight: 600; opacity: 0.95; }
+      .cover-foot { font-size: 12px; opacity: 0.9; }
       .cover-rule { width: 60px; height: 5px; border-radius: 3px; background: #34d399; margin: 18px 0; }
 
       /* ---------- Contenu ---------- */
@@ -344,6 +355,8 @@ export function markdownToDeliveryHtml({ title, destination = "", markdown, kind
   </head>
   <body>
     <section class="cover">
+      ${coverPhoto}
+      <div class="cover-overlay"></div>
       <div class="cover-brand">TripPilot Guides</div>
       <div class="cover-center">
         <span class="cover-kicker">${escapeHtml(kicker)}</span>

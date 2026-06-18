@@ -371,30 +371,32 @@ async function generateBlogMarkdown(research) {
 /** Plan de guide PDF : petites parties concises (évite la troncature), assemblées. */
 async function generateGuidePart(research, instructions, maxTokens, wordTarget) {
   const system =
-    "Tu es concepteur de guides de voyage PDF pour TripPilot Guides. " +
-    "Style CONCIS et actionnable. RÈGLES STRICTES : aucune introduction, aucun " +
-    "paragraphe marketing, tableaux compacts, UNIQUEMENT les sections demandées, " +
-    `maximum ${wordTarget} mots, et TERMINE toujours par une phrase complète. ` +
-    "Markdown BRUT (pas de JSON, pas de bloc de code englobant).";
+    "Tu es l'auteur d'un guide de voyage PDF PREMIUM et PAYANT pour TripPilot Guides. " +
+    "Le client a payé : le contenu doit être RICHE, CONCRET, EXPERT et réellement utile — " +
+    "le genre de guide qu'on garde sur soi pendant tout le voyage.\n" +
+    "EXIGENCES :\n" +
+    "- Prose fluide et vivante, ton d'un ami local expert. Évite le remplissage générique.\n" +
+    "- Sois SPÉCIFIQUE : noms de lieux, durées conseillées, prix indicatifs, horaires malins, " +
+    "astuces d'initié, où manger à proximité, comment éviter la foule.\n" +
+    `- Vise environ ${wordTarget} mots pour cette partie : du contenu dense et valable.\n` +
+    "- Appuie-toi sur les données de recherche ; pour toute info non vérifiée, reste prudent " +
+    "(« comptez environ », « à vérifier »). N'invente pas d'adresses précises douteuses.\n" +
+    "FORMAT : Titres ## et ### uniquement (jamais de #, jamais de double dièse). " +
+    "Mets en **gras** les lieux et chiffres clés. Listes à puces quand pertinent. " +
+    "TERMINE toujours par une phrase complète. Markdown BRUT (pas de bloc de code englobant).";
   const user =
     "DONNÉES DE RECHERCHE :\n" +
     researchContext(research) +
     "\n\n" +
     instructions +
-    "\nSois bref. Ne mets pas de bloc ```; renvoie directement le Markdown.";
-  const { content, finishReason } = await mistralChatFull(
-    [
-      { role: "system", content: system },
-      { role: "user", content: user },
-    ],
-    { json: false, temperature: 0.4, maxTokens, model: GUIDE_MODEL }
-  );
-  const md = content
-    .trim()
-    .replace(/^```(?:markdown)?\s*/i, "")
-    .replace(/```$/i, "")
-    .trim();
-  return { md: normalizeHeadings(md), finishReason };
+    "\nNe mets pas de bloc ```; renvoie directement le Markdown.";
+  // Utilise le retry-si-tronqué pour garantir une section complète.
+  const { md, finishReason } = await markdownWithRetry(system, user, {
+    maxTokens,
+    model: GUIDE_MODEL,
+    temperature: 0.5,
+  });
+  return { md, finishReason };
 }
 
 async function generateGuideOutlineMarkdown(research) {
@@ -402,56 +404,79 @@ async function generateGuideOutlineMarkdown(research) {
   const daysHint = days ? `Respecte EXACTEMENT ${days} jours (pas de Jour ${days + 1}).` : "";
   const defs = [
     {
-      name: "structure-pdf",
-      instr: "Rédige UNIQUEMENT :\n## Structure du PDF (liste ordonnée et compacte des sections)",
-      maxTokens: 1000,
-      words: 200,
-      fb: () => buildGuideFallbackStructurePdf(research),
+      name: "intro",
+      instr:
+        `Rédige UNIQUEMENT :\n## Bienvenue à ${research.destination || "destination"}\n` +
+        "Une introduction chaleureuse et experte (180-250 mots) : ce qui rend la destination " +
+        "unique, l'ambiance des quartiers, à quoi s'attendre, la meilleure période, et comment " +
+        "tirer le meilleur de ce guide. Donne envie tout en restant concret.",
+      maxTokens: 1300,
+      words: 230,
+      fb: () =>
+        `## Bienvenue à ${research.destination || "destination"}\n\nCe guide vous accompagne pas à pas pour profiter pleinement de votre séjour.`,
     },
     {
-      name: "pages-prevues",
-      instr: "Rédige UNIQUEMENT :\n## Pages prévues (sommaire avec numéros de page indicatifs, liste compacte)",
-      maxTokens: 1000,
-      words: 200,
-      fb: () => buildGuideFallbackPages(research),
+      name: "itinerary",
+      instr:
+        "Rédige UNIQUEMENT :\n## Itinéraire jour par jour\n" +
+        "Pour CHAQUE jour : un titre `### Jour X — thème évocateur`, un court paragraphe " +
+        "d'introduction, puis **Matin**, **Après-midi**, **Soir** (en gras, suivis d'un tiret —) " +
+        "avec à chaque fois un VRAI paragraphe détaillé : lieux précis, ce qu'on y voit et " +
+        "pourquoi, durée conseillée, prix indicatif, astuce d'initié pour éviter la foule, et " +
+        "une suggestion de restaurant/café à proximité avec fourchette de prix. Riche et concret. " +
+        daysHint,
+      maxTokens: 4000,
+      words: 1200,
+      fb: () => buildGuideFallbackItinerary(research),
     },
     {
       name: "budget",
       instr:
-        "Rédige UNIQUEMENT :\n## Budget\nDeux tableaux Markdown COMPACTS : (1) budget par jour ; " +
-        "(2) budget par poste avec colonnes Bas / Moyen / Confort. Montants indicatifs.",
+        "Rédige UNIQUEMENT :\n## Budget détaillé\n" +
+        "Un paragraphe d'introduction, puis DEUX tableaux Markdown : (1) budget par poste et par " +
+        "jour ; (2) budget total du séjour par niveau (Bas / Moyen / Confort). Termine par 3 " +
+        "astuces d'économie concrètes et spécifiques à la destination.",
       maxTokens: 1800,
       words: 450,
       fb: () => buildGuideFallbackBudget(research),
     },
     {
-      name: "itinerary",
+      name: "sleep",
       instr:
-        "Rédige UNIQUEMENT :\n## Itinéraire jour par jour (par jour : matin / après-midi / soir, en phrases courtes)\n" +
-        "## Planning type d'une journée (un seul tableau Matin / Midi / Après-midi / Soir)\n" +
-        "## Alternatives pluie / fatigue (liste courte)\n" +
-        daysHint,
-      maxTokens: 2500,
-      words: 850,
-      fb: () => buildGuideFallbackItinerary(research),
+        "Rédige UNIQUEMENT :\n## Où dormir : les meilleurs quartiers\n" +
+        "Présente 3 à 4 quartiers : pour chacun, un paragraphe sur l'ambiance, pour qui c'est " +
+        "idéal, la fourchette de prix par nuit, et les points d'attention. Termine par un " +
+        "conseil de réservation (quand réserver, quoi éviter).",
+      maxTokens: 1800,
+      words: 480,
+      fb: () =>
+        `## Où dormir : les meilleurs quartiers\n\n- Quartier central : pratique pour tout faire à pied.\n- Quartier authentique : meilleure ambiance locale.`,
     },
     {
-      name: "checklist-canva",
+      name: "transport-food",
       instr:
-        "Rédige UNIQUEMENT :\n## Checklist imprimable (cases '- [ ]', liste compacte)\n" +
-        "## Éléments visuels à créer dans Canva (liste courte)",
-      maxTokens: 1500,
-      words: 450,
-      fb: () => buildGuideFallbackChecklist(research),
-    },
-    {
-      name: "sources-verification",
-      instr:
-        "Rédige UNIQUEMENT :\n## Liens à vérifier (liste compacte)\n" +
-        "## À vérifier avant le départ (liste courte)",
-      maxTokens: 1200,
-      words: 300,
+        "Rédige UNIQUEMENT :\n## Se déplacer sur place\n" +
+        "Depuis l'aéroport jusqu'au centre (options, prix, durée), le pass transport le plus " +
+        "rentable, les déplacements sur place et les astuces (cartes, applis). Concret.\n\n" +
+        "## Où manger : nos bonnes adresses\n" +
+        "6 à 8 adresses ou types de lieux organisés par quartier, avec ce qu'on y mange, " +
+        "l'ambiance et une fourchette de prix. Indique clairement comment éviter les pièges à touristes.",
+      maxTokens: 2400,
+      words: 650,
       fb: () => buildGuideFallbackSources(research),
+    },
+    {
+      name: "tips-checklist",
+      instr:
+        "Rédige UNIQUEMENT :\n## Conseils pratiques & erreurs à éviter\n" +
+        "6 à 8 conseils concrets et spécifiques (1-2 phrases chacun), ton direct.\n\n" +
+        "## Planning type d'une journée\n" +
+        "Un tableau Markdown : colonnes Moment / Activité / Budget indicatif.\n\n" +
+        "## Checklist imprimable\n" +
+        "Une liste de cases `- [ ]` regroupées (documents, argent, valise, réservations, jour du départ).",
+      maxTokens: 2000,
+      words: 550,
+      fb: () => buildGuideFallbackChecklist(research),
     },
   ];
 

@@ -8,7 +8,14 @@ async function readBody(req) {
   return Buffer.concat(chunks).toString("utf8");
 }
 
-function parseForm(body) {
+function parseForm(body, contentType = "") {
+  if (/application\/json/i.test(contentType)) {
+    try {
+      return JSON.parse(body || "{}");
+    } catch {
+      return {};
+    }
+  }
   return Object.fromEntries(new URLSearchParams(body));
 }
 
@@ -75,7 +82,12 @@ async function sendChecklistEmail({ email, slug }) {
   const payload = {
     from: normalizeFromAddress(process.env.LEAD_MAGNET_FROM_EMAIL),
     to: email,
+    reply_to: process.env.LEAD_MAGNET_REPLY_TO || "hello@trippilotguides.com",
     subject: "Votre checklist voyage gratuite — TripPilot Guides",
+    headers: {
+      "List-Unsubscribe": "<mailto:hello@trippilotguides.com?subject=unsubscribe>",
+      "List-Unsubscribe-Post": "List-Unsubscribe=One-Click",
+    },
     html,
     text:
       `Merci pour votre inscription !\n\n` +
@@ -122,7 +134,7 @@ export default async function handler(req, res) {
     req.url,
     process.env.SITE_URL || "https://example.com"
   ).searchParams;
-  const body = req.method === "POST" ? parseForm(await readBody(req)) : {};
+  const body = req.method === "POST" ? parseForm(await readBody(req), req.headers?.["content-type"] || "") : {};
   const email = String(body.email || query.get("email") || "").trim();
   const slug = String(body.slug || query.get("slug") || "").trim();
 

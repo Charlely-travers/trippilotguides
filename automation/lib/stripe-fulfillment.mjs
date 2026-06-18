@@ -88,7 +88,11 @@ export function buildFulfillmentEmail({ to, destination, guideUrl, from, siteUrl
   return {
     from: normalizeFromAddress(from),
     to,
+    reply_to: "hello@trippilotguides.com",
     subject,
+    headers: {
+      "List-Unsubscribe": "<mailto:hello@trippilotguides.com?subject=unsubscribe>",
+    },
     html,
     text:
       `Merci pour votre achat !\n\n` +
