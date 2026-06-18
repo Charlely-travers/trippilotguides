@@ -171,13 +171,26 @@ async function generateBlogMeta(research) {
   }
 }
 
-/** Nettoie un Markdown (retire un éventuel bloc de code englobant). */
+/** Nettoie un Markdown (retire un éventuel bloc de code englobant + titres mal formés). */
 function cleanMarkdown(content) {
-  return content
-    .trim()
-    .replace(/^```(?:markdown)?\s*/i, "")
-    .replace(/```$/i, "")
-    .trim();
+  return normalizeHeadings(
+    content
+      .trim()
+      .replace(/^```(?:markdown)?\s*/i, "")
+      .replace(/```$/i, "")
+      .trim()
+  );
+}
+
+/**
+ * Corrige les titres mal formés par le modèle :
+ * "### ### Jour 1" -> "### Jour 1" (dièses répétés en début de ligne).
+ */
+function normalizeHeadings(md) {
+  return String(md || "")
+    .split(/\r?\n/)
+    .map((line) => line.replace(/^\s*(#{1,6})\s+(?:#{1,6}\s+)+/, "$1 "))
+    .join("\n");
 }
 
 /** Itinéraire court (fallback blog), conscient de la durée. */
@@ -240,80 +253,71 @@ async function generateBlogMarkdown(research) {
   const daysHint = days ? ` Respecte EXACTEMENT ${days} jours (pas de Jour ${days + 1}).` : "";
   const system =
     "Tu es rédacteur voyage senior pour TripPilot Guides, un média premium de guides de voyage PDF. " +
-    "STYLE : prose fluide et engageante, comme un ami expérimenté qui raconte. Phrases variées " +
-    "(pas uniquement courtes). Utilise des transitions naturelles, des anecdotes concrètes et " +
-    "des conseils actionnables. Le lecteur doit se projeter dans le voyage.\n" +
-    "QUALITÉ : contenu de niveau magazine (Lonely Planet, Routard haut de gamme). Pas de " +
-    "listes plates ennuyeuses — chaque jour raconte une mini-histoire.\n" +
-    "FIABILITÉ : appuie-toi sur les données de recherche. Pour toute info non sourcée, " +
-    "reste prudent (« comptez environ », « à vérifier »).\n" +
-    "FORMATAGE (IMPORTANT, le rendu visuel en dépend) :\n" +
-    "- Titres de section avec ## (ex: ## Itinéraire jour par jour).\n" +
-    "- Chaque jour avec ### Jour X — Nom évocateur (ex: ### Jour 1 — L'âme antique).\n" +
-    "- Dans chaque jour, commence les moments par **Matin**, **Après-midi**, **Soir** en gras " +
-    "(suivis d'un tiret cadratin —) puis un paragraphe narratif.\n" +
-    "- Utilise des tableaux Markdown pour les budgets (toujours avec en-tête | --- |).\n" +
-    "- Utilise des listes à puces pour les quartiers/options, des listes numérotées pour les " +
-    "étapes ou erreurs.\n" +
-    "- Mets en **gras** les noms de lieux clés et les chiffres importants.\n" +
-    "- Aère : un paragraphe = une idée. Jamais de pavé de plus de 4 phrases.\n" +
-    "FORMAT : Titres ## et ### uniquement (PAS de #). N'ajoute PAS de disclaimer, sources " +
-    "ni CTA (ajoutés automatiquement). TERMINE toujours par une phrase complète. Markdown BRUT.\n" +
-    "OBJECTIF : que le lecteur se dise « ce site sait de quoi il parle, je vais acheter le guide ».";
+    "STYLE : prose fluide, immersive et engageante, comme un ami qui donne envie de partir. " +
+    "Phrases variées, transitions naturelles, quelques images sensorielles.\n" +
+    "RÔLE DE L'ARTICLE : c'est un article de BLOG GRATUIT qui sert d'APERÇU et donne envie " +
+    "d'acheter le guide PDF complet. Il informe et inspire, MAIS il ne dévoile PAS tout.\n" +
+    "RÈGLE CLÉ (différenciation produit) :\n" +
+    "- NE DONNE PAS l'itinéraire heure par heure détaillé (matin/après-midi/soir avec adresses " +
+    "précises et prix de chaque lieu). Ça, c'est le contenu du guide payant.\n" +
+    "- Donne plutôt une VUE D'ENSEMBLE : les incontournables, un aperçu condensé de l'itinéraire " +
+    "(une ligne par jour), des fourchettes de budget globales, et quelques conseils.\n" +
+    "- Reste concret et utile (le lecteur doit te faire confiance), mais laisse-le vouloir le " +
+    "détail complet, le planning optimisé et les bonnes adresses dans le guide.\n" +
+    "FIABILITÉ : appuie-toi sur les données de recherche ; pour toute info non sourcée, reste prudent.\n" +
+    "FORMATAGE : Titres ## et ### uniquement (JAMAIS de #, JAMAIS de double dièse comme '### ###'). " +
+    "Listes à puces, **gras** sur les lieux/chiffres clés. Paragraphes courts (max 4 phrases). " +
+    "N'ajoute PAS de disclaimer, sources ni CTA (ajoutés automatiquement). " +
+    "TERMINE toujours par une phrase complète. Markdown BRUT.";
 
   const defs = [
     {
-      name: "blog-intro-itinerary",
+      name: "blog-intro-highlights",
       instr:
         "Rédige UNIQUEMENT :\n" +
-        "- Une introduction captivante (3-4 phrases) : pose le décor, crée l'envie avec une image " +
-        "mentale du voyage (un lieu, une ambiance, un moment). Enchaîne avec la promesse de l'article.\n" +
-        "## Itinéraire jour par jour\n" +
-        "Pour CHAQUE jour : un titre évocateur (### Jour X — Nom de l'ambiance), puis matin / " +
-        "après-midi / soir avec des mini-paragraphes narratifs (pas juste des bullet points). " +
-        "Glisse des tips pratiques et des estimations de prix quand disponibles." +
-        daysHint,
-      maxTokens: 3000,
-      words: 700,
+        "- Une introduction captivante (3-4 phrases) qui pose l'ambiance et donne envie.\n" +
+        "## Les incontournables de la destination\n" +
+        "5 à 7 lieux/expériences phares, chacun en 1-2 phrases évocatrices (PAS d'horaires, " +
+        "PAS de plan détaillé — juste pourquoi c'est incontournable).\n" +
+        "## L'itinéraire en un coup d'œil\n" +
+        "Un aperçu CONDENSÉ : une seule ligne par jour (ex: « **Jour 1** — Acropole et vieille ville »)." +
+        daysHint +
+        "\nNe détaille PAS chaque journée heure par heure : c'est réservé au guide complet.",
+      maxTokens: 1800,
+      words: 450,
       fb: () =>
-        `Préparez votre voyage à ${research.destination || "votre destination"} sans stress, avec un plan clair.\n\n` +
-        `## Itinéraire jour par jour\n\n${shortItinerary(research)}`,
+        `Préparez votre voyage à ${research.destination || "votre destination"} sans stress.\n\n` +
+        `## L'itinéraire en un coup d'œil\n\n${shortItinerary(research)}`,
     },
     {
-      name: "blog-budget-errors",
+      name: "blog-budget-tips",
       instr:
         "Rédige UNIQUEMENT :\n" +
-        "## Budget détaillé\n" +
-        "Un paragraphe d'intro qui contextualise (« Voici à quoi ressemble un budget réaliste... »), " +
-        "puis un tableau Markdown à 3 niveaux (routard / équilibré / confort) avec colonnes : poste, " +
-        "fourchette basse, fourchette haute. Ajoute une phrase de conseil après le tableau.\n\n" +
-        "## Les erreurs qui gâchent un premier voyage\n" +
-        "5-7 erreurs concrètes avec explication courte (pas juste un mot). Ton vécu et direct, " +
-        "comme si tu prévenais un ami.",
-      maxTokens: 2500,
-      words: 500,
+        "## Quel budget prévoir ?\n" +
+        "Un paragraphe d'introduction, puis un PETIT tableau Markdown à 3 colonnes " +
+        "(Routard / Équilibré / Confort) avec UNE seule ligne « Budget par jour ». " +
+        "Reste sur des fourchettes globales, sans détailler chaque poste (ça, c'est le guide).\n\n" +
+        "## 4 conseils pour réussir son séjour\n" +
+        "4 conseils concrets et utiles (erreurs fréquentes à éviter), 1-2 phrases chacun.",
+      maxTokens: 1500,
+      words: 380,
       fb: () =>
-        `## Budget détaillé\n\n| Niveau | Indicatif / jour |\n| --- | --- |\n| Routard | à vérifier |\n| Équilibré | à vérifier |\n| Confort | à vérifier |\n\n` +
-        `## Les erreurs qui gâchent un premier voyage\n\n- Sous-estimer les distances et la fatigue.\n- Réserver trop tard.`,
+        `## Quel budget prévoir ?\n\n| Routard | Équilibré | Confort |\n| --- | --- | --- |\n| à vérifier | à vérifier | à vérifier |\n\n` +
+        `## 4 conseils pour réussir son séjour\n\n- Réserver les sites majeurs à l'avance.\n- Éviter les restaurants trop touristiques.`,
     },
     {
-      name: "blog-transport-sleep-booking",
+      name: "blog-why-guide",
       instr:
         "Rédige UNIQUEMENT :\n" +
-        "## Se déplacer sur place\n" +
-        "Comment aller de l'aéroport au centre, quel pass transport prendre, et les astuces " +
-        "locales. Style direct et pratique.\n\n" +
-        "## Où dormir (et où éviter)\n" +
-        "Les quartiers recommandés selon le budget et le style de voyage. Mentionne 2-3 quartiers " +
-        "avec leur ambiance et fourchette de prix.\n\n" +
-        "## À réserver avant de partir\n" +
-        "Liste priorisée de ce qui se réserve en avance vs sur place.",
-      maxTokens: 2500,
-      words: 500,
+        "## Aller plus loin : le guide complet\n" +
+        "Un court paragraphe (3-4 phrases) qui explique ce que le voyageur trouvera dans le guide " +
+        "PDF complet et qui n'est PAS dans cet article : l'itinéraire détaillé jour par jour " +
+        "(matin/après-midi/soir), les bonnes adresses testées, le budget poste par poste, la carte " +
+        "des quartiers et la checklist imprimable. Ton enthousiaste mais honnête, sans survente.",
+      maxTokens: 700,
+      words: 160,
       fb: () =>
-        `## Se déplacer sur place\n\n- Depuis l'aéroport et sur place : à vérifier selon la destination.\n\n` +
-        `## Où dormir (et où éviter)\n\n- Quartiers centraux pour un premier séjour.\n\n` +
-        `## À réserver avant de partir\n\n- Hébergement, billets des sites courus, transferts.`,
+        `## Aller plus loin : le guide complet\n\nLe guide PDF complet détaille l'itinéraire jour par jour, les bonnes adresses, le budget poste par poste et une checklist imprimable.`,
     },
   ];
 
@@ -372,7 +376,7 @@ async function generateGuidePart(research, instructions, maxTokens, wordTarget) 
     .replace(/^```(?:markdown)?\s*/i, "")
     .replace(/```$/i, "")
     .trim();
-  return { md, finishReason };
+  return { md: normalizeHeadings(md), finishReason };
 }
 
 async function generateGuideOutlineMarkdown(research) {

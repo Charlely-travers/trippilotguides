@@ -75,7 +75,9 @@ async function main() {
     await page.setContent(
       markdownToDeliveryHtml({
         title: product.title || slug,
+        destination: product.destination || "",
         markdown: guideMd,
+        kind: "guide",
       }),
       { waitUntil: "networkidle" }
     );
@@ -92,8 +94,10 @@ async function main() {
       const checklistPdf = path.join(targetDir, "checklist.pdf");
       await page.setContent(
         markdownToDeliveryHtml({
-          title: `Checklist gratuite — ${product.title || slug}`,
+          title: `Checklist — ${product.destination || product.title || slug}`,
+          destination: product.destination || "",
           markdown: checklistMd,
+          kind: "checklist",
         }),
         { waitUntil: "networkidle" }
       );

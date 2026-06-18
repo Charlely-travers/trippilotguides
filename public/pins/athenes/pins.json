@@ -1,82 +1,132 @@
 [
   {
     "destination": "Athènes",
-    "title": "Athènes 5 jours : l’itinéraire parfait (sans gaspiller ton temps)",
-    "overlayText": "Athènes 5 jours : l’itinéraire parfait",
-    "description": "Athènes 5 jours : l’itinéraire parfait (sans gaspiller ton temps). Athènes en 5 jours - guide complet",
-    "tags": [],
+    "title": "Athènes 5 jours : évite ces pièges touristiques",
+    "overlayText": "Athènes 5 jours : évite ces pièges",
+    "description": "Athènes 5 jours : évite ces pièges touristiques. Athènes en 5 jours - guide complet",
+    "tags": [
+      "voyageathènes",
+      "conseilsvoyage",
+      "antiquité",
+      "astucesvoyage"
+    ],
     "url": "https://www.trippilotguides.com/blog/athenes"
   },
   {
     "destination": "Athènes",
-    "title": "Quartiers où dormir à Athènes selon ton budget (2026)",
-    "overlayText": "Quartiers où dormir à Athènes selon ton",
-    "description": "Quartiers où dormir à Athènes selon ton budget (2026). Athènes en 5 jours - guide complet",
-    "tags": [],
+    "title": "Plaka vs Koukaki : où dormir à Athènes en 2026 ?",
+    "overlayText": "Plaka vs Koukaki : où dormir à Athènes en",
+    "description": "Plaka vs Koukaki : où dormir à Athènes en 2026 ?. Athènes en 5 jours - guide complet",
+    "tags": [
+      "logementathènes",
+      "voyagegrece",
+      "trippilotguides",
+      "meilleurquartier"
+    ],
     "url": "https://www.trippilotguides.com/blog/athenes"
   },
   {
     "destination": "Athènes",
-    "title": "Acropole : les billets à 30€ ou 36€ ? Voici comment économiser",
-    "overlayText": "Acropole : les billets à 30€ ou 36€ ?",
-    "description": "Acropole : les billets à 30€ ou 36€ ? Voici comment économiser. Athènes en 5 jours - guide complet",
-    "tags": [],
-    "url": "https://www.trippilotguides.com/blog/athenes"
-  },
-  {
-    "destination": "Athènes",
-    "title": "5 tavernes authentiques à Athènes que les touristes ignorent",
-    "overlayText": "5 tavernes authentiques à Athènes que les",
-    "description": "5 tavernes authentiques à Athènes que les touristes ignorent. Athènes en 5 jours - guide complet",
-    "tags": [],
-    "url": "https://www.trippilotguides.com/blog/athenes"
-  },
-  {
-    "destination": "Athènes",
-    "title": "Athènes en 5 jours : what to pack (et éviter la catastrophe)",
-    "overlayText": "Athènes en 5 jours : what to pack (et",
-    "description": "Athènes en 5 jours : what to pack (et éviter la catastrophe). Athènes en 5 jours - guide complet",
-    "tags": [],
-    "url": "https://www.trippilotguides.com/blog/athenes"
-  },
-  {
-    "destination": "Athènes",
-    "title": "Monastiraki vs Plaka : quel quartier choisir pour ton séjour ?",
-    "overlayText": "Monastiraki vs Plaka : quel quartier",
-    "description": "Monastiraki vs Plaka : quel quartier choisir pour ton séjour ?. Athènes en 5 jours - guide complet",
-    "tags": [],
-    "url": "https://www.trippilotguides.com/blog/athenes"
-  },
-  {
-    "destination": "Athènes",
-    "title": "Transports aéroport → Athènes : 1,20€ ou 50€ ? Le meilleur choix",
-    "overlayText": "Transports aéroport → Athènes : 1,20€ ou",
-    "description": "Transports aéroport → Athènes : 1,20€ ou 50€ ? Le meilleur choix. Athènes en 5 jours - guide complet",
-    "tags": [],
-    "url": "https://www.trippilotguides.com/blog/athenes"
-  },
-  {
-    "destination": "Athènes",
-    "title": "Agora antique et Lycabette : le duo gratuit à ne pas manquer",
-    "overlayText": "Agora antique et Lycabette : le duo",
-    "description": "Agora antique et Lycabette : le duo gratuit à ne pas manquer. Athènes en 5 jours - guide complet",
-    "tags": [],
-    "url": "https://www.trippilotguides.com/blog/athenes"
-  },
-  {
-    "destination": "Athènes",
-    "title": "Athènes hors des sentiers battus : Exarchia et ses pépites",
-    "overlayText": "Athènes hors des sentiers battus :",
-    "description": "Athènes hors des sentiers battus : Exarchia et ses pépites. Athènes en 5 jours - guide complet",
-    "tags": [],
-    "url": "https://www.trippilotguides.com/blog/athenes"
-  },
-  {
-    "destination": "Athènes",
-    "title": "5 jours à Athènes avec à tarif indicatif : c’est possible (voici comment)",
+    "title": "5 jours à Athènes avec à tarif indicatif : l'itinéraire exact",
     "overlayText": "5 jours à Athènes avec à tarif indicatif :",
-    "description": "5 jours à Athènes avec à tarif indicatif : c’est possible (voici comment). Athènes en 5 jours - guide complet",
-    "tags": [],
+    "description": "5 jours à Athènes avec à tarif indicatif : l'itinéraire exact. Athènes en 5 jours - guide complet",
+    "tags": [
+      "budgetvoyage",
+      "athènespascher",
+      "voyageintelligent",
+      "trippilot"
+    ],
+    "url": "https://www.trippilotguides.com/blog/athenes"
+  },
+  {
+    "destination": "Athènes",
+    "title": "Acropole : la vérité sur les files d'attente (et comment les éviter)",
+    "overlayText": "Acropole : la vérité sur les files",
+    "description": "Acropole : la vérité sur les files d'attente (et comment les éviter). Athènes en 5 jours - guide complet",
+    "tags": [
+      "visiteantique",
+      "acropole",
+      "voyagesansstress",
+      "trippilotguides"
+    ],
+    "url": "https://www.trippilotguides.com/blog/athenes"
+  },
+  {
+    "destination": "Athènes",
+    "title": "Monastiraki vs Exarchia : lequel choisir pour ton voyage ?",
+    "overlayText": "Monastiraki vs Exarchia : lequel choisir",
+    "description": "Monastiraki vs Exarchia : lequel choisir pour ton voyage ?. Athènes en 5 jours - guide complet",
+    "tags": [
+      "athènesauthentique",
+      "culturelocale",
+      "voyagealternatif",
+      "trippilot"
+    ],
+    "url": "https://www.trippilotguides.com/blog/athenes"
+  },
+  {
+    "destination": "Athènes",
+    "title": "Où manger à Athènes sans se faire arnaquer (liste testée)",
+    "overlayText": "Où manger à Athènes sans se faire arnaquer",
+    "description": "Où manger à Athènes sans se faire arnaquer (liste testée). Athènes en 5 jours - guide complet",
+    "tags": [
+      "restaurantsgrecs",
+      "voyagegourmand",
+      "astucesvoyage",
+      "trippilot"
+    ],
+    "url": "https://www.trippilotguides.com/blog/athenes"
+  },
+  {
+    "destination": "Athènes",
+    "title": "Transports aéroport Athènes : le guide pour ne pas se perdre",
+    "overlayText": "Transports aéroport Athènes : le guide",
+    "description": "Transports aéroport Athènes : le guide pour ne pas se perdre. Athènes en 5 jours - guide complet",
+    "tags": [
+      "transportathènes",
+      "voyagesanssouci",
+      "trippilotguides",
+      "conseilsvoyage"
+    ],
+    "url": "https://www.trippilotguides.com/blog/athenes"
+  },
+  {
+    "destination": "Athènes",
+    "title": "Lycabette vs Philopappou : la bataille des meilleures vues",
+    "overlayText": "Lycabette vs Philopappou : la bataille des",
+    "description": "Lycabette vs Philopappou : la bataille des meilleures vues. Athènes en 5 jours - guide complet",
+    "tags": [
+      "athènesinsta",
+      "pointsdevue",
+      "voyageimpressions",
+      "trippilot"
+    ],
+    "url": "https://www.trippilotguides.com/blog/athenes"
+  },
+  {
+    "destination": "Athènes",
+    "title": "5 sites antiques à Athènes (hors Acropole) que tu ignores",
+    "overlayText": "5 sites antiques à Athènes (hors Acropole)",
+    "description": "5 sites antiques à Athènes (hors Acropole) que tu ignores. Athènes en 5 jours - guide complet",
+    "tags": [
+      "antiquitégrecque",
+      "voyageculturel",
+      "trippilotguides",
+      "inspirationvoyage"
+    ],
+    "url": "https://www.trippilotguides.com/blog/athenes"
+  },
+  {
+    "destination": "Athènes",
+    "title": "Athènes en famille : les activités qui plaisent aux enfants",
+    "overlayText": "Athènes en famille : les activités qui",
+    "description": "Athènes en famille : les activités qui plaisent aux enfants. Athènes en 5 jours - guide complet",
+    "tags": [
+      "voyageenfamille",
+      "athènesavecenfants",
+      "trippilot",
+      "activitésenfants"
+    ],
     "url": "https://www.trippilotguides.com/blog/athenes"
   }
 ]
