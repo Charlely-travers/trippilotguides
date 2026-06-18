@@ -395,7 +395,9 @@ async function generateGuidePart(research, instructions, maxTokens, wordTarget) 
     "Mets en **gras** les lieux et chiffres clés — les astérisques UNIQUEMENT par paires " +
     "pour le gras, JAMAIS d'astérisque isolé ni de note en bas de page avec *. " +
     "Listes à puces quand pertinent. " +
-    "TERMINE toujours par une phrase complète. Markdown BRUT (pas de bloc de code englobant).";
+    "TERMINE toujours par une phrase complète. Markdown BRUT (pas de bloc de code englobant).\n" +
+    "ORTHOGRAPHE : français impeccable. Écris « temple » (jamais « tempel »), « hôtel », " +
+    "« musée » correctement. Relis-toi mentalement : aucune faute n'est tolérable sur un produit payant.";
   const user =
     "DONNÉES DE RECHERCHE :\n" +
     researchContext(research) +

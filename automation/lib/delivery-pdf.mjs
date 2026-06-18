@@ -61,6 +61,16 @@ export function cleanGuideMarkdown(md) {
   return out.join("\n").replace(/\n{3,}/g, "\n\n").trim();
 }
 
+/** Corrige des fautes récurrentes du modèle (ne jamais laisser passer sur un produit payant). */
+function fixCommonTypos(md) {
+  return String(md || "")
+    // "tempel" -> "temple" (faute fréquente), en préservant la casse initiale.
+    .replace(/\bTempel\b/g, "Temple")
+    .replace(/\btempel\b/g, "temple")
+    // Doubles espaces parasites.
+    .replace(/[ \t]{2,}/g, " ");
+}
+
 /* ---------------- Markdown -> HTML (inline + blocs) ---------------- */
 
 function inlineMarkdown(text) {
@@ -231,7 +241,9 @@ function markdownBodyToHtml(markdown) {
 /* ---------------- Template PDF ---------------- */
 
 export function markdownToDeliveryHtml({ title, destination = "", markdown, kind = "guide", coverImage = "", mapImage = "", placePhotos = [] }) {
-  const cleaned = kind === "guide" ? cleanGuideMarkdown(markdown) : stripFrontmatter(markdown);
+  const cleaned = fixCommonTypos(
+    kind === "guide" ? cleanGuideMarkdown(markdown) : stripFrontmatter(markdown)
+  );
   const body = markdownBodyToHtml(cleaned);
   const kicker = kind === "guide" ? "Guide de voyage PDF" : "Checklist de préparation";
   const dest = destination || "";
