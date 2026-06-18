@@ -131,36 +131,67 @@ h4,
   -webkit-backdrop-filter: saturate(180%) blur(12px);
 }
 
-/* ---------- Typographie des articles de blog ---------- */
+/* ---------- Typographie des articles de blog (style magazine) ---------- */
 .prose-article {
   color: var(--color-ink-700);
-  line-height: 1.78;
+  line-height: 1.8;
   font-size: 1.075rem;
 }
+/* Chapô / paragraphe d'introduction */
 .prose-article > p:first-of-type {
-  font-size: 1.18rem;
+  font-size: 1.22rem;
+  line-height: 1.65;
   color: var(--color-ink-800);
-  line-height: 1.7;
+  font-weight: 450;
+  padding-left: 1.25rem;
+  border-left: 3px solid var(--color-brand-400);
+  margin-bottom: 1.75rem;
 }
+/* Titres de section (##) — avec barre d'accent dégradée */
 .prose-article h2 {
+  position: relative;
   color: var(--color-ink-900);
-  font-size: 1.6rem;
-  font-weight: 700;
-  margin-top: 2.75rem;
-  margin-bottom: 0.85rem;
+  font-size: 1.7rem;
+  font-weight: 800;
+  margin-top: 3rem;
+  margin-bottom: 1rem;
+  padding-bottom: 0.6rem;
   scroll-margin-top: 6rem;
-  font-family: var(--font-display, "Plus Jakarta Sans", system-ui, sans-serif);
+  font-family: var(--font-display);
+  border-bottom: 1px solid var(--color-brand-100);
 }
+.prose-article h2::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  bottom: -1px;
+  width: 3.5rem;
+  height: 3px;
+  border-radius: 9999px;
+  background: linear-gradient(90deg, var(--color-brand-500), var(--color-accent-500));
+}
+/* Sous-titres (###) — ex. "Jour 1 — ..." : carte d'étape */
 .prose-article h3 {
   color: var(--color-ink-900);
-  font-size: 1.25rem;
+  font-size: 1.2rem;
   font-weight: 700;
-  margin-top: 1.85rem;
-  margin-bottom: 0.6rem;
-  font-family: var(--font-display, "Plus Jakarta Sans", system-ui, sans-serif);
+  margin-top: 2rem;
+  margin-bottom: 0.85rem;
+  padding: 0.7rem 1rem;
+  border-radius: 0.75rem;
+  border-left: 4px solid var(--color-brand-500);
+  background: linear-gradient(100deg, var(--color-brand-50), rgba(255, 255, 255, 0));
+  font-family: var(--font-display);
 }
 .prose-article p {
   margin-bottom: 1.15rem;
+}
+/* Labels en début de paragraphe (Matin / Après-midi / Soir) */
+.prose-article p > strong:first-child {
+  display: inline-block;
+  color: var(--color-brand-700);
+  font-weight: 700;
+  margin-right: 0.15rem;
 }
 .prose-article ul {
   list-style: none;
@@ -186,14 +217,36 @@ h4,
     var(--color-accent-500)
   );
 }
+/* Listes numérotées — pastilles brand */
 .prose-article ol {
-  list-style: decimal;
-  padding-left: 1.4rem;
+  list-style: none;
+  counter-reset: item;
+  padding-left: 0;
   margin-bottom: 1.25rem;
 }
-.prose-article ol li {
-  margin-bottom: 0.45rem;
-  padding-left: 0.25rem;
+.prose-article ol > li {
+  position: relative;
+  counter-increment: item;
+  padding-left: 2.6rem;
+  margin-bottom: 0.85rem;
+  min-height: 1.75rem;
+}
+.prose-article ol > li::before {
+  content: counter(item);
+  position: absolute;
+  left: 0;
+  top: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.75rem;
+  height: 1.75rem;
+  border-radius: 9999px;
+  background: linear-gradient(135deg, var(--color-brand-500), var(--color-accent-500));
+  color: #fff;
+  font-size: 0.85rem;
+  font-weight: 700;
+  font-family: var(--font-display);
 }
 .prose-article strong {
   color: var(--color-ink-900);
@@ -208,49 +261,56 @@ h4,
 .prose-article a:hover {
   color: var(--color-accent-600);
 }
-/* Tables */
+/* Tables — style premium avec en-tête dégradé */
 .prose-article table {
   width: 100%;
   border-collapse: collapse;
-  margin: 1.5rem 0;
-  font-size: 0.9rem;
-  border-radius: 0.75rem;
+  margin: 1.75rem 0;
+  font-size: 0.92rem;
+  border-radius: 0.85rem;
   overflow: hidden;
-  border: 1px solid var(--color-slate-200, #e2e8f0);
+  border: 1px solid var(--color-brand-100);
+  box-shadow: var(--shadow-soft);
 }
 .prose-article thead {
-  background: linear-gradient(135deg, var(--color-brand-50, #eff6ff), var(--color-brand-100, #dbeafe));
+  background: linear-gradient(135deg, var(--color-brand-600), var(--color-accent-600));
 }
 .prose-article th {
-  padding: 0.75rem 1rem;
+  padding: 0.8rem 1rem;
   text-align: left;
-  font-weight: 600;
-  color: var(--color-ink-900);
-  font-size: 0.85rem;
+  font-weight: 700;
+  color: #fff;
+  font-size: 0.8rem;
   text-transform: uppercase;
-  letter-spacing: 0.02em;
-  border-bottom: 2px solid var(--color-brand-200, #bfdbfe);
+  letter-spacing: 0.03em;
 }
 .prose-article td {
-  padding: 0.65rem 1rem;
-  border-bottom: 1px solid var(--color-slate-100, #f1f5f9);
+  padding: 0.7rem 1rem;
+  border-bottom: 1px solid var(--color-brand-50);
   color: var(--color-ink-700);
+}
+.prose-article tbody tr:nth-child(even) {
+  background-color: rgba(238, 242, 255, 0.4);
 }
 .prose-article tbody tr:last-child td {
   border-bottom: none;
 }
 .prose-article tbody tr:hover {
-  background-color: var(--color-brand-50, #eff6ff);
+  background-color: var(--color-brand-50);
 }
-/* Blockquotes */
+.prose-article td:first-child {
+  font-weight: 600;
+  color: var(--color-ink-900);
+}
+/* Blockquotes / encadrés "à vérifier" */
 .prose-article blockquote {
-  margin: 1.5rem 0;
-  padding: 1rem 1.25rem;
-  border-left: 4px solid var(--color-brand-400, #60a5fa);
-  background: var(--color-brand-50, #eff6ff);
-  border-radius: 0 0.75rem 0.75rem 0;
+  margin: 1.75rem 0;
+  padding: 1.1rem 1.35rem;
+  border-left: 4px solid var(--color-accent-500);
+  background: linear-gradient(100deg, var(--color-brand-50), rgba(255, 255, 255, 0));
+  border-radius: 0 0.85rem 0.85rem 0;
   color: var(--color-ink-800);
-  font-size: 0.95rem;
+  font-size: 0.96rem;
 }
 .prose-article blockquote p {
   margin-bottom: 0.5rem;
@@ -258,12 +318,15 @@ h4,
 .prose-article blockquote p:last-child {
   margin-bottom: 0;
 }
-/* Horizontal rule */
+.prose-article blockquote strong {
+  color: var(--color-accent-600);
+}
+/* Séparateur horizontal */
 .prose-article hr {
-  margin: 2.5rem 0;
+  margin: 2.75rem 0;
   border: none;
   height: 2px;
-  background: linear-gradient(90deg, transparent, var(--color-brand-200, #bfdbfe), transparent);
+  background: linear-gradient(90deg, transparent, var(--color-brand-200), transparent);
 }
 
 /* ---------- Accessibilité : focus visible homogène ---------- */

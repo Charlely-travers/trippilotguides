@@ -247,6 +247,16 @@ async function generateBlogMarkdown(research) {
     "listes plates ennuyeuses — chaque jour raconte une mini-histoire.\n" +
     "FIABILITÉ : appuie-toi sur les données de recherche. Pour toute info non sourcée, " +
     "reste prudent (« comptez environ », « à vérifier »).\n" +
+    "FORMATAGE (IMPORTANT, le rendu visuel en dépend) :\n" +
+    "- Titres de section avec ## (ex: ## Itinéraire jour par jour).\n" +
+    "- Chaque jour avec ### Jour X — Nom évocateur (ex: ### Jour 1 — L'âme antique).\n" +
+    "- Dans chaque jour, commence les moments par **Matin**, **Après-midi**, **Soir** en gras " +
+    "(suivis d'un tiret cadratin —) puis un paragraphe narratif.\n" +
+    "- Utilise des tableaux Markdown pour les budgets (toujours avec en-tête | --- |).\n" +
+    "- Utilise des listes à puces pour les quartiers/options, des listes numérotées pour les " +
+    "étapes ou erreurs.\n" +
+    "- Mets en **gras** les noms de lieux clés et les chiffres importants.\n" +
+    "- Aère : un paragraphe = une idée. Jamais de pavé de plus de 4 phrases.\n" +
     "FORMAT : Titres ## et ### uniquement (PAS de #). N'ajoute PAS de disclaimer, sources " +
     "ni CTA (ajoutés automatiquement). TERMINE toujours par une phrase complète. Markdown BRUT.\n" +
     "OBJECTIF : que le lecteur se dise « ce site sait de quoi il parle, je vais acheter le guide ».";

@@ -25,6 +25,7 @@ const { entry } = Astro.props;
 const { Content } = await render(entry);
 const { title, description, destination, price, gradient, buyLink, checklistLink } = entry.data;
 const city = getCityImage(entry.id);
+const hasBuyLink = Boolean(buyLink) && !buyLink.startsWith("TODO");
 
 const faq = [
   { question: "Est-ce un produit physique ?", answer: "Non, c'est un guide 100 % numérique au format PDF téléchargeable." },
@@ -46,7 +47,11 @@ const faq = [
           <p class="mt-5 text-lg text-ink-700">{description}</p>
           <div class="mt-7 flex flex-wrap items-center gap-4">
             <span class="font-display text-3xl font-extrabold text-ink-900">{price}</span>
-            <Button href={buyLink} external size="lg" variant="primary">Acheter le guide</Button>
+            {hasBuyLink ? (
+              <Button href={buyLink} external size="lg" variant="primary">Acheter le guide</Button>
+            ) : (
+              <Button href="/contact" size="lg" variant="primary">Acheter le guide (bientôt)</Button>
+            )}
             {checklistLink && (
               <a href={checklistLink} class="text-sm font-semibold text-brand-700 hover:underline">
                 ou la checklist gratuite
@@ -88,9 +93,22 @@ const faq = [
           Prêt à partir à {destination} l'esprit léger ?
         </h2>
         <div class="relative mt-7 flex flex-col items-center justify-center gap-3 sm:flex-row">
-          <a href={buyLink} target="_blank" rel="noopener noreferrer" class="inline-flex items-center justify-center rounded-full bg-white px-7 py-3.5 text-[0.95rem] font-semibold text-brand-700 shadow-soft transition-all hover:-translate-y-0.5 hover:shadow-lift">
-            Acheter le guide — {price}
-          </a>
+          {hasBuyLink ? (
+            <a href={buyLink} target="_blank" rel="noopener noreferrer" class="inline-flex items-center justify-center rounded-full bg-white px-7 py-3.5 text-[0.95rem] font-semibold text-brand-700 shadow-soft transition-all hover:-translate-y-0.5 hover:shadow-lift">
+              Acheter le guide — {price}
+            </a>
+          ) : (
+            <>
+              <a href="/contact" class="inline-flex items-center justify-center rounded-full bg-white px-7 py-3.5 text-[0.95rem] font-semibold text-brand-700 shadow-soft transition-all hover:-translate-y-0.5 hover:shadow-lift">
+                Acheter le guide — {price} (bientôt)
+              </a>
+              {checklistLink && (
+                <a href={checklistLink} class="inline-flex items-center justify-center rounded-full px-7 py-3.5 text-[0.95rem] font-semibold text-white ring-1 ring-white/40 transition-all hover:bg-white/10">
+                  Checklist gratuite
+                </a>
+              )}
+            </>
+          )}
         </div>
       </div>
       <p class="mx-auto mt-6 max-w-2xl rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-center text-sm text-amber-800" role="note">
