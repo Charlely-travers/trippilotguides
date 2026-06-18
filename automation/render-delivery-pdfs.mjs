@@ -86,6 +86,23 @@ async function main() {
       mapImage = "";
     }
 
+    // Charge les photos des sites/monuments en data URI (galerie du guide).
+    const placePhotos = [];
+    for (const ph of Array.isArray(product.placePhotos) ? product.placePhotos : []) {
+      if (!ph?.path) continue;
+      try {
+        const p = path.join(ROOT, "public", ph.path.replace(/^\//, ""));
+        const buf = await fs.readFile(p);
+        placePhotos.push({
+          name: ph.name || "",
+          credit: ph.credit || "",
+          dataUri: `data:image/webp;base64,${buf.toString("base64")}`,
+        });
+      } catch {
+        /* image manquante : on saute */
+      }
+    }
+
     const folder = deliveryFolderName(slug, product.deliveryToken || "");
     const targetDir = path.join(PUBLIC_DELIVERY_DIR, folder);
     await fs.mkdir(targetDir, { recursive: true });
@@ -100,6 +117,7 @@ async function main() {
         kind: "guide",
         coverImage,
         mapImage,
+        placePhotos,
       }),
       { waitUntil: "networkidle" }
     );

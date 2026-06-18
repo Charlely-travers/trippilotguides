@@ -414,6 +414,7 @@ async function generateGuidePart(research, instructions, maxTokens, wordTarget) 
 async function generateGuideOutlineMarkdown(research) {
   const days = parseDays(research.idea);
   const daysHint = days ? `Respecte EXACTEMENT ${days} jours (pas de Jour ${days + 1}).` : "";
+  const includeExcursions = !days || days >= 3;
   const defs = [
     {
       name: "intro",
@@ -481,6 +482,27 @@ async function generateGuideOutlineMarkdown(research) {
       words: 600,
       fb: () => buildGuideFallbackSources(research),
     },
+    ...(includeExcursions
+      ? [
+          {
+            name: "excursions",
+            instr:
+              "Rédige UNIQUEMENT :\n## Escapades & excursions d'une journée\n" +
+              "Propose 2 à 4 excursions CÉLÈBRES et RÉELLES accessibles en une journée depuis " +
+              `${research.destination || "la destination"} (sites/villes alentours bien connus). ` +
+              "Pour CHACUNE : un titre `### Nom de l'excursion`, puis pourquoi y aller, comment " +
+              "s'y rendre (type de transport, durée approximative de trajet), le temps à prévoir " +
+              "sur place, et une fourchette de budget indicative. " +
+              "FIABILITÉ : ne cite QUE des lieux dont tu es certain qu'ils existent et sont " +
+              "réellement accessibles à la journée ; reste prudent sur les prix (« comptez " +
+              "environ »). Si tu n'es pas sûr d'une excursion, ne l'inclus pas.",
+            maxTokens: 2000,
+            words: 500,
+            fb: () =>
+              `## Escapades & excursions d'une journée\n\nSelon le temps disponible, renseignez-vous sur les sites et villes accessibles à la journée depuis ${research.destination || "votre destination"}.`,
+          },
+        ]
+      : []),
     {
       name: "tips-checklist",
       instr:

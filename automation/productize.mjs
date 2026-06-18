@@ -22,7 +22,7 @@ import {
   computeGuidePrice,
 } from "./lib/publish-rules.mjs";
 import { writePinAssets } from "./lib/pin-assets.mjs";
-import { fetchCityImage, fetchCityMap } from "./lib/city-image.mjs";
+import { fetchCityImage, fetchCityMap, fetchPlacePhotos } from "./lib/city-image.mjs";
 import {
   createStripePaymentLink,
   getStripePaymentConfig,
@@ -307,7 +307,8 @@ function generateProductJson(
   decision,
   pinCount,
   paymentLink,
-  deliveryToken
+  deliveryToken,
+  placePhotos = []
 ) {
   return JSON.stringify(
     {
@@ -322,6 +323,7 @@ function generateProductJson(
       paymentLinkId: paymentLink?.id || "",
       paymentLinkCreated: Boolean(paymentLink?.created),
       deliveryToken,
+      placePhotos: Array.isArray(placePhotos) ? placePhotos : [],
       publicPinBasePath: `/pins/${slug}`,
       blogPath: `/blog/${slug}`,
       guidePagePath: `/guides/${slug}`,
@@ -445,6 +447,24 @@ async function main() {
         console.log(`  city map error: ${err.message}`);
       }
 
+      // Vraies photos des principaux sites/monuments pour illustrer le guide PDF.
+      let placePhotos = [];
+      try {
+        const placeNames = Array.isArray(research?.attractions)
+          ? research.attractions.map((a) => a?.name).filter(Boolean)
+          : [];
+        placePhotos = await fetchPlacePhotos({
+          places: placeNames,
+          destination: meta.destination,
+          slug,
+          publicDir: PUBLIC_DIR,
+          max: 4,
+        });
+        console.log(`  place photos: ${placePhotos.length} récupérée(s)`);
+      } catch (err) {
+        console.log(`  place photos error: ${err.message}`);
+      }
+
       let decision = decidePublication({ item, meta, config: publishConfig });
       const existingGuide = await readSafe(path.join(GUIDES_DIR, `${slug}.md`));
       const existingBuyLink = extractFrontmatterString(existingGuide, "buyLink");
@@ -545,7 +565,8 @@ async function main() {
         decision,
         pinResult.pins.length,
         paymentLink,
-        deliveryToken
+        deliveryToken,
+        placePhotos
       );
       const readme = generateReadme(slug, guideInfo, decision, paymentLink);
 

@@ -230,7 +230,7 @@ function markdownBodyToHtml(markdown) {
 
 /* ---------------- Template PDF ---------------- */
 
-export function markdownToDeliveryHtml({ title, destination = "", markdown, kind = "guide", coverImage = "", mapImage = "" }) {
+export function markdownToDeliveryHtml({ title, destination = "", markdown, kind = "guide", coverImage = "", mapImage = "", placePhotos = [] }) {
   const cleaned = kind === "guide" ? cleanGuideMarkdown(markdown) : stripFrontmatter(markdown);
   const body = markdownBodyToHtml(cleaned);
   const kicker = kind === "guide" ? "Guide de voyage PDF" : "Checklist de préparation";
@@ -247,6 +247,26 @@ export function markdownToDeliveryHtml({ title, destination = "", markdown, kind
   const mapBlock =
     kind === "guide" && mapImage
       ? `<figure class="citymap"><img src="${mapImage}" alt="Carte de ${escapeHtml(dest)}"/><figcaption>${escapeHtml(dest)} et ses quartiers — repères généraux (source : OpenStreetMap).</figcaption></figure>`
+      : "";
+
+  // Galerie de vraies photos des sites/monuments (avec attribution CC obligatoire).
+  const photos = Array.isArray(placePhotos) ? placePhotos.filter((p) => p?.dataUri) : [];
+  const galleryBlock =
+    kind === "guide" && photos.length
+      ? `<section class="gallery">
+          <h2>En images</h2>
+          <div class="gallery-grid">
+            ${photos
+              .map(
+                (p) => `<figure class="gallery-item">
+                  <img src="${p.dataUri}" alt="${escapeHtml(p.name)}"/>
+                  <figcaption><span class="gallery-name">${escapeHtml(p.name)}</span><span class="gallery-credit">${escapeHtml(p.credit || "")}</span></figcaption>
+                </figure>`
+              )
+              .join("\n")}
+          </div>
+          <p class="gallery-note">Photos sous licence Creative Commons via Openverse — crédits indiqués sous chaque image.</p>
+        </section>`
       : "";
 
   return `<!doctype html>
@@ -375,6 +395,37 @@ export function markdownToDeliveryHtml({ title, destination = "", markdown, kind
       .citymap { margin: 0 0 22px; }
       .citymap img { width: 100%; border-radius: 12px; border: 1px solid #e0e7ff; display: block; }
       .citymap figcaption { font-size: 9px; color: #94a3b8; margin-top: 6px; text-align: center; }
+
+      /* Galerie de photos des sites */
+      .gallery { margin: 8px 0 24px; page-break-inside: avoid; }
+      .gallery-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 12px;
+      }
+      .gallery-item {
+        margin: 0;
+        border-radius: 10px;
+        overflow: hidden;
+        border: 1px solid #e0e7ff;
+        background: #f8fafc;
+        page-break-inside: avoid;
+      }
+      .gallery-item img {
+        width: 100%;
+        height: 130px;
+        object-fit: cover;
+        display: block;
+      }
+      .gallery-item figcaption {
+        padding: 6px 10px 8px;
+        display: flex;
+        flex-direction: column;
+        gap: 2px;
+      }
+      .gallery-name { font-size: 10.5px; font-weight: 700; color: #0b1120; }
+      .gallery-credit { font-size: 7.5px; color: #94a3b8; }
+      .gallery-note { font-size: 8.5px; color: #94a3b8; margin: 8px 0 0; font-style: italic; }
       /* Résumé "En bref" par jour */
       p.enbref {
         background: linear-gradient(100deg, #ecfdf5, rgba(255,255,255,0));
@@ -402,6 +453,7 @@ export function markdownToDeliveryHtml({ title, destination = "", markdown, kind
     <main class="content">
       ${honestyNote}
       ${mapBlock}
+      ${galleryBlock}
       ${body}
       <div class="footer">
         Guide numérique TripPilot Guides — usage personnel. Les prix, horaires et conditions

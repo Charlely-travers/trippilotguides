@@ -237,6 +237,201 @@ export async function fetchCityMap({ destination, slug, publicDir, zoom = 13 }) 
   return { ok: true, map: mapRel, coords };
 }
 
+/** Nettoie un nom de lieu pour la recherche/légende (retire parenthèses, mentions de prix…). */
+function cleanPlaceName(name) {
+  return String(name || "")
+    .replace(/\([^)]*\)/g, "") // retire le contenu entre parenthèses
+    .replace(/\s*[-–—:].*$/, "") // coupe après tiret/deux-points (sous-titres)
+    .replace(/\s{2,}/g, " ")
+    .trim();
+}
+
+/** Recherche une photo précise d'un lieu (monument, site) via Openverse. */
+async function openversePlacePhoto(query) {
+  try {
+    const url =
+      "https://api.openverse.org/v1/images/?" +
+      new URLSearchParams({ q: query, page_size: "30", mature: "false" }).toString();
+    const data = await fetchJson(url);
+    const results = Array.isArray(data?.results) ? data.results : [];
+    const candidate = results.find((r) => {
+      const w = Number(r.width || 0);
+      const h = Number(r.height || 0);
+      const title = `${r.title || ""} ${r.foreign_landing_url || ""}`;
+      if (REJECT_RE.test(title)) return false;
+      if (w && h && w / h < 1.1) return false; // évite les portraits
+      if (w && w < 700) return false;
+      return Boolean(r.url);
+    });
+    if (!candidate) return null;
+    const creator = candidate.creator || "Auteur inconnu";
+    const license = `${String(candidate.license || "").toUpperCase()} ${
+      candidate.license_version || ""
+    }`.trim();
+    return {
+      url: candidate.url,
+      credit: `${creator} (${license || "CC"}) / Openverse`,
+    };
+  } catch {
+    return null;
+  }
+}
+
+/** Décode les entités HTML basiques d'un champ de métadonnées Commons. */
+function stripHtml(value) {
+  return String(value || "")
+    .replace(/<[^>]*>/g, "")
+    .replace(/&amp;/g, "&")
+    .replace(/&quot;/g, '"')
+    .replace(/&#0?39;|&apos;/g, "'")
+    .replace(/&nbsp;/g, " ")
+    .replace(/\s{2,}/g, " ")
+    .trim();
+}
+
+/** Récupère auteur + licence d'un fichier Wikimedia Commons (best effort). */
+async function commonsCredit(fileTitle) {
+  if (!fileTitle) return "via Wikimedia Commons";
+  try {
+    const url =
+      "https://commons.wikimedia.org/w/api.php?" +
+      new URLSearchParams({
+        action: "query",
+        titles: fileTitle.startsWith("File:") ? fileTitle : `File:${fileTitle}`,
+        prop: "imageinfo",
+        iiprop: "extmetadata",
+        format: "json",
+        origin: "*",
+      }).toString();
+    const data = await fetchJson(url);
+    const pages = data?.query?.pages || {};
+    const page = Object.values(pages)[0];
+    const meta = page?.imageinfo?.[0]?.extmetadata || {};
+    const artist = stripHtml(meta.Artist?.value);
+    const license = stripHtml(meta.LicenseShortName?.value);
+    const parts = [];
+    if (artist) parts.push(artist.slice(0, 60));
+    if (license) parts.push(license);
+    const credit = parts.join(" · ");
+    return credit ? `${credit} / Wikimedia Commons` : "via Wikimedia Commons";
+  } catch {
+    return "via Wikimedia Commons";
+  }
+}
+
+/**
+ * Recherche une photo précise d'un lieu via Wikipédia (fr puis en).
+ * Source FIABLE et sans clé — renvoie l'image principale de l'article + attribution.
+ */
+async function wikiPlacePhoto(query) {
+  for (const lang of ["fr", "en"]) {
+    try {
+      const url =
+        `https://${lang}.wikipedia.org/w/api.php?` +
+        new URLSearchParams({
+          action: "query",
+          prop: "pageimages",
+          piprop: "original",
+          generator: "search",
+          gsrsearch: query,
+          gsrlimit: "3",
+          gsrnamespace: "0",
+          redirects: "1",
+          format: "json",
+          origin: "*",
+        }).toString();
+      const data = await fetchJson(url);
+      const pages = Object.values(data?.query?.pages || {});
+      // Préfère un résultat avec image, en filtrant drapeaux/cartes/svg.
+      const withImg = pages
+        .filter((p) => p?.original?.source)
+        .filter((p) => {
+          const src = p.original.source;
+          return !REJECT_RE.test(src) && !/\.svg(\?|$)/i.test(src);
+        })
+        .sort((a, b) => (a.index || 99) - (b.index || 99));
+      const hit = withImg[0];
+      if (!hit) continue;
+      const src = hit.original.source;
+      // Devine le titre de fichier depuis l'URL pour l'attribution.
+      const fileName = decodeURIComponent(src.split("/").pop().split("?")[0] || "");
+      const credit = await commonsCredit(fileName);
+      return { url: src, credit };
+    } catch {
+      /* langue suivante */
+    }
+  }
+  return null;
+}
+
+/**
+ * Récupère de vraies photos des principaux sites/monuments d'une destination et
+ * les stocke en local (800x500 webp). Utilisé pour illustrer le guide PDF.
+ * @param {{places:string[], destination:string, slug:string, publicDir:string, max?:number}} args
+ * @returns {Promise<Array<{name:string, path:string, credit:string}>>}
+ */
+export async function fetchPlacePhotos({ places, destination, slug, publicDir, max = 4 }) {
+  const citySlug = slugify(slug || destination);
+  let sharp;
+  try {
+    sharp = (await import("sharp")).default;
+  } catch {
+    return [];
+  }
+
+  const outDir = path.join(publicDir, "images", "cities");
+  await fs.mkdir(outDir, { recursive: true });
+
+  const out = [];
+  const seenUrls = new Set();
+  let index = 0;
+
+  for (const raw of places || []) {
+    if (out.length >= max) break;
+    const clean = cleanPlaceName(raw);
+    if (!clean) continue;
+
+    // Plusieurs requêtes du plus précis au plus général.
+    const queries = [`${clean} ${destination}`, `${clean}`];
+    let found = null;
+    for (const q of queries) {
+      // Wikipédia en priorité (fiable), Openverse en repli.
+      found = (await wikiPlacePhoto(q)) || (await openversePlacePhoto(q));
+      if (found && !seenUrls.has(found.url)) break;
+      found = null;
+    }
+    if (process.env.DEBUG_PLACES) console.error("  place:", clean, "->", found ? found.url : "NONE");
+    if (!found) continue;
+    seenUrls.add(found.url);
+
+    let buf;
+    try {
+      buf = await downloadBuffer(found.url);
+    } catch (err) {
+      if (process.env.DEBUG_PLACES) console.error("  download fail", clean, err.message);
+      continue;
+    }
+
+    index += 1;
+    const rel = `/images/cities/${citySlug}-place-${index}.webp`;
+    const filePath = path.join(outDir, `${citySlug}-place-${index}.webp`);
+    try {
+      await sharp(buf)
+        .resize(800, 500, { fit: "cover", position: "attention" })
+        .webp({ quality: 80 })
+        .toFile(filePath);
+    } catch (err) {
+      if (process.env.DEBUG_PLACES) console.error("  sharp fail", clean, err.message);
+      index -= 1;
+      continue;
+    }
+
+    out.push({ name: clean, path: rel, credit: found.credit });
+  }
+
+  return out;
+}
+
 /**
  * Récupère et stocke l'image d'une destination en hero (1600x900) et card (800x600).
  * @returns {Promise<{ok:boolean, hero?:string, card?:string, credit?:string, buffer?:Buffer, reason?:string}>}
