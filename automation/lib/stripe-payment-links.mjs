@@ -116,7 +116,7 @@ export async function createStripePaymentLink({
       Authorization: `Bearer ${config.secretKey}`,
       "Content-Type": "application/x-www-form-urlencoded",
       "Stripe-Version": config.apiVersion,
-      "Idempotency-Key": `trippilot-payment-link-${slug}-v1`,
+      "Idempotency-Key": `trippilot-payment-link-${slug}-${deliveryToken || "v1"}`,
     },
     body: params,
   });

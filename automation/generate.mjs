@@ -173,12 +173,14 @@ async function generateBlogMeta(research) {
 
 /** Nettoie un Markdown (retire un éventuel bloc de code englobant + titres mal formés). */
 function cleanMarkdown(content) {
-  return normalizeHeadings(
-    content
-      .trim()
-      .replace(/^```(?:markdown)?\s*/i, "")
-      .replace(/```$/i, "")
-      .trim()
+  return fixDayOverviewLines(
+    normalizeHeadings(
+      content
+        .trim()
+        .replace(/^```(?:markdown)?\s*/i, "")
+        .replace(/```$/i, "")
+        .trim()
+    )
   );
 }
 
@@ -190,6 +192,22 @@ function normalizeHeadings(md) {
   return String(md || "")
     .split(/\r?\n/)
     .map((line) => line.replace(/^\s*(#{1,6})\s+(?:#{1,6}\s+)+/, "$1 "))
+    .join("\n");
+}
+
+/**
+ * Transforme les lignes d'aperçu "**Jour 1** — ..." en éléments de liste à puces.
+ * Sans ça, des lignes consécutives sans ligne vide sont fusionnées en un seul paragraphe.
+ * Ne touche pas aux titres (### Jour 1) ni aux lignes déjà en liste.
+ */
+function fixDayOverviewLines(md) {
+  return String(md || "")
+    .split(/\r?\n/)
+    .map((line) => {
+      if (/^\s*(#{1,6}|[-*]|\d+[.)])\s/.test(line)) return line; // titre / liste : on laisse
+      if (/^\s*\*\*Jour\s*\d+\*\*/i.test(line)) return `- ${line.trim()}`;
+      return line;
+    })
     .join("\n");
 }
 

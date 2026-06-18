@@ -217,6 +217,23 @@ h4,
     var(--color-accent-500)
   );
 }
+/* Listes de tâches GFM (- [ ]) : vraies cases, pas de puce dégradée */
+.prose-article ul.contains-task-list {
+  margin-left: 0;
+}
+.prose-article li.task-list-item {
+  padding-left: 0.25rem;
+}
+.prose-article li.task-list-item::before {
+  display: none;
+}
+.prose-article li.task-list-item input[type="checkbox"] {
+  width: 1.05rem;
+  height: 1.05rem;
+  margin-right: 0.6rem;
+  accent-color: var(--color-brand-600);
+  vertical-align: -2px;
+}
 /* Listes numérotées — pastilles brand */
 .prose-article ol {
   list-style: none;

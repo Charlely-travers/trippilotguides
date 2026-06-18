@@ -126,6 +126,11 @@ export default async function handler(req, res) {
   const email = String(body.email || query.get("email") || "").trim();
   const slug = String(body.slug || query.get("slug") || "").trim();
 
+  // Détecte une requête AJAX (fetch) pour répondre en JSON plutôt qu'en redirection.
+  const wantsJson =
+    /application\/json/i.test(String(req.headers?.accept || "")) ||
+    String(body.ajax || query.get("ajax") || "") === "1";
+
   if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email) || !slug) {
     res.status(400).json({ error: "invalid_email_or_slug" });
     return;
@@ -136,6 +141,11 @@ export default async function handler(req, res) {
   } catch (err) {
     console.error("lead-magnet error:", err.message);
     res.status(500).json({ error: "email_send_failed" });
+    return;
+  }
+
+  if (wantsJson) {
+    res.status(200).json({ ok: true });
     return;
   }
 

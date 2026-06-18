@@ -63,10 +63,19 @@ async function readJsonSafe(filepath, fallback = null) {
   }
 }
 
-async function getDeliveryToken(prodDir) {
+async function getDeliveryToken(prodDir, slug = "") {
   const existing = await readJsonSafe(path.join(prodDir, "product.json"), {});
   if (existing?.deliveryToken) return String(existing.deliveryToken);
-  return crypto.randomBytes(9).toString("hex");
+  // Token DÉTERMINISTE par ville : stable entre régénérations.
+  // Garantit que le PDF (dossier slug-token) et les métadonnées Stripe coïncident,
+  // et que la clé d'idempotence Stripe reste valide.
+  const salt =
+    process.env.DELIVERY_TOKEN_SALT || process.env.STRIPE_WEBHOOK_SECRET || "trippilot-delivery";
+  return crypto
+    .createHash("sha256")
+    .update(`${slug}:${salt}`)
+    .digest("hex")
+    .slice(0, 18);
 }
 
 async function writeIfNotExists(filepath, content, label) {
@@ -187,7 +196,7 @@ function generateGuideContent(slug, research, guideOutline, meta, decision, guid
 function generateChecklistContent(slug, meta, decision, extras = {}) {
   const dest = meta.destination;
   const title = `Checklist gratuite - ${dest}`;
-  const desc = `Téléchargez une checklist complète pour préparer votre voyage à ${dest} sans rien oublier : documents, budget, transports et valise.`;
+  const desc = `Téléchargez une checklist complète et imprimable pour préparer votre voyage à ${dest} sans rien oublier : documents, argent, transport, santé et valise.`;
   const img = extras.image || {};
   const formLink =
     decision.formLink === "/api/lead-magnet"
@@ -209,20 +218,63 @@ function generateChecklistContent(slug, meta, decision, extras = {}) {
     "---",
   ].join("\n");
   const body = [
-    "## Ce que contient la checklist",
+    `Votre checklist imprimable pour préparer votre voyage à ${dest} sereinement. Cochez chaque élément au fur et à mesure : vous ne risquez plus rien d'oublier.`,
     "",
-    "- Documents essentiels (carte d'identité ou passeport, billets, réservations, assurance voyage)",
-    "- Budget et paiement (espèces, carte sans frais à l'étranger, budget par jour)",
-    "- Transports (trajet aéroport, pass local, applis utiles)",
-    "- Logement (adresse, horaires de check-in, contact de l'hébergeur)",
-    "- Valise intelligente (vêtements selon la météo, chaussures de marche, chargeurs)",
-    "- Applis indispensables (cartes hors-ligne, transports, traduction)",
+    "## 1 mois avant le départ",
     "",
-    "## FAQ",
+    "- [ ] Vérifier la validité du passeport / de la carte d'identité (6 mois après le retour)",
+    "- [ ] Vérifier si un visa ou une autorisation est nécessaire",
+    "- [ ] Réserver vols et hébergement",
+    "- [ ] Souscrire une assurance voyage / vérifier les garanties de la carte bancaire",
+    "- [ ] Réserver les sites et activités à forte affluence",
+    "- [ ] Commander une carte bancaire sans frais à l'étranger si besoin",
     "",
-    "**C'est vraiment gratuit ?** Oui, la checklist PDF est 100% gratuite. Tu la reçois par email en quelques secondes.",
+    "## 1 semaine avant",
     "",
-    `**Et le guide complet ?** Le guide PDF complet avec itinéraire jour par jour et budget détaillé est disponible séparément. [Voir le guide ${dest}](/guides/${slug}).`,
+    "- [ ] Faire le check-in en ligne et enregistrer les cartes d'embarquement",
+    "- [ ] Télécharger les billets, réservations et confirmations (hors-ligne)",
+    "- [ ] Enregistrer l'adresse du logement et l'itinéraire depuis l'aéroport",
+    "- [ ] Prévenir la banque d'un voyage à l'étranger",
+    "- [ ] Télécharger les cartes hors-ligne et les applis utiles (transport, traduction)",
+    "- [ ] Retirer un peu d'espèces en devise locale",
+    "- [ ] Vérifier la météo et adapter la valise",
+    "",
+    "## Documents à emporter",
+    "",
+    "- [ ] Passeport / carte d'identité",
+    "- [ ] Billets d'avion + réservations (papier ou mobile)",
+    "- [ ] Attestation d'assurance et numéros d'urgence",
+    "- [ ] Carte européenne d'assurance maladie (si applicable)",
+    "- [ ] Copies / photos des documents importants (séparées des originaux)",
+    "- [ ] Permis de conduire (international si location de voiture)",
+    "",
+    "## Argent & téléphone",
+    "",
+    "- [ ] Carte bancaire + une carte de secours",
+    "- [ ] Espèces en devise locale",
+    "- [ ] Téléphone + chargeur + batterie externe",
+    "- [ ] Adaptateur de prise si nécessaire",
+    "- [ ] Forfait international ou eSIM activé",
+    "",
+    "## Valise (à adapter à la météo)",
+    "",
+    "- [ ] Vêtements selon la saison et la durée",
+    "- [ ] Chaussures de marche confortables",
+    "- [ ] Trousse de toilette (format cabine si bagage à main)",
+    "- [ ] Médicaments personnels + petite trousse de premiers soins",
+    "- [ ] Lunettes de soleil, crème solaire, gourde réutilisable",
+    "",
+    "## La veille / le jour du départ",
+    "",
+    "- [ ] Recharger tous les appareils",
+    "- [ ] Vérifier l'heure d'embarquement et le terminal",
+    "- [ ] Fermer eau / gaz / fenêtres et débrancher les appareils",
+    "- [ ] Laisser une copie de l'itinéraire à un proche",
+    "- [ ] Vérifier les restrictions de bagages de la compagnie",
+    "",
+    "---",
+    "",
+    `**Envie d'aller plus loin ?** Le guide PDF complet ${dest} contient l'itinéraire jour par jour, le budget détaillé et les bonnes adresses. [Voir le guide ${dest}](/guides/${slug}).`,
   ].join("\n");
   return { content: `${fm}\n\n${body}\n`, title, desc, dest };
 }
@@ -400,7 +452,7 @@ async function main() {
 
       const prodDir = path.join(PRODUCTS_DIR, slug);
       await fs.mkdir(prodDir, { recursive: true });
-      const deliveryToken = await getDeliveryToken(prodDir);
+      const deliveryToken = await getDeliveryToken(prodDir, slug);
 
       if (!decision.buyLink && !decision.blogDraft && stripeConfig.enabled) {
         console.log(`  creating Stripe payment link (${price.label})`);
