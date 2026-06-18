@@ -68,7 +68,9 @@ function inlineMarkdown(text) {
     .replace(/\*\*(.+?)\*\*/g, "<strong>$1</strong>")
     .replace(/(^|[^*])\*(?!\s)([^*]+?)\*(?!\*)/g, "$1<em>$2</em>")
     .replace(/`([^`]+?)`/g, "<code>$1</code>")
-    .replace(/\[(.*?)\]\((.*?)\)/g, '<a href="$2">$1</a>');
+    .replace(/\[(.*?)\]\((.*?)\)/g, '<a href="$2">$1</a>')
+    // Retire les astérisques orphelins restants (notes de bas de page parasites du modèle).
+    .replace(/\*+/g, "");
 }
 
 function splitTableRow(line) {
@@ -215,7 +217,11 @@ function markdownBodyToHtml(markdown) {
 
     // Paragraphe
     closeList();
-    html.push(`<p>${inlineMarkdown(trimmed)}</p>`);
+    if (/^\*\*En bref\s*:?\*\*/i.test(trimmed)) {
+      html.push(`<p class="enbref">${inlineMarkdown(trimmed)}</p>`);
+    } else {
+      html.push(`<p>${inlineMarkdown(trimmed)}</p>`);
+    }
     i++;
   }
   closeList();
@@ -224,7 +230,7 @@ function markdownBodyToHtml(markdown) {
 
 /* ---------------- Template PDF ---------------- */
 
-export function markdownToDeliveryHtml({ title, destination = "", markdown, kind = "guide", coverImage = "" }) {
+export function markdownToDeliveryHtml({ title, destination = "", markdown, kind = "guide", coverImage = "", mapImage = "" }) {
   const cleaned = kind === "guide" ? cleanGuideMarkdown(markdown) : stripFrontmatter(markdown);
   const body = markdownBodyToHtml(cleaned);
   const kicker = kind === "guide" ? "Guide de voyage PDF" : "Checklist de préparation";
@@ -232,6 +238,16 @@ export function markdownToDeliveryHtml({ title, destination = "", markdown, kind
   const coverPhoto = coverImage
     ? `<div class="cover-photo" style="background-image:url('${coverImage}')"></div>`
     : "";
+
+  // Encadré d'honnêteté (guides) + carte de la ville, insérés en tête de contenu.
+  const honestyNote =
+    kind === "guide"
+      ? `<div class="note">Les adresses, prix et horaires sont donnés à titre indicatif et peuvent évoluer. Vérifiez toujours les informations importantes (ouverture, disponibilité, tarifs) avant de vous déplacer.</div>`
+      : "";
+  const mapBlock =
+    kind === "guide" && mapImage
+      ? `<figure class="citymap"><img src="${mapImage}" alt="Carte de ${escapeHtml(dest)}"/><figcaption>${escapeHtml(dest)} et ses quartiers — repères généraux (source : OpenStreetMap).</figcaption></figure>`
+      : "";
 
   return `<!doctype html>
 <html lang="fr">
@@ -350,6 +366,22 @@ export function markdownToDeliveryHtml({ title, destination = "", markdown, kind
 
       hr { border: none; height: 1px; background: #e2e8f0; margin: 18px 0; }
 
+      /* Encadré d'honnêteté */
+      .note {
+        background: #eef2ff; border: 1px solid #c7d2fe; border-radius: 10px;
+        padding: 12px 16px; font-size: 10.5px; color: #3730a3; margin-bottom: 18px;
+      }
+      /* Carte de la ville */
+      .citymap { margin: 0 0 22px; }
+      .citymap img { width: 100%; border-radius: 12px; border: 1px solid #e0e7ff; display: block; }
+      .citymap figcaption { font-size: 9px; color: #94a3b8; margin-top: 6px; text-align: center; }
+      /* Résumé "En bref" par jour */
+      p.enbref {
+        background: linear-gradient(100deg, #ecfdf5, rgba(255,255,255,0));
+        border-left: 4px solid #34d399; border-radius: 0 8px 8px 0;
+        padding: 8px 14px; margin: 0 0 12px; font-size: 11px; color: #065f46;
+      }
+
       .footer { margin-top: 30px; border-top: 1px solid #e2e8f0; padding-top: 12px; color: #94a3b8; font-size: 9px; }
     </style>
   </head>
@@ -368,6 +400,8 @@ export function markdownToDeliveryHtml({ title, destination = "", markdown, kind
     </section>
 
     <main class="content">
+      ${honestyNote}
+      ${mapBlock}
       ${body}
       <div class="footer">
         Guide numérique TripPilot Guides — usage personnel. Les prix, horaires et conditions

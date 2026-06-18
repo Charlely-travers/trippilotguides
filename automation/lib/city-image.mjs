@@ -115,6 +115,128 @@ async function downloadBuffer(url) {
   return Buffer.from(await res.arrayBuffer());
 }
 
+/** Récupère les coordonnées (lat/lon) du centre-ville via Wikipedia, repli Nominatim. */
+async function cityCoordinates(destination) {
+  const base = destination.charAt(0).toUpperCase() + destination.slice(1);
+  for (const lang of ["fr", "en"]) {
+    for (const title of [...new Set([base, destination])]) {
+      try {
+        const url = `https://${lang}.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(
+          title
+        )}`;
+        const data = await fetchJson(url);
+        if (data?.coordinates?.lat && data?.coordinates?.lon) {
+          return { lat: data.coordinates.lat, lon: data.coordinates.lon };
+        }
+      } catch {
+        /* suivant */
+      }
+    }
+  }
+  // Repli : géocodage Nominatim (OSM), sans clé.
+  try {
+    const url =
+      "https://nominatim.openstreetmap.org/search?" +
+      new URLSearchParams({ q: destination, format: "json", limit: "1" }).toString();
+    const arr = await fetchJson(url);
+    if (Array.isArray(arr) && arr[0]?.lat && arr[0]?.lon) {
+      return { lat: Number(arr[0].lat), lon: Number(arr[0].lon) };
+    }
+  } catch {
+    /* ignore */
+  }
+  return null;
+}
+
+/** Conversion lon/lat -> coordonnées de tuile (fractionnaires) au zoom donné. */
+function lonLatToTile(lon, lat, z) {
+  const n = 2 ** z;
+  const x = ((lon + 180) / 360) * n;
+  const latRad = (lat * Math.PI) / 180;
+  const y = ((1 - Math.log(Math.tan(latRad) + 1 / Math.cos(latRad)) / Math.PI) / 2) * n;
+  return { x, y, n };
+}
+
+/**
+ * Génère une carte statique de la ville en assemblant des tuiles OpenStreetMap
+ * (tile.openstreetmap.org, fiable, sans clé). Stocke un WebP local.
+ * @returns {Promise<{ok:boolean, map?:string, reason?:string, coords?:object}>}
+ */
+export async function fetchCityMap({ destination, slug, publicDir, zoom = 13 }) {
+  const citySlug = slugify(slug || destination);
+  let sharp;
+  try {
+    sharp = (await import("sharp")).default;
+  } catch {
+    return { ok: false, reason: "sharp_unavailable" };
+  }
+
+  const coords = await cityCoordinates(destination);
+  if (!coords) return { ok: false, reason: "no_coordinates" };
+
+  const TILE = 256;
+  const COLS = 4; // largeur : 4 tuiles = 1024 px
+  const ROWS = 3; // hauteur : 3 tuiles = 768 px
+  const { x: xf, y: yf } = lonLatToTile(coords.lon, coords.lat, zoom);
+  const xtile = Math.floor(xf);
+  const ytile = Math.floor(yf);
+  const startX = xtile - 1; // 1 tuile à gauche
+  const startY = ytile - 1; // 1 tuile en haut
+
+  // Télécharge la grille de tuiles.
+  const composites = [];
+  try {
+    for (let dy = 0; dy < ROWS; dy++) {
+      for (let dx = 0; dx < COLS; dx++) {
+        const tx = startX + dx;
+        const ty = startY + dy;
+        const url = `https://tile.openstreetmap.org/${zoom}/${tx}/${ty}.png`;
+        const buf = await downloadBuffer(url);
+        composites.push({ input: buf, left: dx * TILE, top: dy * TILE });
+      }
+    }
+  } catch (err) {
+    return { ok: false, reason: `tiles_failed: ${err.message}` };
+  }
+
+  const outDir = path.join(publicDir, "images", "cities");
+  await fs.mkdir(outDir, { recursive: true });
+  const mapRel = `/images/cities/${citySlug}-map.webp`;
+  const mapPath = path.join(outDir, `${citySlug}-map.webp`);
+
+  try {
+    // Assemble la grille complète.
+    const full = await sharp({
+      create: {
+        width: COLS * TILE,
+        height: ROWS * TILE,
+        channels: 3,
+        background: { r: 233, g: 231, b: 226 },
+      },
+    })
+      .composite(composites)
+      .png()
+      .toBuffer();
+
+    // Recadre une fenêtre 900x520 centrée sur la ville.
+    const centerX = (xf - startX) * TILE;
+    const centerY = (yf - startY) * TILE;
+    const cropW = 900;
+    const cropH = 520;
+    const left = Math.max(0, Math.min(COLS * TILE - cropW, Math.round(centerX - cropW / 2)));
+    const top = Math.max(0, Math.min(ROWS * TILE - cropH, Math.round(centerY - cropH / 2)));
+
+    await sharp(full)
+      .extract({ left, top, width: cropW, height: cropH })
+      .webp({ quality: 88 })
+      .toFile(mapPath);
+  } catch (err) {
+    return { ok: false, reason: `map_compose_failed: ${err.message}` };
+  }
+
+  return { ok: true, map: mapRel, coords };
+}
+
 /**
  * Récupère et stocke l'image d'une destination en hero (1600x900) et card (800x600).
  * @returns {Promise<{ok:boolean, hero?:string, card?:string, credit?:string, buffer?:Buffer, reason?:string}>}

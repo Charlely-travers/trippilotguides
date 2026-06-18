@@ -284,7 +284,9 @@ async function generateBlogMarkdown(research) {
     "détail complet, le planning optimisé et les bonnes adresses dans le guide.\n" +
     "FIABILITÉ : appuie-toi sur les données de recherche ; pour toute info non sourcée, reste prudent.\n" +
     "FORMATAGE : Titres ## et ### uniquement (JAMAIS de #, JAMAIS de double dièse comme '### ###'). " +
-    "Listes à puces, **gras** sur les lieux/chiffres clés. Paragraphes courts (max 4 phrases). " +
+    "Listes à puces, **gras** sur les lieux/chiffres clés (astérisques UNIQUEMENT par paires, " +
+    "jamais isolés). N'invente pas de noms précis non présents dans la recherche. " +
+    "Paragraphes courts (max 4 phrases). " +
     "N'ajoute PAS de disclaimer, sources ni CTA (ajoutés automatiquement). " +
     "TERMINE toujours par une phrase complète. Markdown BRUT.";
 
@@ -380,9 +382,19 @@ async function generateGuidePart(research, instructions, maxTokens, wordTarget) 
     "astuces d'initié, où manger à proximité, comment éviter la foule.\n" +
     `- Vise environ ${wordTarget} mots pour cette partie : du contenu dense et valable.\n` +
     "- Appuie-toi sur les données de recherche ; pour toute info non vérifiée, reste prudent " +
-    "(« comptez environ », « à vérifier »). N'invente pas d'adresses précises douteuses.\n" +
+    "(« comptez environ », « à vérifier »).\n" +
+    "FIABILITÉ ABSOLUE (un produit payant ne peut pas mentir) :\n" +
+    "- N'invente JAMAIS de noms de restaurants, d'hôtels, de prix précis ni de faits " +
+    "historiques (emplacement d'une œuvre dans tel musée, dates exactes…). Utilise EN " +
+    "PRIORITÉ les lieux présents dans les DONNÉES DE RECHERCHE.\n" +
+    "- Si tu n'as pas d'adresse vérifiée, reste GÉNÉRIQUE (« une taverne du quartier », " +
+    "« un café local près de la place ») plutôt que d'inventer un nom précis.\n" +
+    "- Ne cite pas d'anecdote historique précise si tu n'en es pas certain.\n" +
+    "NON-RÉPÉTITION : ne répète pas d'un section à l'autre les mêmes conseils ou adresses.\n" +
     "FORMAT : Titres ## et ### uniquement (jamais de #, jamais de double dièse). " +
-    "Mets en **gras** les lieux et chiffres clés. Listes à puces quand pertinent. " +
+    "Mets en **gras** les lieux et chiffres clés — les astérisques UNIQUEMENT par paires " +
+    "pour le gras, JAMAIS d'astérisque isolé ni de note en bas de page avec *. " +
+    "Listes à puces quand pertinent. " +
     "TERMINE toujours par une phrase complète. Markdown BRUT (pas de bloc de code englobant).";
   const user =
     "DONNÉES DE RECHERCHE :\n" +
@@ -394,7 +406,7 @@ async function generateGuidePart(research, instructions, maxTokens, wordTarget) 
   const { md, finishReason } = await markdownWithRetry(system, user, {
     maxTokens,
     model: GUIDE_MODEL,
-    temperature: 0.5,
+    temperature: 0.4,
   });
   return { md, finishReason };
 }
@@ -419,11 +431,13 @@ async function generateGuideOutlineMarkdown(research) {
       name: "itinerary",
       instr:
         "Rédige UNIQUEMENT :\n## Itinéraire jour par jour\n" +
-        "Pour CHAQUE jour : un titre `### Jour X — thème évocateur`, un court paragraphe " +
-        "d'introduction, puis **Matin**, **Après-midi**, **Soir** (en gras, suivis d'un tiret —) " +
-        "avec à chaque fois un VRAI paragraphe détaillé : lieux précis, ce qu'on y voit et " +
-        "pourquoi, durée conseillée, prix indicatif, astuce d'initié pour éviter la foule, et " +
-        "une suggestion de restaurant/café à proximité avec fourchette de prix. Riche et concret. " +
+        "Pour CHAQUE jour : un titre `### Jour X — thème évocateur`, puis une ligne " +
+        "`**En bref :** ...` qui résume la journée en une phrase (les 2-3 temps forts). " +
+        "Ensuite un court paragraphe d'introduction, puis **Matin**, **Après-midi**, **Soir** " +
+        "(en gras, suivis d'un tiret —) avec à chaque fois un VRAI paragraphe détaillé : lieux " +
+        "précis, ce qu'on y voit et pourquoi, durée conseillée, prix indicatif, astuce d'initié. " +
+        "Tu peux suggérer UNE table par soir maximum, sans jamais répéter une adresse déjà " +
+        "citée un autre jour. " +
         daysHint,
       maxTokens: 4000,
       words: 1200,
@@ -458,18 +472,22 @@ async function generateGuideOutlineMarkdown(research) {
         "Rédige UNIQUEMENT :\n## Se déplacer sur place\n" +
         "Depuis l'aéroport jusqu'au centre (options, prix, durée), le pass transport le plus " +
         "rentable, les déplacements sur place et les astuces (cartes, applis). Concret.\n\n" +
-        "## Où manger : nos bonnes adresses\n" +
-        "6 à 8 adresses ou types de lieux organisés par quartier, avec ce qu'on y mange, " +
-        "l'ambiance et une fourchette de prix. Indique clairement comment éviter les pièges à touristes.",
+        "## Que manger : les spécialités à goûter\n" +
+        "NE RE-LISTE PAS les restaurants déjà cités dans l'itinéraire. Présente plutôt 6 à 8 " +
+        "SPÉCIALITÉS culinaires locales (plats, street food, douceurs, boissons) : ce que c'est, " +
+        "où en trouver de la bonne (type de lieu / quartier, pas forcément un nom précis), et la " +
+        "fourchette de prix. Ajoute une astuce pour repérer une bonne adresse et éviter les pièges.",
       maxTokens: 2400,
-      words: 650,
+      words: 600,
       fb: () => buildGuideFallbackSources(research),
     },
     {
       name: "tips-checklist",
       instr:
         "Rédige UNIQUEMENT :\n## Conseils pratiques & erreurs à éviter\n" +
-        "6 à 8 conseils concrets et spécifiques (1-2 phrases chacun), ton direct.\n\n" +
+        "6 à 8 conseils NOUVEAUX et spécifiques (sécurité, horaires locaux, étiquette, météo, " +
+        "argent/paiement, connectivité…). NE répète PAS la réservation des sites ni les conseils " +
+        "déjà évidents dans l'itinéraire.\n\n" +
         "## Planning type d'une journée\n" +
         "Un tableau Markdown : colonnes Moment / Activité / Budget indicatif.\n\n" +
         "## Checklist imprimable\n" +

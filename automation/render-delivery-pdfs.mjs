@@ -76,6 +76,16 @@ async function main() {
       coverImage = "";
     }
 
+    // Charge la carte de la ville en data URI.
+    let mapImage = "";
+    try {
+      const mapPath = path.join(ROOT, "public", "images", "cities", `${slug}-map.webp`);
+      const buf = await fs.readFile(mapPath);
+      mapImage = `data:image/webp;base64,${buf.toString("base64")}`;
+    } catch {
+      mapImage = "";
+    }
+
     const folder = deliveryFolderName(slug, product.deliveryToken || "");
     const targetDir = path.join(PUBLIC_DELIVERY_DIR, folder);
     await fs.mkdir(targetDir, { recursive: true });
@@ -89,6 +99,7 @@ async function main() {
         markdown: guideMd,
         kind: "guide",
         coverImage,
+        mapImage,
       }),
       { waitUntil: "networkidle" }
     );

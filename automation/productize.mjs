@@ -22,7 +22,7 @@ import {
   computeGuidePrice,
 } from "./lib/publish-rules.mjs";
 import { writePinAssets } from "./lib/pin-assets.mjs";
-import { fetchCityImage } from "./lib/city-image.mjs";
+import { fetchCityImage, fetchCityMap } from "./lib/city-image.mjs";
 import {
   createStripePaymentLink,
   getStripePaymentConfig,
@@ -432,6 +432,18 @@ async function main() {
       const imageExtras = cityImage.ok
         ? { hero: cityImage.hero, card: cityImage.card, credit: cityImage.credit }
         : {};
+
+      // Carte statique de la ville (Wikimedia/OSM, sans clé) pour le guide PDF.
+      try {
+        const mapRes = await fetchCityMap({
+          destination: meta.destination,
+          slug,
+          publicDir: PUBLIC_DIR,
+        });
+        console.log(mapRes.ok ? `  city map: ${mapRes.map}` : `  city map: skipped (${mapRes.reason})`);
+      } catch (err) {
+        console.log(`  city map error: ${err.message}`);
+      }
 
       let decision = decidePublication({ item, meta, config: publishConfig });
       const existingGuide = await readSafe(path.join(GUIDES_DIR, `${slug}.md`));
