@@ -1,5 +1,6 @@
 import fs from "node:fs/promises";
 import path from "node:path";
+import { renderBeautifulPins } from "./pin-render.mjs";
 
 const PIN_WIDTH = 1000;
 const PIN_HEIGHT = 1500;
@@ -197,12 +198,46 @@ function renderPinFallbackBackgroundSvg() {
 </svg>`;
 }
 
-export async function writePinAssets({ outputDir, socialMarkdown, context, backgroundImage = null }) {
+export async function writePinAssets({ outputDir, socialMarkdown, context, backgroundImage = null, backgroundImages = null }) {
   const extracted = extractPinterestPins(socialMarkdown, context);
   const pins = extracted.length ? extracted : buildFallbackPins(context);
   const selected = pins.slice(0, 10);
   await fs.mkdir(outputDir, { recursive: true });
 
+  // Liste des fonds disponibles (photos de monuments + hero) pour le rendu premium.
+  const backgrounds = (
+    Array.isArray(backgroundImages) && backgroundImages.length
+      ? backgroundImages
+      : backgroundImage
+        ? [backgroundImage]
+        : []
+  ).filter(Boolean);
+
+  // 1) Rendu PREMIUM via Playwright (HTML/CSS + polices web + photos de sites).
+  if (backgrounds.length) {
+    try {
+      const premiumFiles = await renderBeautifulPins({
+        pins: selected,
+        outputDir,
+        backgrounds,
+        destination: context.destination,
+        urlText: context.url,
+      });
+      if (premiumFiles.length) {
+        await fs.writeFile(
+          path.join(outputDir, "pins.json"),
+          JSON.stringify(selected, null, 2),
+          "utf8"
+        );
+        premiumFiles.push(path.join(outputDir, "pins.json"));
+        return { pins: selected, files: premiumFiles, renderer: "playwright" };
+      }
+    } catch (err) {
+      console.log(`  pins: rendu premium indisponible (${err.message}), repli SVG`);
+    }
+  }
+
+  // 2) Repli : composition sharp + overlay SVG (sans navigateur).
   let sharp = null;
   try {
     sharp = (await import("sharp")).default;

@@ -415,18 +415,26 @@ export async function fetchPlacePhotos({ places, destination, slug, publicDir, m
     index += 1;
     const rel = `/images/cities/${citySlug}-place-${index}.webp`;
     const filePath = path.join(outDir, `${citySlug}-place-${index}.webp`);
+    const pinRel = `/images/cities/${citySlug}-place-${index}-pin.webp`;
+    const pinPath = path.join(outDir, `${citySlug}-place-${index}-pin.webp`);
     try {
+      // Version galerie (paysage) pour le PDF.
       await sharp(buf)
         .resize(800, 500, { fit: "cover", position: "attention" })
         .webp({ quality: 80 })
         .toFile(filePath);
+      // Version portrait haute résolution pour les épingles Pinterest (depuis l'original).
+      await sharp(buf)
+        .resize(1000, 1500, { fit: "cover", position: "attention" })
+        .webp({ quality: 82 })
+        .toFile(pinPath);
     } catch (err) {
       if (process.env.DEBUG_PLACES) console.error("  sharp fail", clean, err.message);
       index -= 1;
       continue;
     }
 
-    out.push({ name: clean, path: rel, credit: found.credit });
+    out.push({ name: clean, path: rel, pinPath: pinRel, credit: found.credit });
   }
 
   return out;

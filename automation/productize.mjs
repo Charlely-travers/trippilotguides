@@ -543,10 +543,19 @@ async function main() {
           })
         : generateFallbackBlog(meta, decision);
 
+      // Fonds pour les pins : photos de monuments (version portrait HD) en priorité, puis hero.
+      const pinBackgrounds = [
+        ...placePhotos.map((p) =>
+          path.join(PUBLIC_DIR, (p.pinPath || p.path).replace(/^\//, ""))
+        ),
+        ...(cityImage.ok ? [path.join(PUBLIC_DIR, cityImage.hero.replace(/^\//, ""))] : []),
+      ];
+
       const pinResult = await writePinAssets({
         outputDir: path.join(prodDir, "pins"),
         socialMarkdown: social,
         backgroundImage: cityImage.ok ? path.join(PUBLIC_DIR, cityImage.hero.replace(/^\//, "")) : null,
+        backgroundImages: pinBackgrounds,
         context: {
           destination: meta.destination,
           title: guideInfo.title,
