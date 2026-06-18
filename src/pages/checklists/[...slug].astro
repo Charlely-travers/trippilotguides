@@ -23,7 +23,10 @@ const { entry } = Astro.props;
 const { Content } = await render(entry);
 const { title, description, destination, gradient, formLink, guideSlug } = entry.data;
 const city = getCityImage(destination.toLowerCase());
+const heroSrc = entry.data.image || city.hero;
 const isInternalForm = formLink.startsWith("/api/");
+// Pour le lead-magnet interne : action propre + slug en champ caché (robuste)
+const formAction = isInternalForm ? "/api/lead-magnet" : formLink;
 ---
 
 <BaseLayout title={title} description={description}>
@@ -39,19 +42,21 @@ const isInternalForm = formLink.startsWith("/api/");
           <p class="mt-5 text-lg text-ink-700">{description}</p>
           <form
             class="mt-7 flex flex-col gap-3 sm:flex-row"
-            action={formLink}
+            action={formAction}
             method={isInternalForm ? "post" : "get"}
             target={isInternalForm ? undefined : "_blank"}
+            data-astro-reload
           >
+            <input type="hidden" name="slug" value={entry.id} />
             <label for="email" class="sr-only">Votre adresse email</label>
-            <input id="email" name="email" type="email" autocomplete="email" placeholder="ton@email.com" class="w-full rounded-full border border-slate-200 bg-surface px-5 py-3.5 text-ink-900 placeholder:text-ink-400 focus:border-brand-400 focus:outline-none focus:ring-2 focus:ring-brand-200 sm:max-w-xs" />
+            <input id="email" name="email" type="email" autocomplete="email" required placeholder="ton@email.com" class="w-full rounded-full border border-slate-200 bg-surface px-5 py-3.5 text-ink-900 placeholder:text-ink-400 focus:border-brand-400 focus:outline-none focus:ring-2 focus:ring-brand-200 sm:max-w-xs" />
             <Button type="submit" size="lg" variant="primary" class="shrink-0">Recevoir la checklist</Button>
           </form>
           <p class="mt-3 text-sm text-ink-500">Pas de spam. Désinscription en un clic.</p>
         </div>
         <div class="relative aspect-[4/3] overflow-hidden rounded-[1.75rem] shadow-glow">
           <img
-            src={city.hero}
+            src={heroSrc}
             alt={`Vue de ${destination}`}
             class="h-full w-full object-cover"
             loading="eager"

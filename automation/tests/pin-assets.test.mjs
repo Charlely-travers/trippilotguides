@@ -4,7 +4,7 @@ import assert from "node:assert/strict";
 import {
   buildFallbackPins,
   extractPinterestPins,
-  renderPinSvg,
+  renderPinOverlaySvg,
 } from "../lib/pin-assets.mjs";
 
 test("creates ten fallback pins for a destination", () => {
@@ -44,8 +44,8 @@ test("extracts numbered Pinterest ideas from social markdown", () => {
   assert.deepEqual(pins[0].tags, ["lisbonne"]);
 });
 
-test("renders a 1000x1500 SVG and escapes overlay text", () => {
-  const svg = renderPinSvg({
+test("renders a 1000x1500 overlay SVG and escapes title text", () => {
+  const svg = renderPinOverlaySvg({
     destination: "Porto",
     title: "Porto <budget>",
     overlayText: "Porto & budget",
@@ -56,8 +56,7 @@ test("renders a 1000x1500 SVG and escapes overlay text", () => {
 
   assert.match(svg, /width="1000"/);
   assert.match(svg, /height="1500"/);
-  assert.match(svg, /Porto &amp; budget/);
-  assert.doesNotMatch(svg, /Porto & budget/);
   assert.match(svg, /Porto &lt;budget&gt;/);
+  assert.doesNotMatch(svg, /Porto <budget>/);
 });
 

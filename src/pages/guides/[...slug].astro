@@ -25,6 +25,7 @@ const { entry } = Astro.props;
 const { Content } = await render(entry);
 const { title, description, destination, price, gradient, buyLink, checklistLink } = entry.data;
 const city = getCityImage(entry.id);
+const heroSrc = entry.data.image || city.hero;
 const hasBuyLink = Boolean(buyLink) && !buyLink.startsWith("TODO");
 
 const faq = [
@@ -61,7 +62,7 @@ const faq = [
         </div>
         <div class="relative aspect-[4/3] overflow-hidden rounded-[1.75rem] shadow-glow">
           <img
-            src={city.hero}
+            src={heroSrc}
             alt={`Vue de ${destination}`}
             class="h-full w-full object-cover"
             loading="eager"

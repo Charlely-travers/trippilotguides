@@ -9,10 +9,13 @@ interface Props {
   description: string;
   /** Slug ou nom de ville pour l'image */
   citySlug?: string;
+  /** Image locale optionnelle (prioritaire) */
+  image?: string;
   readingTime: string;
 }
-const { href, title, description, citySlug = "", readingTime } = Astro.props;
+const { href, title, description, citySlug = "", image, readingTime } = Astro.props;
 const city = getCityImage(citySlug || href.split("/").pop() || "");
+const cardSrc = image || city.card;
 ---
 
 <article
@@ -21,7 +24,7 @@ const city = getCityImage(citySlug || href.split("/").pop() || "");
   <a href={href} class="flex flex-1 flex-col">
     <div class="relative h-44 overflow-hidden">
       <img
-        src={city.card}
+        src={cardSrc}
         alt=""
         class="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
         loading="lazy"

@@ -772,8 +772,28 @@ function verificationBox(research) {
   );
 }
 
+/** Exclut les sources hors-sujet (SEO, Pinterest, marketing) du blog. */
+function isRelevantSource(s) {
+  const haystack = `${s?.title || ""} ${s?.url || ""}`.toLowerCase();
+  const banned = [
+    "pinterest",
+    "seo",
+    "accio.com",
+    "tendances",
+    "trends",
+    "mots-clés",
+    "mots-cles",
+    "keyword",
+    "marketing",
+    "growth",
+    "hashtag",
+  ];
+  return !banned.some((b) => haystack.includes(b));
+}
+
 function sourcesSection(research) {
-  if (!research.sources?.length) {
+  const relevant = (research.sources || []).filter(isRelevantSource);
+  if (!relevant.length) {
     return (
       "\n\n## Sources\n\n_Aucune source vérifiée n'a été collectée pour ce brouillon : " +
       "les informations doivent être confirmées avant toute publication._\n"
@@ -781,7 +801,7 @@ function sourcesSection(research) {
   }
   return (
     "\n\n## Sources\n\n" +
-    research.sources.map((s) => `- [${s.title}](${s.url})`).join("\n") +
+    relevant.map((s) => `- [${s.title}](${s.url})`).join("\n") +
     "\n"
   );
 }

@@ -13,6 +13,12 @@ const blog = defineCollection({
     destination: z.string().optional(),
     guideSlug: z.string().optional(),
     checklistSlug: z.string().optional(),
+    /** Image hero locale (ex: /images/cities/<slug>-hero.webp) */
+    image: z.string().optional(),
+    /** Image carte locale (ex: /images/cities/<slug>-card.webp) */
+    cardImage: z.string().optional(),
+    /** Crédit / attribution de la photo */
+    imageCredit: z.string().optional(),
     draft: z.boolean().default(false),
   }),
 });
@@ -30,6 +36,9 @@ const guides = defineCollection({
     gradient: z.string().default("from-brand-500 to-accent-600"),
     buyLink: z.string().default("TODO_GUMROAD_OR_PAYHIP_LINK"),
     checklistLink: z.string().default(""),
+    image: z.string().optional(),
+    cardImage: z.string().optional(),
+    imageCredit: z.string().optional(),
     draft: z.boolean().default(false),
   }),
 });
@@ -44,6 +53,9 @@ const checklists = defineCollection({
     gradient: z.string().default("from-emerald-400 to-cyan-500"),
     formLink: z.string().default("TODO_TALLY_OR_MAILERLITE_LINK"),
     guideSlug: z.string().default(""),
+    image: z.string().optional(),
+    cardImage: z.string().optional(),
+    imageCredit: z.string().optional(),
     draft: z.boolean().default(false),
   }),
 });

@@ -19,9 +19,9 @@ export const SITE = {
 
 /** Liens externes — à remplacer par les vrais. */
 export const LINKS = {
-  // Achat du guide Rome — pointe vers la page guide pour l'instant
-  buyRomeGuide: "/guides/rome-5-jours-budget-700",
-  // Checklist gratuite — page interne
+  // Page listant tous les guides
+  buyRomeGuide: "/guides",
+  // Checklists gratuites — page interne
   freeChecklist: "/checklists",
   // Contact
   email: "hello@trippilotguides.com",

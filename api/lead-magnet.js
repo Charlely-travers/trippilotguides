@@ -1,5 +1,6 @@
 import fs from "node:fs";
 import path from "node:path";
+import { renderBrandedEmail, normalizeFromAddress } from "../automation/lib/email-template.mjs";
 
 async function readBody(req) {
   const chunks = [];
@@ -43,28 +44,46 @@ async function sendChecklistEmail({ email, slug }) {
 
   const pdfPath = findChecklistPdf(slug);
   const url = checklistUrl(slug);
+  const siteUrl = String(process.env.SITE_URL || "https://trippilotguides.com").replace(/\/$/, "");
+  const guideUrl = `${siteUrl}/guides/${encodeURIComponent(slug)}`;
 
-  // Préparer le payload Resend
+  const intro =
+    `<p style="margin:0 0 14px;">Merci pour votre inscription ! Voici votre <strong>checklist de voyage gratuite</strong> pour partir l'esprit tranquille, sans rien oublier.</p>` +
+    (pdfPath
+      ? `<p style="margin:0;">Le PDF est <strong>en pièce jointe</strong> de cet email — enregistrez-le ou imprimez-le.</p>`
+      : `<p style="margin:0;">Retrouvez votre checklist imprimable en cliquant sur le bouton ci-dessous.</p>`);
+
+  const secondaryHtml =
+    `<div style="margin-top:8px;padding:18px;background:#f8fafc;border-radius:12px;border:1px solid #e2e8f0;">` +
+    `<p style="margin:0 0 6px;font-size:15px;color:#0b1120;font-weight:700;">Envie d'un itinéraire complet ?</p>` +
+    `<p style="margin:0 0 12px;font-size:14px;line-height:1.5;color:#475569;">Notre guide PDF complet contient l'itinéraire jour par jour, le budget détaillé et les meilleurs quartiers où dormir.</p>` +
+    `<a href="${guideUrl}" style="font-size:14px;font-weight:700;color:#4f46e5;text-decoration:none;">Découvrir le guide complet →</a>` +
+    `</div>`;
+
+  const html = renderBrandedEmail({
+    siteUrl,
+    preheader: "Votre checklist de voyage gratuite est arrivée.",
+    heading: "Votre checklist de voyage gratuite",
+    intro,
+    ctaLabel: pdfPath ? "" : "Voir ma checklist",
+    ctaUrl: pdfPath ? "" : url,
+    secondaryHtml,
+    footerNote:
+      "Vous recevez cet email car vous avez demandé la checklist gratuite sur trippilotguides.com. Pour vous désinscrire, répondez \"stop\" à cet email.",
+  });
+
   const payload = {
-    from:
-      process.env.LEAD_MAGNET_FROM_EMAIL ||
-      "TripPilot Guides <hello@trippilotguides.com>",
+    from: normalizeFromAddress(process.env.LEAD_MAGNET_FROM_EMAIL),
     to: email,
-    subject: `Votre checklist voyage gratuite — TripPilot Guides`,
-    html: [
-      `<div style="font-family:Arial,sans-serif;max-width:560px;margin:0 auto;color:#0f172a;">`,
-      `<p style="font-size:16px;"><strong>Bonjour 👋</strong></p>`,
-      `<p>Merci pour votre inscription ! Voici votre checklist gratuite pour préparer votre voyage sans rien oublier.</p>`,
-      pdfPath
-        ? `<p>📎 <strong>Le PDF est en pièce jointe de cet email.</strong> Vous pouvez l'enregistrer ou l'imprimer.</p>`
-        : `<p>👉 <a href="${url}" style="color:#4f46e5;font-weight:bold;">Accéder à votre checklist imprimable</a></p>`,
-      `<hr style="border:none;border-top:1px solid #e2e8f0;margin:24px 0;" />`,
-      `<p style="font-size:14px;">💡 <strong>Envie d'un itinéraire complet ?</strong></p>`,
-      `<p style="font-size:14px;">Notre guide PDF complet contient l'itinéraire jour par jour, le budget détaillé et les meilleurs quartiers où dormir. <a href="${String(process.env.SITE_URL || "").replace(/\/$/, "")}/guides/${encodeURIComponent(slug)}" style="color:#4f46e5;">Découvrir le guide →</a></p>`,
-      `<hr style="border:none;border-top:1px solid #e2e8f0;margin:24px 0;" />`,
-      `<p style="font-size:12px;color:#64748b;">Vous recevez cet email car vous avez demandé la checklist gratuite sur trippilotguides.com.<br/>Se désinscrire ? Répondez simplement "stop" à cet email.</p>`,
-      `</div>`,
-    ].join("\n"),
+    subject: "Votre checklist voyage gratuite — TripPilot Guides",
+    html,
+    text:
+      `Merci pour votre inscription !\n\n` +
+      (pdfPath
+        ? `Votre checklist est en pièce jointe de cet email.\n\n`
+        : `Votre checklist : ${url}\n\n`) +
+      `Envie d'un itinéraire complet ? Découvrez le guide : ${guideUrl}\n\n` +
+      `TripPilot Guides`,
   };
 
   // Attacher le PDF si disponible
@@ -122,7 +141,7 @@ export default async function handler(req, res) {
 
   const redirectUrl =
     process.env.LEAD_MAGNET_SUCCESS_URL ||
-    `${String(process.env.SITE_URL || "https://www.trippilotguides.com").replace(/\/$/, "")}/checklist-rome-gratuite?sent=1`;
+    `${String(process.env.SITE_URL || "https://www.trippilotguides.com").replace(/\/$/, "")}/checklists?sent=1`;
   res.writeHead(303, { Location: redirectUrl });
   res.end();
 }

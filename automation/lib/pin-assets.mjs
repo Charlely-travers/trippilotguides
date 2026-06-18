@@ -101,77 +101,103 @@ function svgTextLines(text, maxChars = 17) {
   return lines.slice(0, 4);
 }
 
-export function renderPinSvg(pin) {
-  const overlayLines = svgTextLines(pin.overlayText || pin.title);
-  const titleLines = svgTextLines(pin.title, 28).slice(0, 2);
-  const dest = escapeXml(pin.destination || "Voyage");
-  const overlay = overlayLines
+function wrapText(text, maxChars, maxLines) {
+  const words = String(text || "").split(/\s+/).filter(Boolean);
+  const lines = [];
+  let current = "";
+  for (const word of words) {
+    const next = current ? `${current} ${word}` : word;
+    if (next.length > maxChars && current) {
+      lines.push(current);
+      current = word;
+    } else {
+      current = next;
+    }
+  }
+  if (current) lines.push(current);
+  return lines.slice(0, maxLines);
+}
+
+/**
+ * Overlay transparent (texte + dégradés) à composer PAR-DESSUS la photo de ville.
+ * Design éditorial : badge marque, destination, gros titre bas, footer.
+ */
+export function renderPinOverlaySvg(pin) {
+  const dest = escapeXml((pin.destination || "Voyage").toUpperCase());
+  const titleLines = wrapText(pin.title, 17, 4);
+  const lineHeight = 92;
+  const titleBlockHeight = titleLines.length * lineHeight;
+  const titleStartY = 1180 - titleBlockHeight;
+
+  const titleSvg = titleLines
     .map(
-      (line, index) =>
-        `<text x="500" y="${620 + index * 100}" font-size="82" font-weight="800" fill="#ffffff" text-anchor="middle" font-family="system-ui,-apple-system,sans-serif">${escapeXml(line)}</text>`
-    )
-    .join("\n");
-  const title = titleLines
-    .map(
-      (line, index) =>
-        `<text x="500" y="${1080 + index * 44}" font-size="32" font-weight="600" fill="#f1f5f9" text-anchor="middle" font-family="system-ui,-apple-system,sans-serif">${escapeXml(line)}</text>`
+      (line, i) =>
+        `<text x="80" y="${titleStartY + i * lineHeight}" font-size="74" font-weight="800" fill="#ffffff" font-family="'Plus Jakarta Sans','Inter',sans-serif" letter-spacing="-1">${escapeXml(
+          line
+        )}</text>`
     )
     .join("\n");
 
   return `<svg xmlns="http://www.w3.org/2000/svg" width="${PIN_WIDTH}" height="${PIN_HEIGHT}" viewBox="0 0 ${PIN_WIDTH} ${PIN_HEIGHT}">
   <defs>
-    <linearGradient id="bg" x1="0" y1="0" x2="0.4" y2="1">
-      <stop offset="0" stop-color="#1e1b4b"/>
-      <stop offset="0.5" stop-color="#312e81"/>
-      <stop offset="1" stop-color="#0f766e"/>
+    <linearGradient id="bottom" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0.30" stop-color="#0b1120" stop-opacity="0"/>
+      <stop offset="0.62" stop-color="#0b1120" stop-opacity="0.55"/>
+      <stop offset="1" stop-color="#0b1120" stop-opacity="0.94"/>
+    </linearGradient>
+    <linearGradient id="top" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#0b1120" stop-opacity="0.55"/>
+      <stop offset="1" stop-color="#0b1120" stop-opacity="0"/>
     </linearGradient>
     <linearGradient id="accent" x1="0" y1="0" x2="1" y2="0">
       <stop offset="0" stop-color="#818cf8"/>
       <stop offset="1" stop-color="#34d399"/>
     </linearGradient>
-    <radialGradient id="glow" cx="0.5" cy="0.35" r="0.6">
-      <stop offset="0" stop-color="#818cf8" stop-opacity="0.15"/>
-      <stop offset="1" stop-color="#818cf8" stop-opacity="0"/>
-    </radialGradient>
-    <filter id="shadow" x="-10%" y="-10%" width="120%" height="120%">
-      <feDropShadow dx="0" dy="4" stdDeviation="6" flood-color="#000000" flood-opacity="0.3"/>
-    </filter>
   </defs>
 
-  <!-- Fond principal -->
-  <rect width="${PIN_WIDTH}" height="${PIN_HEIGHT}" fill="url(#bg)"/>
-  <rect width="${PIN_WIDTH}" height="${PIN_HEIGHT}" fill="url(#glow)"/>
+  <!-- Dégradés de lisibilité -->
+  <rect x="0" y="0" width="${PIN_WIDTH}" height="300" fill="url(#top)"/>
+  <rect x="0" y="0" width="${PIN_WIDTH}" height="${PIN_HEIGHT}" fill="url(#bottom)"/>
 
-  <!-- Éléments décoratifs -->
-  <circle cx="850" cy="200" r="180" fill="#818cf8" opacity="0.08"/>
-  <circle cx="150" cy="1300" r="220" fill="#34d399" opacity="0.06"/>
-  <rect x="70" y="440" width="860" height="520" rx="32" fill="#ffffff" fill-opacity="0.05" stroke="#ffffff" stroke-opacity="0.12" stroke-width="1.5"/>
+  <!-- Badge marque (haut) -->
+  <g>
+    <rect x="60" y="64" width="320" height="62" rx="31" fill="#0b1120" fill-opacity="0.55"/>
+    <circle cx="98" cy="95" r="17" fill="url(#accent)"/>
+    <text x="128" y="105" font-size="28" font-weight="800" fill="#ffffff" font-family="'Plus Jakarta Sans','Inter',sans-serif">TripPilot Guides</text>
+  </g>
 
-  <!-- Logo & branding (haut) -->
-  <rect x="70" y="70" width="180" height="44" rx="22" fill="#ffffff" fill-opacity="0.15"/>
-  <text x="110" y="100" font-size="22" font-weight="700" fill="#ffffff" font-family="system-ui,-apple-system,sans-serif" opacity="0.95">TripPilot</text>
+  <!-- Destination (eyebrow) -->
+  <text x="84" y="${titleStartY - 118}" font-size="30" font-weight="800" fill="#a7f3d0" font-family="'Plus Jakarta Sans','Inter',sans-serif" letter-spacing="4">${dest}</text>
+  <rect x="80" y="${titleStartY - 92}" width="64" height="6" rx="3" fill="url(#accent)"/>
 
-  <!-- Destination badge -->
-  <rect x="70" y="160" width="${Math.min(dest.length * 28 + 60, 500)}" height="64" rx="32" fill="url(#accent)" opacity="0.9"/>
-  <text x="100" y="202" font-size="36" font-weight="800" fill="#ffffff" font-family="system-ui,-apple-system,sans-serif">${dest}</text>
-
-  <!-- Texte principal (overlay) -->
-  ${overlay}
-
-  <!-- Séparateur -->
-  <rect x="380" y="980" width="240" height="5" rx="3" fill="url(#accent)" opacity="0.7"/>
-
-  <!-- Sous-titre -->
-  ${title}
+  <!-- Titre principal -->
+  ${titleSvg}
 
   <!-- Footer -->
-  <rect x="70" y="1280" width="860" height="140" rx="24" fill="#ffffff" fill-opacity="0.08"/>
-  <text x="500" y="1340" font-size="28" font-weight="700" fill="#e0e7ff" text-anchor="middle" font-family="system-ui,-apple-system,sans-serif">Itinéraire · Budget · Checklist</text>
-  <text x="500" y="1388" font-size="22" font-weight="600" fill="#94a3b8" text-anchor="middle" font-family="system-ui,-apple-system,sans-serif">${escapeXml(pin.url || "trippilotguides.com")}</text>
+  <text x="80" y="1380" font-size="27" font-weight="700" fill="#ffffff" font-family="'Plus Jakarta Sans','Inter',sans-serif" opacity="0.92">Itinéraire · Budget · Checklist</text>
+  <text x="80" y="1428" font-size="23" font-weight="600" fill="#cbd5e1" font-family="'Inter',sans-serif">${escapeXml(
+    (pin.url || "trippilotguides.com").replace(/^https?:\/\//, "")
+  )}</text>
 </svg>`;
 }
 
-export async function writePinAssets({ outputDir, socialMarkdown, context }) {
+/** Fond dégradé (repli quand aucune photo de ville n'est disponible). */
+function renderPinFallbackBackgroundSvg() {
+  return `<svg xmlns="http://www.w3.org/2000/svg" width="${PIN_WIDTH}" height="${PIN_HEIGHT}" viewBox="0 0 ${PIN_WIDTH} ${PIN_HEIGHT}">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="0.5" y2="1">
+      <stop offset="0" stop-color="#312e81"/>
+      <stop offset="0.55" stop-color="#4f46e5"/>
+      <stop offset="1" stop-color="#0f766e"/>
+    </linearGradient>
+  </defs>
+  <rect width="${PIN_WIDTH}" height="${PIN_HEIGHT}" fill="url(#bg)"/>
+  <circle cx="820" cy="240" r="220" fill="#ffffff" opacity="0.06"/>
+  <circle cx="160" cy="1240" r="260" fill="#ffffff" opacity="0.05"/>
+</svg>`;
+}
+
+export async function writePinAssets({ outputDir, socialMarkdown, context, backgroundImage = null }) {
   const extracted = extractPinterestPins(socialMarkdown, context);
   const pins = extracted.length ? extracted : buildFallbackPins(context);
   const selected = pins.slice(0, 10);
@@ -184,17 +210,43 @@ export async function writePinAssets({ outputDir, socialMarkdown, context }) {
     sharp = null;
   }
 
+  // Prépare le fond commun (photo de ville recadrée en 1000x1500, sinon dégradé).
+  let baseBackground = null;
+  if (sharp) {
+    try {
+      if (backgroundImage) {
+        baseBackground = await sharp(backgroundImage)
+          .resize(PIN_WIDTH, PIN_HEIGHT, { fit: "cover", position: "attention" })
+          .toBuffer();
+      } else {
+        baseBackground = await sharp(Buffer.from(renderPinFallbackBackgroundSvg()))
+          .png()
+          .toBuffer();
+      }
+    } catch {
+      baseBackground = await sharp(Buffer.from(renderPinFallbackBackgroundSvg()))
+        .png()
+        .toBuffer();
+    }
+  }
+
   const files = [];
   for (const [index, pin] of selected.entries()) {
     const number = String(index + 1).padStart(2, "0");
-    const svg = renderPinSvg(pin);
-    const svgPath = path.join(outputDir, `pin-${number}.svg`);
-    await fs.writeFile(svgPath, svg, "utf8");
-    files.push(svgPath);
-    if (sharp) {
+    const overlaySvg = renderPinOverlaySvg(pin);
+
+    if (sharp && baseBackground) {
       const pngPath = path.join(outputDir, `pin-${number}.png`);
-      await sharp(Buffer.from(svg)).png().toFile(pngPath);
+      await sharp(baseBackground)
+        .composite([{ input: Buffer.from(overlaySvg), top: 0, left: 0 }])
+        .png()
+        .toFile(pngPath);
       files.push(pngPath);
+    } else {
+      // Pas de sharp : on stocke au moins l'overlay SVG.
+      const svgPath = path.join(outputDir, `pin-${number}.svg`);
+      await fs.writeFile(svgPath, overlaySvg, "utf8");
+      files.push(svgPath);
     }
   }
 

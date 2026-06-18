@@ -25,6 +25,8 @@ export const getStaticPaths = (async () => {
 const { post } = Astro.props;
 const { Content } = await render(post);
 const city = getCityImage(post.data.destination || post.id);
+const heroSrc = post.data.image || city.hero;
+const cardSrc = post.data.cardImage || post.data.image || city.card;
 
 const publishedGuideEntries = (await getCollection("guides"))
   .filter((entry) => !entry.data.draft)
@@ -96,7 +98,7 @@ const breadcrumbSchema = {
       class="relative isolate flex min-h-[24rem] flex-col justify-end overflow-hidden sm:min-h-[28rem] lg:min-h-[32rem]"
     >
       <img
-        src={city.hero}
+        src={heroSrc}
         alt={`${post.data.destination || ""} — photo de couverture`}
         class="absolute inset-0 -z-10 h-full w-full object-cover"
         loading="eager"
@@ -170,7 +172,7 @@ const breadcrumbSchema = {
           <div class="grid items-stretch gap-0 sm:grid-cols-[1fr_1.6fr]">
             <div class="relative min-h-52 overflow-hidden">
               <img
-                src={city.card}
+                src={cardSrc}
                 alt=""
                 class="absolute inset-0 h-full w-full object-cover"
                 loading="lazy"

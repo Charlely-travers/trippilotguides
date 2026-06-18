@@ -51,6 +51,30 @@ export function guessDuration(idea) {
   return match ? `${match[1]} jours` : "";
 }
 
+/** Nombre de jours extrait d'une durée ("3 jours" -> 3). 0 si inconnu. */
+export function parseDays(value) {
+  const match = String(value || "").match(/(\d+)/);
+  const n = match ? parseInt(match[1], 10) : 0;
+  return n > 0 && n <= 30 ? n : 0;
+}
+
+/**
+ * Calcule un prix cohérent selon la durée du séjour.
+ * Plus le séjour est long, plus le guide contient de contenu, plus il est cher.
+ * Renvoie { label: "9€", cents: 900 }.
+ */
+export function computeGuidePrice({ duration, days } = {}) {
+  const d = days || parseDays(duration);
+  let euros;
+  if (!d) euros = 9;
+  else if (d <= 2) euros = 7;
+  else if (d === 3) euros = 9;
+  else if (d <= 5) euros = 12;
+  else if (d <= 7) euros = 14;
+  else euros = 17;
+  return { label: `${euros}€`, cents: euros * 100, euros };
+}
+
 export function deriveDestinationMeta({ slug, research = {} }) {
   const destination = String(
     research.destination || guessDestination(research.idea, slug) || slug
@@ -123,6 +147,9 @@ export function applyBlogFrontmatter(markdown, updates) {
       destination: updates.destination,
       guideSlug: updates.guideSlug,
       checklistSlug: updates.checklistSlug,
+      image: updates.image,
+      cardImage: updates.cardImage,
+      imageCredit: updates.imageCredit,
       draft: updates.draft,
     }).filter(([, value]) => value !== undefined && value !== null)
   );

@@ -37,12 +37,12 @@ const API_KEY = process.env.MISTRAL_API_KEY;
 const MODEL = process.env.MISTRAL_MODEL || "mistral-small-latest";
 const API_URL = "https://api.mistral.ai/v1/chat/completions";
 
-// Seuils de statut sur 10 :
-//   < 8  -> needs_improvement
-//   >= 8 -> ok
-//   >= 9 -> publish_candidate
-const OK_THRESHOLD = 8;
-const PUBLISH_THRESHOLD = 9;
+// Seuils de statut sur 10 (configurables via variables d'environnement) :
+//   < OK_THRESHOLD       -> needs_improvement
+//   >= OK_THRESHOLD      -> ok
+//   >= PUBLISH_THRESHOLD -> publish_candidate (éligible à la publication auto)
+const OK_THRESHOLD = Number(process.env.REVIEW_OK_THRESHOLD || 7);
+const PUBLISH_THRESHOLD = Number(process.env.REVIEW_PUBLISH_THRESHOLD || 8);
 
 function statusFromScore(score) {
   if (score >= PUBLISH_THRESHOLD) return "publish_candidate";

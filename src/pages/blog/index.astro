@@ -41,6 +41,7 @@ const posts = (await getCollection("blog"))
               title={post.data.title}
               description={post.data.description}
               citySlug={post.data.destination || post.id}
+              image={post.data.cardImage || post.data.image}
               readingTime={post.data.readingTime}
             />
           ))

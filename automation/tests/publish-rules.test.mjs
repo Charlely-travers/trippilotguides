@@ -8,7 +8,7 @@ import {
   isRealExternalLink,
 } from "../lib/publish-rules.mjs";
 
-test("publishes only the blog when a candidate has no monetization links", () => {
+test("publishes blog and guide page when a candidate has no monetization links", () => {
   const meta = deriveDestinationMeta({
     slug: "cracovie",
     research: {
@@ -24,7 +24,9 @@ test("publishes only the blog when a candidate has no monetization links", () =>
   });
 
   assert.equal(decision.blogDraft, false);
-  assert.equal(decision.guideDraft, true);
+  // Le guide se publie même sans lien de paiement (la page gère "Acheter bientôt").
+  assert.equal(decision.guideDraft, false);
+  // La checklist reste en draft tant qu'aucun formulaire n'est configuré.
   assert.equal(decision.checklistDraft, true);
   assert.equal(decision.buyLink, "");
   assert.equal(decision.formLink, "");

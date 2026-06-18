@@ -19,8 +19,10 @@ import {
   deriveDestinationMeta,
   getPublishConfig,
   isRealExternalLink,
+  computeGuidePrice,
 } from "./lib/publish-rules.mjs";
 import { writePinAssets } from "./lib/pin-assets.mjs";
+import { fetchCityImage } from "./lib/city-image.mjs";
 import {
   createStripePaymentLink,
   getStripePaymentConfig,
@@ -38,6 +40,7 @@ const BLOG_DIR = path.join(ROOT, "src", "content", "blog");
 const GUIDES_DIR = path.join(ROOT, "src", "content", "guides");
 const CHECKLISTS_DIR = path.join(ROOT, "src", "content", "checklists");
 const PUBLIC_PINS_DIR = path.join(ROOT, "public", "pins");
+const PUBLIC_DIR = path.join(ROOT, "public");
 
 const REQUIRED_STATUS = "publish_candidate";
 const SITE_URL = isUsableUrl(process.env.SITE_URL)
@@ -121,10 +124,12 @@ function buildGuideMeta(meta) {
   return { title, desc, dest: meta.destination };
 }
 
-function generateGuideContent(slug, research, guideOutline, meta, decision, guideMeta) {
+function generateGuideContent(slug, research, guideOutline, meta, decision, guideMeta, extras = {}) {
   const { title, desc } = guideMeta;
   const dest = meta.destination;
   const durationLabel = meta.duration ? ` en ${meta.duration}` : "";
+  const price = extras.price || "9€";
+  const img = extras.image || {};
   const fm = [
     "---",
     `title: ${q(title)}`,
@@ -132,11 +137,14 @@ function generateGuideContent(slug, research, guideOutline, meta, decision, guid
     `destination: ${q(meta.destination)}`,
     `duration: ${q(meta.duration)}`,
     `budget: ""`,
-    `price: "9€"`,
+    `price: ${q(price)}`,
     `emoji: "📍"`,
     `gradient: "from-brand-500 via-accent-500 to-accent-600"`,
     `buyLink: ${q(decision.buyLink)}`,
     `checklistLink: "/checklists/${slug}"`,
+    ...(img.hero ? [`image: ${q(img.hero)}`] : []),
+    ...(img.card ? [`cardImage: ${q(img.card)}`] : []),
+    ...(img.credit ? [`imageCredit: ${q(img.credit)}`] : []),
     `draft: ${decision.guideDraft}`,
     "---",
   ].join("\n");
@@ -176,10 +184,11 @@ function generateGuideContent(slug, research, guideOutline, meta, decision, guid
   };
 }
 
-function generateChecklistContent(slug, meta, decision) {
+function generateChecklistContent(slug, meta, decision, extras = {}) {
   const dest = meta.destination;
   const title = `Checklist gratuite - ${dest}`;
   const desc = `Téléchargez une checklist complète pour préparer votre voyage à ${dest} sans rien oublier : documents, budget, transports et valise.`;
+  const img = extras.image || {};
   const formLink =
     decision.formLink === "/api/lead-magnet"
       ? `/api/lead-magnet?slug=${encodeURIComponent(slug)}`
@@ -193,6 +202,9 @@ function generateChecklistContent(slug, meta, decision) {
     `gradient: "from-emerald-400 via-teal-400 to-cyan-500"`,
     `formLink: ${q(formLink)}`,
     `guideSlug: ${q(slug)}`,
+    ...(img.hero ? [`image: ${q(img.hero)}`] : []),
+    ...(img.card ? [`cardImage: ${q(img.card)}`] : []),
+    ...(img.credit ? [`imageCredit: ${q(img.credit)}`] : []),
     `draft: ${decision.checklistDraft}`,
     "---",
   ].join("\n");
@@ -347,6 +359,28 @@ async function main() {
 
       const meta = deriveDestinationMeta({ slug, research });
       const guideMeta = buildGuideMeta(meta);
+      const price = computeGuidePrice({ duration: meta.duration });
+
+      // Récupère une vraie photo de la ville (Openverse/Wikipedia) -> public/images/cities
+      let cityImage = { ok: false };
+      try {
+        cityImage = await fetchCityImage({
+          destination: meta.destination,
+          slug,
+          publicDir: PUBLIC_DIR,
+        });
+        console.log(
+          cityImage.ok
+            ? `  city image: ${cityImage.hero}`
+            : `  city image: fallback (${cityImage.reason})`
+        );
+      } catch (err) {
+        console.log(`  city image error: ${err.message}`);
+      }
+      const imageExtras = cityImage.ok
+        ? { hero: cityImage.hero, card: cityImage.card, credit: cityImage.credit }
+        : {};
+
       let decision = decidePublication({ item, meta, config: publishConfig });
       const existingGuide = await readSafe(path.join(GUIDES_DIR, `${slug}.md`));
       const existingBuyLink = extractFrontmatterString(existingGuide, "buyLink");
@@ -369,7 +403,7 @@ async function main() {
       const deliveryToken = await getDeliveryToken(prodDir);
 
       if (!decision.buyLink && !decision.blogDraft && stripeConfig.enabled) {
-        console.log("  creating Stripe payment link");
+        console.log(`  creating Stripe payment link (${price.label})`);
         try {
           paymentLink = await createStripePaymentLink({
             slug,
@@ -378,7 +412,7 @@ async function main() {
             destination: meta.destination,
             deliveryToken,
             siteUrl: SITE_URL,
-            config: stripeConfig,
+            config: { ...stripeConfig, unitAmount: price.cents },
           });
         } catch (err) {
           paymentLink = {
@@ -407,14 +441,20 @@ async function main() {
         guideOutline,
         meta,
         decision,
-        guideMeta
+        guideMeta,
+        { price: price.label, image: imageExtras }
       );
-      const checklistInfo = generateChecklistContent(slug, meta, decision);
+      const checklistInfo = generateChecklistContent(slug, meta, decision, {
+        image: imageExtras,
+      });
       const blogContent = blog
         ? applyBlogFrontmatter(blog, {
             destination: meta.destination,
             guideSlug: meta.guideSlug,
             checklistSlug: meta.checklistSlug,
+            image: imageExtras.hero,
+            cardImage: imageExtras.card,
+            imageCredit: imageExtras.credit,
             draft: decision.blogDraft,
           })
         : generateFallbackBlog(meta, decision);
@@ -422,6 +462,7 @@ async function main() {
       const pinResult = await writePinAssets({
         outputDir: path.join(prodDir, "pins"),
         socialMarkdown: social,
+        backgroundImage: cityImage.ok ? path.join(PUBLIC_DIR, cityImage.hero.replace(/^\//, "")) : null,
         context: {
           destination: meta.destination,
           title: guideInfo.title,

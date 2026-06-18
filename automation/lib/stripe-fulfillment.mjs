@@ -1,5 +1,6 @@
 import crypto from "node:crypto";
 import { isUsableUrl } from "./env-validation.mjs";
+import { renderBrandedEmail, normalizeFromAddress } from "./email-template.mjs";
 
 const DEFAULT_TOLERANCE_SECONDS = 300;
 
@@ -60,20 +61,39 @@ export function buildGuideDeliveryUrl({ env = process.env, slug, token = "" }) {
   return `${base}/${encodeURIComponent(folder)}/guide.pdf`;
 }
 
-export function buildFulfillmentEmail({ to, destination, guideUrl, from }) {
+export function buildFulfillmentEmail({ to, destination, guideUrl, from, siteUrl }) {
   const subject = destination
-    ? `Votre guide TripPilot pour ${destination}`
-    : "Votre guide TripPilot";
+    ? `Votre guide TripPilot pour ${destination} est prêt`
+    : "Votre guide TripPilot est prêt";
+  const dest = destination || "votre destination";
+  const intro =
+    `<p style="margin:0 0 14px;">Merci pour votre achat, et bravo pour cette future aventure à <strong>${dest}</strong> !</p>` +
+    `<p style="margin:0;">Votre guide PDF complet est prêt : itinéraire jour par jour, budget détaillé, quartiers où dormir et checklist imprimable. Cliquez ci-dessous pour le télécharger.</p>`;
+  const secondaryHtml =
+    `<div style="margin-top:8px;padding:16px 18px;background:#f8fafc;border-radius:12px;border:1px solid #e2e8f0;">` +
+    `<p style="margin:0 0 6px;font-size:14px;color:#0b1120;font-weight:700;">Astuce</p>` +
+    `<p style="margin:0;font-size:14px;line-height:1.5;color:#475569;">Enregistrez le PDF sur votre téléphone pour l'avoir hors-ligne pendant le voyage. Le lien reste accessible, mais une copie locale ne dépend pas du réseau.</p>` +
+    `</div>`;
+  const html = renderBrandedEmail({
+    siteUrl,
+    preheader: `Votre guide ${dest} est disponible au téléchargement.`,
+    heading: `Votre guide pour ${dest} est prêt`,
+    intro,
+    ctaLabel: "Télécharger mon guide PDF",
+    ctaUrl: guideUrl,
+    secondaryHtml,
+    footerNote:
+      "Vous recevez cet email car vous avez acheté un guide sur trippilotguides.com. Une question ? Répondez simplement à cet email.",
+  });
   return {
-    from,
+    from: normalizeFromAddress(from),
     to,
     subject,
-    html: [
-      `<p>Merci pour votre achat.</p>`,
-      `<p>Votre guide est disponible ici :</p>`,
-      `<p><a href="${guideUrl}">${guideUrl}</a></p>`,
-      `<p>Bon voyage,<br/>TripPilot Guides</p>`,
-    ].join("\n"),
+    html,
+    text:
+      `Merci pour votre achat !\n\n` +
+      `Votre guide pour ${dest} est disponible ici : ${guideUrl}\n\n` +
+      `Bon voyage,\nTripPilot Guides`,
   };
 }
 
@@ -120,6 +140,6 @@ export async function handleStripeWebhook({
     return { status: 200, body: { received: true, fulfilled: false, reason: "email_not_configured" } };
   }
 
-  await sendEmail(buildFulfillmentEmail({ to: email, destination, guideUrl, from }));
+  await sendEmail(buildFulfillmentEmail({ to: email, destination, guideUrl, from, siteUrl: env.SITE_URL }));
   return { status: 200, body: { received: true, fulfilled: true, slug } };
 }
