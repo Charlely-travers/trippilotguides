@@ -75,11 +75,13 @@ export function decidePublication({ item, meta, config = getPublishConfig() }) {
     : "";
 
   const blogDraft = !isCandidate;
-  const guideDraft = !isCandidate || !buyLink;
+  // Le guide se publie dès qu'il est candidat : la page gère l'absence de lien
+  // de paiement ("Acheter bientôt" + checklist). Le lien Stripe reste optionnel.
+  const guideDraft = !isCandidate;
   const checklistDraft = !isCandidate || !formLink;
   const status = !isCandidate
     ? "not_publishable"
-    : !guideDraft && !checklistDraft
+    : buyLink && formLink
       ? "full_funnel_published"
       : "traffic_published_products_draft";
 

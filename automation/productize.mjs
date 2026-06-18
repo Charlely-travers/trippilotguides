@@ -123,6 +123,8 @@ function buildGuideMeta(meta) {
 
 function generateGuideContent(slug, research, guideOutline, meta, decision, guideMeta) {
   const { title, desc } = guideMeta;
+  const dest = meta.destination;
+  const durationLabel = meta.duration ? ` en ${meta.duration}` : "";
   const fm = [
     "---",
     `title: ${q(title)}`,
@@ -130,7 +132,7 @@ function generateGuideContent(slug, research, guideOutline, meta, decision, guid
     `destination: ${q(meta.destination)}`,
     `duration: ${q(meta.duration)}`,
     `budget: ""`,
-    `price: "9EUR"`,
+    `price: "9€"`,
     `emoji: "📍"`,
     `gradient: "from-brand-500 via-accent-500 to-accent-600"`,
     `buyLink: ${q(decision.buyLink)}`,
@@ -141,19 +143,20 @@ function generateGuideContent(slug, research, guideOutline, meta, decision, guid
   const landingBody = [
     "## Ce que contient le guide",
     "",
-    "- Itineraire jour par jour pret a suivre",
-    "- Budget detaille et arbitrages pour eviter les depenses inutiles",
-    "- Quartiers ou dormir selon le style de voyage",
-    "- Transports, rythme conseille et erreurs a eviter",
-    "- Checklist imprimable pour preparer le depart",
+    `- **Itinéraire${durationLabel} jour par jour**, découpé matin / après-midi / soir`,
+    "- **Budget détaillé** poste par poste, avec 3 niveaux (routard, équilibré, confort)",
+    "- **Quartiers où dormir** selon ton budget et ton style de voyage",
+    "- **Transports** : depuis l'aéroport et sur place, avec les bons réflexes",
+    "- **Bonnes adresses et erreurs à éviter** pour un premier voyage réussi",
+    "- **Checklist imprimable** pour préparer ton départ sans rien oublier",
     "",
-    "## Pour qui ?",
+    "## Pour qui est ce guide ?",
     "",
-    `Ce guide est pense pour preparer un voyage a ${meta.destination} sans passer des heures a comparer des dizaines d'onglets.`,
+    `Ce guide est pensé pour préparer un voyage à ${dest} sans passer des heures à comparer des dizaines d'onglets. Que tu partes en couple, entre amis ou en solo, tout est expliqué pas à pas.`,
     "",
     "## Livraison",
     "",
-    "Le bouton d'achat ouvre la page de paiement securisee configuree pour ce guide.",
+    "C'est un PDF numérique, lisible sur téléphone, tablette ou ordinateur, et conçu pour rester clair une fois imprimé. Tu le reçois après l'achat.",
   ].join("\n");
   const productBody = guideOutline || "## Contenu du guide\n\nA completer.\n";
   const productContent = [
@@ -174,8 +177,9 @@ function generateGuideContent(slug, research, guideOutline, meta, decision, guid
 }
 
 function generateChecklistContent(slug, meta, decision) {
-  const title = `Checklist gratuite - ${meta.destination}`;
-  const desc = `Recevez une checklist simple pour preparer votre voyage a ${meta.destination} sans rien oublier.`;
+  const dest = meta.destination;
+  const title = `Checklist gratuite - ${dest}`;
+  const desc = `Téléchargez une checklist complète pour préparer votre voyage à ${dest} sans rien oublier : documents, budget, transports et valise.`;
   const formLink =
     decision.formLink === "/api/lead-magnet"
       ? `/api/lead-magnet?slug=${encodeURIComponent(slug)}`
@@ -184,7 +188,7 @@ function generateChecklistContent(slug, meta, decision) {
     "---",
     `title: ${q(title)}`,
     `description: ${q(desc)}`,
-    `destination: ${q(meta.destination)}`,
+    `destination: ${q(dest)}`,
     `emoji: "📝"`,
     `gradient: "from-emerald-400 via-teal-400 to-cyan-500"`,
     `formLink: ${q(formLink)}`,
@@ -195,20 +199,20 @@ function generateChecklistContent(slug, meta, decision) {
   const body = [
     "## Ce que contient la checklist",
     "",
-    "- Documents (passeport, billets, assurance)",
-    "- Budget et moyens de paiement",
-    "- Transports (aeroport, local)",
-    "- Logement (adresse, check-in)",
-    "- Valise (vetements, chargeurs, chaussures)",
-    "- Applis utiles (cartes hors-ligne, traduction)",
+    "- Documents essentiels (carte d'identité ou passeport, billets, réservations, assurance voyage)",
+    "- Budget et paiement (espèces, carte sans frais à l'étranger, budget par jour)",
+    "- Transports (trajet aéroport, pass local, applis utiles)",
+    "- Logement (adresse, horaires de check-in, contact de l'hébergeur)",
+    "- Valise intelligente (vêtements selon la météo, chaussures de marche, chargeurs)",
+    "- Applis indispensables (cartes hors-ligne, transports, traduction)",
     "",
     "## FAQ",
     "",
-    "**C'est vraiment gratuit ?** Oui, la checklist est gratuite en PDF.",
+    "**C'est vraiment gratuit ?** Oui, la checklist PDF est 100% gratuite. Tu la reçois par email en quelques secondes.",
     "",
-    `**Et le guide complet ?** Le guide PDF complet est disponible separement. [Voir le guide](/guides/${slug}).`,
+    `**Et le guide complet ?** Le guide PDF complet avec itinéraire jour par jour et budget détaillé est disponible séparément. [Voir le guide ${dest}](/guides/${slug}).`,
   ].join("\n");
-  return { content: `${fm}\n\n${body}\n`, title, desc, dest: meta.destination };
+  return { content: `${fm}\n\n${body}\n`, title, desc, dest };
 }
 
 function generateFallbackBlog(meta, decision) {
