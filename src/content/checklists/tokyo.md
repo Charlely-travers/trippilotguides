@@ -4,12 +4,12 @@ description: "Téléchargez une checklist complète et imprimable pour préparer
 destination: "Tokyo"
 emoji: "📝"
 gradient: "from-emerald-400 via-teal-400 to-cyan-500"
-formLink: ""
+formLink: "/api/lead-magnet?slug=tokyo"
 guideSlug: "tokyo"
 image: "/images/cities/tokyo-hero.webp"
 cardImage: "/images/cities/tokyo-card.webp"
 imageCredit: "Photo : inefekt69 (BY-NC-ND 2.0) via Openverse"
-draft: true
+draft: false
 ---
 
 Votre checklist imprimable pour préparer votre voyage à Tokyo sereinement. Cochez chaque élément au fur et à mesure : vous ne risquez plus rien d'oublier.
