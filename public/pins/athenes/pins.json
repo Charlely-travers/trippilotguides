@@ -1,82 +1,122 @@
 [
   {
     "destination": "Athènes",
-    "title": "Athènes en 5 jours : l’itinéraire parfait testé par les locaux",
-    "overlayText": "Athènes en 5 jours : l’itinéraire parfait",
-    "description": "Athènes en 5 jours : l’itinéraire parfait testé par les locaux. Athènes en 5 jours - guide complet",
-    "tags": [],
+    "title": "Athènes 5 jours : l’itinéraire parfait testé par les locaux",
+    "overlayText": "Athènes 5 jours : l’itinéraire parfait",
+    "description": "Athènes 5 jours : l’itinéraire parfait testé par les locaux. Athènes en 5 jours - guide complet",
+    "tags": [
+      "athènesvoyage",
+      "itinéraireathènes",
+      "trippilotguides"
+    ],
     "url": "https://trippilotguides.com/blog/athenes"
   },
   {
     "destination": "Athènes",
-    "title": "Où dormir à Athènes ? Le guide des quartiers selon ton budget",
-    "overlayText": "Où dormir à Athènes ? Le guide des",
-    "description": "Où dormir à Athènes ? Le guide des quartiers selon ton budget. Athènes en 5 jours - guide complet",
-    "tags": [],
+    "title": "Budget Athènes 5 jours : combien dépenser vraiment ?",
+    "overlayText": "Budget Athènes 5 jours : combien dépenser",
+    "description": "Budget Athènes 5 jours : combien dépenser vraiment ?. Athènes en 5 jours - guide complet",
+    "tags": [
+      "budgetvoyage",
+      "athènesgratuit",
+      "trippilotguides"
+    ],
     "url": "https://trippilotguides.com/blog/athenes"
   },
   {
     "destination": "Athènes",
-    "title": "Acropole 2026 : horaires secrets et tickets malins à connaître",
-    "overlayText": "Acropole 2026 : horaires secrets et",
-    "description": "Acropole 2026 : horaires secrets et tickets malins à connaître. Athènes en 5 jours - guide complet",
-    "tags": [],
+    "title": "Quartiers d’Athènes : où dormir selon ton style",
+    "overlayText": "Quartiers d’Athènes : où dormir selon ton",
+    "description": "Quartiers d’Athènes : où dormir selon ton style. Athènes en 5 jours - guide complet",
+    "tags": [
+      "oùdormirathènes",
+      "voyageauthentique",
+      "trippilotguides"
+    ],
     "url": "https://trippilotguides.com/blog/athenes"
   },
   {
     "destination": "Athènes",
-    "title": "Monastiraki la nuit : les tavernes où les Grecs mangent vraiment",
-    "overlayText": "Monastiraki la nuit : les tavernes où les",
-    "description": "Monastiraki la nuit : les tavernes où les Grecs mangent vraiment. Athènes en 5 jours - guide complet",
-    "tags": [],
+    "title": "Prix Acropole 2026 : faut-il le billet combiné ? Dévoilé",
+    "overlayText": "Prix Acropole 2026 : faut-il le billet",
+    "description": "Prix Acropole 2026 : faut-il le billet combiné ? Dévoilé. Athènes en 5 jours - guide complet",
+    "tags": [
+      "acropoleprix",
+      "visiteathènes",
+      "trippilotguides"
+    ],
     "url": "https://trippilotguides.com/blog/athenes"
   },
   {
     "destination": "Athènes",
-    "title": "Koukaki : le quartier branché et calme pour explorer Athènes",
-    "overlayText": "Koukaki : le quartier branché et calme",
-    "description": "Koukaki : le quartier branché et calme pour explorer Athènes. Athènes en 5 jours - guide complet",
-    "tags": [],
+    "title": "Monastiraki ou Plaka ? Le vrai du faux sur ces quartiers",
+    "overlayText": "Monastiraki ou Plaka ? Le vrai du faux sur",
+    "description": "Monastiraki ou Plaka ? Le vrai du faux sur ces quartiers. Athènes en 5 jours - guide complet",
+    "tags": [
+      "quartiersathènes",
+      "évitelespièges",
+      "trippilotguides"
+    ],
     "url": "https://trippilotguides.com/blog/athenes"
   },
   {
     "destination": "Athènes",
-    "title": "5 erreurs qui ruinent ton voyage à Athènes (et comment les éviter)",
-    "overlayText": "5 erreurs qui ruinent ton voyage à Athènes",
-    "description": "5 erreurs qui ruinent ton voyage à Athènes (et comment les éviter). Athènes en 5 jours - guide complet",
-    "tags": [],
+    "title": "Réveillon à Athènes : où fêter le Nouvel An sans se ruiner",
+    "overlayText": "Réveillon à Athènes : où fêter le Nouvel",
+    "description": "Réveillon à Athènes : où fêter le Nouvel An sans se ruiner. Athènes en 5 jours - guide complet",
+    "tags": [
+      "athènesnoël",
+      "voyageéconomique",
+      "trippilotguides"
+    ],
     "url": "https://trippilotguides.com/blog/athenes"
   },
   {
     "destination": "Athènes",
-    "title": "Budget serré à Athènes ? Ces 3 quartiers te sauvent",
-    "overlayText": "Budget serré à Athènes ? Ces 3 quartiers",
-    "description": "Budget serré à Athènes ? Ces 3 quartiers te sauvent. Athènes en 5 jours - guide complet",
-    "tags": [],
+    "title": "5 tavernes à Athènes où les locaux mangent (et pas les touristes)",
+    "overlayText": "5 tavernes à Athènes où les locaux mangent",
+    "description": "5 tavernes à Athènes où les locaux mangent (et pas les touristes). Athènes en 5 jours - guide complet",
+    "tags": [
+      "oùmangerathènes",
+      "nourrituregrecque",
+      "trippilotguides"
+    ],
     "url": "https://trippilotguides.com/blog/athenes"
   },
   {
     "destination": "Athènes",
-    "title": "Plaka vs Exarchia : où loger pour l’âme authentique d’Athènes ?",
-    "overlayText": "Plaka vs Exarchia : où loger pour l’âme",
-    "description": "Plaka vs Exarchia : où loger pour l’âme authentique d’Athènes ?. Athènes en 5 jours - guide complet",
-    "tags": [],
+    "title": "Transports aéroport Athènes : la méthode la moins chère",
+    "overlayText": "Transports aéroport Athènes : la méthode",
+    "description": "Transports aéroport Athènes : la méthode la moins chère. Athènes en 5 jours - guide complet",
+    "tags": [
+      "taxioumétro",
+      "athènestransports",
+      "trippilotguides"
+    ],
     "url": "https://trippilotguides.com/blog/athenes"
   },
   {
     "destination": "Athènes",
-    "title": "Transports Athènes : le pass qui te fait économiser sur votre budget",
-    "overlayText": "Transports Athènes : le pass qui te fait",
-    "description": "Transports Athènes : le pass qui te fait économiser sur votre budget. Athènes en 5 jours - guide complet",
-    "tags": [],
+    "title": "L’erreur qui gâche ton voyage à Athènes (on l’a tous faite)",
+    "overlayText": "L’erreur qui gâche ton voyage à Athènes",
+    "description": "L’erreur qui gâche ton voyage à Athènes (on l’a tous faite). Athènes en 5 jours - guide complet",
+    "tags": [
+      "erreursvoyage",
+      "athènesconseils",
+      "trippilotguides"
+    ],
     "url": "https://trippilotguides.com/blog/athenes"
   },
   {
     "destination": "Athènes",
-    "title": "Temple de Zeus Olympien : pourquoi il faut absolument le voir",
-    "overlayText": "Temple de Zeus Olympien : pourquoi il faut",
-    "description": "Temple de Zeus Olympien : pourquoi il faut absolument le voir. Athènes en 5 jours - guide complet",
-    "tags": [],
+    "title": "Athènes hors des sentiers battus : le guide des insiders",
+    "overlayText": "Athènes hors des sentiers battus : le",
+    "description": "Athènes hors des sentiers battus : le guide des insiders. Athènes en 5 jours - guide complet",
+    "tags": [
+      "athènessecrète",
+      "voyageinspiration",
+      "trippilotguides"
+    ],
     "url": "https://trippilotguides.com/blog/athenes"
   }
 ]
