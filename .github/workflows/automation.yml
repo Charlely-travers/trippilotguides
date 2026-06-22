@@ -100,9 +100,10 @@ jobs:
         run: |
           git config user.name "TripPilot Automation"
           git config user.email "actions@github.com"
-          git add src/content automation/published-pins.json package.json package-lock.json
+          git add src/content automation/published-pins.json package.json package-lock.json automation/ideas.json
           [ -d public/pins ] && git add public/pins
           [ -d public/delivery ] && git add public/delivery
+          [ -d public/images/cities ] && git add public/images/cities
           if git diff --cached --quiet; then
             echo "No generated content changes to commit."
           else

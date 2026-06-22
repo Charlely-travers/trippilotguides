@@ -22,12 +22,14 @@
     "automation:check-readiness": "node automation/check-readiness.mjs",
     "automation:promote": "node automation/promote.mjs",
     "automation:notify": "node automation/notify.mjs",
+    "automation:bot": "node automation/discord-bot.mjs",
     "automation:all": "node automation/research.mjs && node automation/generate.mjs && node automation/review.mjs && node automation/productize.mjs && node automation/render-delivery-pdfs.mjs && npm run build && node automation/publish-pinterest.mjs && node automation/notify.mjs"
   },
   "dependencies": {
     "@astrojs/sitemap": "^3.7.3",
     "@tailwindcss/postcss": "^4.3.1",
     "astro": "^6.4.7",
+    "discord.js": "^14.26.4",
     "lucide-astro": "^0.511.0",
     "playwright": "^1.61.0",
     "postcss": "^8.5.3",
