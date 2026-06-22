@@ -13,7 +13,8 @@ test("converts basic markdown into delivery HTML", () => {
     markdown: "# Porto\n\n## Jour 1\n\n- Arriver\n- Manger",
   });
 
-  assert.match(html, /<h1>Porto<\/h1>/);
+  // H1 is intentionally stripped from body (title appears on cover page).
+  assert.doesNotMatch(html, /<h1>Porto<\/h1>/);
   assert.match(html, /<h2>Jour 1<\/h2>/);
   assert.match(html, /<li>Arriver<\/li>/);
   assert.match(html, /TripPilot Guides/);
