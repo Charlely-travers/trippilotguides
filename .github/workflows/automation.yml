@@ -42,6 +42,7 @@ jobs:
       DEFAULT_CHECKLIST_FORM_LINK: ${{ secrets.DEFAULT_CHECKLIST_FORM_LINK }}
       INTERNAL_LEAD_MAGNET: ${{ vars.INTERNAL_LEAD_MAGNET || 'false' }}
       RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
+      RESEND_AUDIENCE_ID: ${{ secrets.RESEND_AUDIENCE_ID }}
       FULFILLMENT_FROM_EMAIL: ${{ vars.FULFILLMENT_FROM_EMAIL || 'TripPilot Guides <hello@trippilotguides.com>' }}
       LEAD_MAGNET_FROM_EMAIL: ${{ vars.LEAD_MAGNET_FROM_EMAIL || 'TripPilot Guides <hello@trippilotguides.com>' }}
       GUIDE_DELIVERY_BASE_URL: ${{ vars.GUIDE_DELIVERY_BASE_URL || 'https://trippilotguides.com/delivery' }}
@@ -131,6 +132,23 @@ jobs:
             echo "No Pinterest state changes to commit."
           else
             git commit -m "chore: record published Pinterest pins"
+            git push
+          fi
+
+      - name: Announce new guides to email list
+        id: broadcast
+        if: steps.build.outcome == 'success' && steps.test.outcome == 'success'
+        continue-on-error: true
+        run: node automation/broadcast.mjs
+
+      - name: Commit broadcast state
+        if: steps.broadcast.outcome == 'success'
+        run: |
+          git add automation/published-broadcasts.json
+          if git diff --cached --quiet; then
+            echo "No broadcast state changes to commit."
+          else
+            git commit -m "chore: record email broadcasts"
             git push
           fi
 

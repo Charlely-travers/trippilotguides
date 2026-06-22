@@ -22,8 +22,9 @@
     "automation:check-readiness": "node automation/check-readiness.mjs",
     "automation:promote": "node automation/promote.mjs",
     "automation:notify": "node automation/notify.mjs",
+    "automation:broadcast": "node automation/broadcast.mjs",
     "automation:bot": "node automation/discord-bot.mjs",
-    "automation:all": "node automation/research.mjs && node automation/generate.mjs && node automation/review.mjs && node automation/productize.mjs && node automation/render-delivery-pdfs.mjs && npm run build && node automation/publish-pinterest.mjs && node automation/notify.mjs"
+    "automation:all": "node automation/research.mjs && node automation/generate.mjs && node automation/review.mjs && node automation/productize.mjs && node automation/render-delivery-pdfs.mjs && npm run build && node automation/publish-pinterest.mjs && node automation/broadcast.mjs && node automation/notify.mjs"
   },
   "dependencies": {
     "@astrojs/sitemap": "^3.7.3",

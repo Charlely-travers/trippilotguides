@@ -228,6 +228,18 @@ function buildPayload(summary) {
       : "Aucune",
   });
 
+  // Annonce email (broadcast)
+  const broadcast = summary?.broadcast;
+  if (broadcast) {
+    fields.push({
+      name: "📣 Annonce liste email",
+      value:
+        broadcast.sent > 0
+          ? `✅ ${broadcast.sent} nouveau(x) guide(s) annoncé(s) à la liste.`
+          : "Aucune nouvelle ville à annoncer (ou liste non configurée).",
+    });
+  }
+
   const description =
     "Exécution de l'automatisation de contenu V2. " +
     "**Auto-publish blog actif** : Stripe peut créer les liens d'achat si `STRIPE_SECRET_KEY` est configuré." +

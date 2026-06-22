@@ -100,6 +100,9 @@ const commands = [
     .setName("publish")
     .setDescription("Déclenche le workflow GitHub Actions (pipeline complète sur le cloud)"),
   new SlashCommandBuilder()
+    .setName("broadcast")
+    .setDescription("Relance le workflow : annonce les nouveaux guides à la liste email"),
+  new SlashCommandBuilder()
     .setName("status")
     .setDescription("Affiche l'état de la dernière exécution de la pipeline"),
   new SlashCommandBuilder()
@@ -145,6 +148,9 @@ client.on("interactionCreate", async (interaction) => {
         break;
       case "publish":
         await handlePublish(interaction);
+        break;
+      case "broadcast":
+        await handleBroadcast(interaction);
         break;
       case "status":
         await handleStatus(interaction);
@@ -208,6 +214,21 @@ async function handlePublish(interaction) {
     .setTitle("⚡ Workflow déclenché")
     .setColor(result.ok ? 0x22c55e : 0xef4444)
     .setDescription(result.ok ? "Le workflow GitHub Actions a été lancé." : `Erreur : ${result.reason}`)
+    .setTimestamp();
+  await interaction.editReply({ embeds: [embed] });
+}
+
+async function handleBroadcast(interaction) {
+  await interaction.deferReply();
+  const result = await triggerGitHubWorkflow(1);
+  const embed = new EmbedBuilder()
+    .setTitle("📣 Annonce email programmée")
+    .setColor(result.ok ? 0x22c55e : 0xef4444)
+    .setDescription(
+      result.ok
+        ? "Le workflow est relancé : les nouveaux guides seront annoncés à ta liste email en fin de pipeline."
+        : `Erreur : ${result.reason}`
+    )
     .setTimestamp();
   await interaction.editReply({ embeds: [embed] });
 }
