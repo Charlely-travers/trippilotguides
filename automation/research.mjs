@@ -35,6 +35,9 @@ const GENERATE_COUNT = Math.max(
   1,
   Math.min(5, parseInt(process.env.GENERATE_COUNT || "1", 10) || 1)
 );
+// Cible explicite (passée par le bot Discord via l'input du workflow).
+// Si présente, on ne traite QUE cette ville (pas de sélection par score).
+const TARGET_IDEA = (process.env.TARGET_IDEA || "").trim();
 
 const CHAT_URL = "https://api.mistral.ai/v1/chat/completions";
 const CONVERSATIONS_URL = "https://api.mistral.ai/v1/conversations";
@@ -184,6 +187,21 @@ function normalizeResearch(idea, parsed, method, extraSources = []) {
   };
 }
 
+/** Slugs des villes déjà publiées (guide présent dans src/content/guides). */
+async function listPublishedSlugs() {
+  const dir = path.join(ROOT, "src", "content", "guides");
+  try {
+    const files = await fs.readdir(dir);
+    return new Set(
+      files
+        .filter((f) => f.endsWith(".md") && !f.startsWith("_") && f !== ".gitkeep")
+        .map((f) => f.replace(/\.md$/, ""))
+    );
+  } catch {
+    return new Set();
+  }
+}
+
 function offlineResearch(idea) {
   return normalizeResearch(
     idea,
@@ -327,9 +345,33 @@ async function main() {
   }
   summary.ideasCount = ideas.length;
 
-  // Scoring + sélection
-  summary.scored = await scoreIdeas(ideas, summary);
-  const selected = summary.scored.slice(0, GENERATE_COUNT);
+  // Sélection des idées à traiter.
+  let selected;
+  if (TARGET_IDEA) {
+    // Cible explicite (Discord) : on ne traite QUE cette ville.
+    const matches = ideas.filter((i) =>
+      i.toLowerCase().includes(TARGET_IDEA.toLowerCase())
+    );
+    const ideaList = matches.length ? matches : [TARGET_IDEA];
+    summary.scored = await scoreIdeas(ideaList, summary);
+    if (!summary.scored.length) {
+      summary.scored = ideaList.map((idea) => ({ idea, score: 0, raison: "cible explicite" }));
+    }
+    selected = summary.scored.slice(0, GENERATE_COUNT);
+    summary.target = TARGET_IDEA;
+  } else {
+    // Pas de cible : on ignore les villes déjà publiées, puis on prend les mieux notées.
+    const published = await listPublishedSlugs();
+    const freshIdeas = ideas.filter(
+      (i) => !published.has(slugify(guessDestination(i)))
+    );
+    const pool = freshIdeas.length ? freshIdeas : ideas;
+    summary.scored = await scoreIdeas(pool, summary);
+    if (!summary.scored.length) {
+      summary.scored = pool.map((idea) => ({ idea, score: 0, raison: "non scoré" }));
+    }
+    selected = summary.scored.slice(0, GENERATE_COUNT);
+  }
   summary.research.requested = selected.length;
 
   // Recherche par idée

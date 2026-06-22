@@ -7,6 +7,10 @@ on:
         description: "Nombre d'idees a transformer en contenu"
         required: false
         default: "1"
+      target_idea:
+        description: "Ville/idee precise a generer (ex: Tokyo en 5 jours). Vide = auto par score."
+        required: false
+        default: ""
   schedule:
     # Weekly run: enough to grow traffic without burning API credits too fast.
     - cron: "17 7 * * 1"
@@ -25,7 +29,9 @@ jobs:
       MISTRAL_RESEARCH_MODEL: ${{ vars.MISTRAL_RESEARCH_MODEL || 'mistral-small-latest' }}
       MISTRAL_GUIDE_MODEL: ${{ vars.MISTRAL_GUIDE_MODEL || 'mistral-medium-latest' }}
       GENERATE_COUNT: ${{ github.event.inputs.generate_count || '1' }}
+      TARGET_IDEA: ${{ github.event.inputs.target_idea || '' }}
       AUTO_PUBLISH_MIN_SCORE: ${{ vars.AUTO_PUBLISH_MIN_SCORE || '9' }}
+      REVIEW_PUBLISH_THRESHOLD: ${{ vars.REVIEW_PUBLISH_THRESHOLD || '8' }}
       DEFAULT_BUY_LINK: ${{ secrets.DEFAULT_BUY_LINK }}
       STRIPE_SECRET_KEY: ${{ secrets.STRIPE_SECRET_KEY }}
       AUTO_CREATE_STRIPE_PAYMENT_LINKS: ${{ vars.AUTO_CREATE_STRIPE_PAYMENT_LINKS || 'true' }}

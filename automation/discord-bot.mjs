@@ -63,7 +63,7 @@ async function writeJson(filepath, data) {
 }
 
 /** Déclenche le workflow GitHub Actions via l'API REST. */
-async function triggerGitHubWorkflow(generateCount = 1) {
+async function triggerGitHubWorkflow(generateCount = 1, targetIdea = "") {
   if (!GITHUB_TOKEN || !GITHUB_REPO) {
     return { ok: false, reason: "GITHUB_TOKEN ou GITHUB_REPO non configuré." };
   }
@@ -77,7 +77,7 @@ async function triggerGitHubWorkflow(generateCount = 1) {
     },
     body: JSON.stringify({
       ref: "main",
-      inputs: { generate_count: String(generateCount) },
+      inputs: { generate_count: String(generateCount), target_idea: targetIdea || "" },
     }),
   });
   if (res.status === 204) return { ok: true };
@@ -185,15 +185,15 @@ async function handlePipeline(interaction) {
     await writeJson(IDEAS_FILE, ideas);
   }
 
-  // Déclenche GitHub Actions
-  const result = await triggerGitHubWorkflow(1);
+  // Déclenche GitHub Actions en CIBLANT cette ville précise.
+  const result = await triggerGitHubWorkflow(1, idea);
   const embed = new EmbedBuilder()
     .setTitle("🚀 Pipeline lancée")
     .setColor(result.ok ? 0x22c55e : 0xf59e0b)
     .addFields(
       { name: "Destination", value: `**${ville}** (${jours} jours)`, inline: true },
-      { name: "Idée", value: idea },
-      { name: "GitHub Actions", value: result.ok ? "✅ Workflow déclenché" : `⚠️ ${result.reason}` }
+      { name: "Idée ciblée", value: idea },
+      { name: "GitHub Actions", value: result.ok ? "✅ Workflow déclenché (cette ville uniquement)" : `⚠️ ${result.reason}` }
     )
     .setFooter({ text: "TripPilot Automation" })
     .setTimestamp();
