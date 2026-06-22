@@ -48,10 +48,12 @@ const cardSrc = guide.cardImage || guide.image || city.card;
         <dt class="text-ink-500">Durée</dt>
         <dd class="font-semibold text-ink-900">{guide.duration}</dd>
       </div>
-      <div>
-        <dt class="text-ink-500">Budget</dt>
-        <dd class="font-semibold text-ink-900">{guide.budget}</dd>
-      </div>
+      {guide.budget && (
+        <div>
+          <dt class="text-ink-500">Budget</dt>
+          <dd class="font-semibold text-ink-900">{guide.budget}</dd>
+        </div>
+      )}
       <div class="col-span-2">
         <dt class="text-ink-500">Pour qui</dt>
         <dd class="font-medium text-ink-700">{guide.audience}</dd>

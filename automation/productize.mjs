@@ -20,6 +20,7 @@ import {
   getPublishConfig,
   isRealExternalLink,
   computeGuidePrice,
+  computeTripBudget,
 } from "./lib/publish-rules.mjs";
 import { writePinAssets } from "./lib/pin-assets.mjs";
 import { fetchCityImage, fetchCityMap, fetchPlacePhotos } from "./lib/city-image.mjs";
@@ -139,13 +140,14 @@ function generateGuideContent(slug, research, guideOutline, meta, decision, guid
   const durationLabel = meta.duration ? ` en ${meta.duration}` : "";
   const price = extras.price || "9€";
   const img = extras.image || {};
+  const budget = computeTripBudget({ idea: research?.idea, duration: meta.duration });
   const fm = [
     "---",
     `title: ${q(title)}`,
     `description: ${q(desc)}`,
     `destination: ${q(meta.destination)}`,
     `duration: ${q(meta.duration)}`,
-    `budget: ""`,
+    `budget: ${q(budget)}`,
     `price: ${q(price)}`,
     `emoji: "📍"`,
     `gradient: "from-brand-500 via-accent-500 to-accent-600"`,

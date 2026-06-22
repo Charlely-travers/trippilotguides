@@ -75,6 +75,24 @@ export function computeGuidePrice({ duration, days } = {}) {
   return { label: `${euros}€`, cents: euros * 100, euros };
 }
 
+/**
+ * Estime un budget de séjour réaliste à afficher sur la fiche guide.
+ * Priorité à un montant explicite dans l'idée ("budget 600€"), sinon estimation
+ * par jour (fourchette). Renvoie une chaîne prête à afficher.
+ */
+export function computeTripBudget({ idea, duration, days } = {}) {
+  const explicit = String(idea || "").match(/(\d[\d\s.]{1,6})\s*(?:€|eur|euros)/i);
+  if (explicit) {
+    const n = parseInt(explicit[1].replace(/[\s.]/g, ""), 10);
+    if (n >= 100) return `≈ ${n} €`;
+  }
+  const d = days || parseDays(duration) || 0;
+  if (!d) return "Variable";
+  const low = d * 90;
+  const high = d * 160;
+  return `${low} – ${high} €`;
+}
+
 export function deriveDestinationMeta({ slug, research = {} }) {
   const destination = String(
     research.destination || guessDestination(research.idea, slug) || slug
