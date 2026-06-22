@@ -138,6 +138,7 @@ async function main() {
           destination: product.destination || "",
           markdown: checklistMd,
           kind: "checklist",
+          coverImage,
         }),
         { waitUntil: "networkidle" }
       );
