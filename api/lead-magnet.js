@@ -124,6 +124,42 @@ async function sendChecklistEmail({ email, slug }) {
   }
 }
 
+/**
+ * Ajoute l'email à une audience Resend (construction de la liste = Voie 3).
+ * Best-effort : n'échoue jamais la requête principale si l'ajout rate.
+ * Requiert RESEND_AUDIENCE_ID (créé dans Resend → Audiences).
+ */
+async function addContactToAudience({ email, slug }) {
+  const audienceId = process.env.RESEND_AUDIENCE_ID;
+  if (!process.env.RESEND_API_KEY || !audienceId) return; // liste non configurée : on saute
+
+  try {
+    const response = await fetch(
+      `https://api.resend.com/audiences/${audienceId}/contacts`,
+      {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${process.env.RESEND_API_KEY}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          email,
+          unsubscribed: false,
+          // Trace la destination d'origine du lead (utile pour segmenter ensuite).
+          first_name: slug ? `Lead ${slug}` : undefined,
+        }),
+      }
+    );
+    // 409 = contact déjà présent : ce n'est pas une erreur.
+    if (!response.ok && response.status !== 409) {
+      const text = await response.text().catch(() => "");
+      console.error(`audience add failed: HTTP ${response.status} ${text.slice(0, 150)}`);
+    }
+  } catch (err) {
+    console.error("audience add error:", err.message);
+  }
+}
+
 export default async function handler(req, res) {
   if (req.method !== "POST" && req.method !== "GET") {
     res.status(405).json({ error: "method_not_allowed" });
@@ -155,6 +191,9 @@ export default async function handler(req, res) {
     res.status(500).json({ error: "email_send_failed" });
     return;
   }
+
+  // Construit la liste email (best-effort, ne bloque pas la réponse).
+  await addContactToAudience({ email, slug });
 
   if (wantsJson) {
     res.status(200).json({ ok: true });

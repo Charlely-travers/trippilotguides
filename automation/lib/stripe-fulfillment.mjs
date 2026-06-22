@@ -145,5 +145,35 @@ export async function handleStripeWebhook({
   }
 
   await sendEmail(buildFulfillmentEmail({ to: email, destination, guideUrl, from, siteUrl: env.SITE_URL }));
+  await addBuyerToAudience({ email, slug, env });
   return { status: 200, body: { received: true, fulfilled: true, slug } };
+}
+
+/**
+ * Ajoute l'acheteur à l'audience Resend (liste = contacts les plus précieux).
+ * Best-effort : n'échoue jamais la livraison du guide.
+ */
+async function addBuyerToAudience({ email, slug, env = process.env }) {
+  const audienceId = env.RESEND_AUDIENCE_ID;
+  if (!env.RESEND_API_KEY || !audienceId || !email) return;
+  try {
+    const res = await fetch(`https://api.resend.com/audiences/${audienceId}/contacts`, {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${env.RESEND_API_KEY}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        email,
+        unsubscribed: false,
+        first_name: slug ? `Acheteur ${slug}` : "Acheteur",
+      }),
+    });
+    if (!res.ok && res.status !== 409) {
+      const t = await res.text().catch(() => "");
+      console.error(`buyer audience add failed: HTTP ${res.status} ${t.slice(0, 150)}`);
+    }
+  } catch (err) {
+    console.error("buyer audience add error:", err.message);
+  }
 }
