@@ -22,6 +22,9 @@ gitcheck.log
 
 # sorties d'automatisation (générées, jamais committées)
 automation/output/
+automation/drafts/
+automation/research/
+automation/products/
 
 # système / éditeurs
 .DS_Store

@@ -24,8 +24,8 @@ jobs:
       MISTRAL_MODEL: ${{ vars.MISTRAL_MODEL || 'mistral-small-latest' }}
       MISTRAL_RESEARCH_MODEL: ${{ vars.MISTRAL_RESEARCH_MODEL || 'mistral-small-latest' }}
       MISTRAL_GUIDE_MODEL: ${{ vars.MISTRAL_GUIDE_MODEL || 'mistral-medium-latest' }}
-      GENERATE_COUNT: ${{ github.event.inputs.generate_count || '3' }}
-      AUTO_PUBLISH_MIN_SCORE: ${{ vars.AUTO_PUBLISH_MIN_SCORE || '7' }}
+      GENERATE_COUNT: ${{ github.event.inputs.generate_count || '1' }}
+      AUTO_PUBLISH_MIN_SCORE: ${{ vars.AUTO_PUBLISH_MIN_SCORE || '9' }}
       DEFAULT_BUY_LINK: ${{ secrets.DEFAULT_BUY_LINK }}
       STRIPE_SECRET_KEY: ${{ secrets.STRIPE_SECRET_KEY }}
       AUTO_CREATE_STRIPE_PAYMENT_LINKS: ${{ vars.AUTO_CREATE_STRIPE_PAYMENT_LINKS || 'true' }}
@@ -100,14 +100,10 @@ jobs:
         run: |
           git config user.name "TripPilot Automation"
           git config user.email "actions@github.com"
-          git add src/content automation/ideas.json package.json package-lock.json
-          [ -d automation/research ] && git add automation/research
-          [ -d automation/drafts ] && git add automation/drafts
-          [ -d automation/products ] && git add automation/products
+          git add src/content automation/published-pins.json package.json package-lock.json automation/ideas.json
           [ -d public/pins ] && git add public/pins
           [ -d public/delivery ] && git add public/delivery
           [ -d public/images/cities ] && git add public/images/cities
-          git add automation/published-pins.json 2>/dev/null || true
           if git diff --cached --quiet; then
             echo "No generated content changes to commit."
           else
