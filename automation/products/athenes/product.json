@@ -1,0 +1,51 @@
+{
+  "slug": "athenes",
+  "title": "Athènes en 5 jours - guide complet",
+  "destination": "Athènes",
+  "angle": "Antiquité, quartiers et budget pour 5 jours",
+  "priceSuggestion": "9EUR",
+  "buyLink": "https://buy.stripe.com/test_4gM00jaImghE87Q3n6eUU05",
+  "checklistFormLink": "/api/lead-magnet",
+  "paymentProvider": "",
+  "paymentLinkId": "",
+  "paymentLinkCreated": false,
+  "deliveryToken": "41fd57e16dc1d602d8",
+  "placePhotos": [
+    {
+      "name": "Acropole",
+      "path": "/images/cities/athenes-place-1.webp",
+      "pinPath": "/images/cities/athenes-place-1-pin.webp",
+      "credit": "A.Savin · CC BY-SA 3.0 / Wikimedia Commons"
+    },
+    {
+      "name": "Agora antique et temple d'Héphaïstos",
+      "path": "/images/cities/athenes-place-2.webp",
+      "pinPath": "/images/cities/athenes-place-2-pin.webp",
+      "credit": "Dennis G. Jarvis · CC BY-SA 2.0 / Wikimedia Commons"
+    },
+    {
+      "name": "Musée national archéologique",
+      "path": "/images/cities/athenes-place-3.webp",
+      "pinPath": "/images/cities/athenes-place-3-pin.webp",
+      "credit": "Thomas Wolf, www.foto-tw.de · CC BY-SA 3.0 de / Wikimedia Commons"
+    },
+    {
+      "name": "Colline du Lycabette",
+      "path": "/images/cities/athenes-place-4.webp",
+      "pinPath": "/images/cities/athenes-place-4-pin.webp",
+      "credit": "User:Greenshed · Public domain / Wikimedia Commons"
+    }
+  ],
+  "publicPinBasePath": "/pins/athenes",
+  "blogPath": "/blog/athenes",
+  "guidePagePath": "/guides/athenes",
+  "checklistPagePath": "/checklists/athenes",
+  "printGuidePath": "/print/guide/athenes",
+  "printChecklistPath": "/print/checklist/athenes",
+  "status": "full_funnel_published",
+  "blogDraft": false,
+  "guideDraft": false,
+  "checklistDraft": false,
+  "pinCount": 10,
+  "createdAt": "2026-06-18T15:32:15.352Z"
+}

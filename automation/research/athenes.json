@@ -1,0 +1,189 @@
+{
+  "idea": "Athènes en 5 jours : antiquité, quartiers et budget",
+  "destination": "Athènes",
+  "angle": "Antiquité, quartiers et budget pour 5 jours",
+  "method": "web_search",
+  "generatedAt": "2026-06-18T08:46:39.054Z",
+  "sources": [
+    {
+      "title": "Billets Acropole Athènes – Prix 2026 & Accès Rapide",
+      "url": "https://bons-plans-athenes.com/acropole-tarif-prix-billets/"
+    },
+    {
+      "title": "Billets pour l'Acropole d'Athènes (Tarifs 2026)",
+      "url": "https://www.acropolis-athens-tickets.com/fr"
+    },
+    {
+      "title": "Tarifs billet Acropole Athènes 2026 | Prix officiels",
+      "url": "https://acropolistickets.guide/fr/ticket-prices/"
+    },
+    {
+      "title": "Visiter l’Acropole d’Athènes en 2026 : l’essentiel pour préparer votre visite",
+      "url": "https://www.petitfute.com/v42831-athenes/actualite/m17-top-10-insolites-voyage/a46060-visiter-lacropole-dathenes-lessentiel-pour-preparer-votre-visite.html"
+    },
+    {
+      "title": "Les différents moyens de transport depuis l’aéroport d’Athènes",
+      "url": "https://vivreathenes.com/les-differents-moyens-de-transport-depuis-l-aeroport-international-d-athenes.html"
+    },
+    {
+      "title": "Quels transports entre l'aéroport, le centre d'Athènes et le Pirée ?",
+      "url": "https://hellenica.fr/athenes/transports-aeroport-centre-port-piree/"
+    },
+    {
+      "title": "Transports publics | Guide Officiel d'Athènes",
+      "url": "https://www.thisisathens.org/fr/se-deplacer/transports-communs-metro-bus-tram"
+    },
+    {
+      "title": "Où dormir à Athènes | Nos conseils et hôtels par quartier",
+      "url": "https://floetjulie.com/ou-dormir-a-athenes/"
+    },
+    {
+      "title": "Où dormir à Athènes ? Meilleurs Quartiers + Hôtels en 2026",
+      "url": "https://voyageursintrepides.com/quartier-loger-athenes-dormir"
+    },
+    {
+      "title": "Où manger à Athènes: 7 bons restaurants et tavernes typiques",
+      "url": "https://generationvoyage.fr/manger-athenes/"
+    },
+    {
+      "title": "Où manger à Athènes - Plats typiques et restaurants à Athènes",
+      "url": "https://www.athenes.fr/ou-manger"
+    },
+    {
+      "title": "Athènes Grèce 2026, recommandations et informations aux voyageurs",
+      "url": "https://greece.vivato.co.il/fr/location/%D7%90%D7%AA%D7%95%D7%A0%D7%94/"
+    },
+    {
+      "title": "Guide de voyage d'Athènes 2026 | Plus d'attractions, de conseils et plus encore",
+      "url": "https://www.tickets-athens.com/fr/travel-guide/"
+    },
+    {
+      "title": "Athènes 2026: Ce qu'il faut savoir pour votre visite",
+      "url": "https://fr.tripadvisor.ca/Tourism-g189400-Athens_Attica-Vacations.html"
+    },
+    {
+      "title": "Première fois à Athènes : les immanquables en 2026",
+      "url": "https://advised-traveler.com/europe/guide-voyage-grece/visiter-premiere-fois-athenes-faire-voir/"
+    },
+    {
+      "title": "Quels sont les meilleurs mots-clés Pinterest à utiliser en 2026 ? [Liste]",
+      "url": "https://brand24.com/blog/fr/mots-cles-pinterest/"
+    },
+    {
+      "title": "SEO et voyages : des mots clés essentiels pour augmenter votre visibilité",
+      "url": "https://ezus.io/fr/article/mots-cles-seo-voyage"
+    },
+    {
+      "title": "Tendances Pinterest 2026 : mots-clés à suivre",
+      "url": "https://fr.accio.com/business/pinterest-trends-keywords"
+    }
+  ],
+  "attractions": [
+    {
+      "name": "Acropole (Parthénon, Propylées, temple d'Athéna Nikè)",
+      "priceIndicatif": "30 € (adulte), 15 € (réduit), 36 € (billet combiné 7 sites)",
+      "url": "https://www.acropolis-athens-tickets.com/fr"
+    },
+    {
+      "name": "Musée de l'Acropole",
+      "priceIndicatif": "15 € (adulte), 8 € (réduit)",
+      "url": "https://www.acropolis-athens-tickets.com/fr"
+    },
+    {
+      "name": "Agora antique et temple d'Héphaïstos",
+      "priceIndicatif": "10 € (adulte), 5 € (réduit)",
+      "url": ""
+    },
+    {
+      "name": "Musée national archéologique",
+      "priceIndicatif": "12 € (adulte), 6 € (réduit)",
+      "url": ""
+    },
+    {
+      "name": "Colline du Lycabette (vue panoramique)",
+      "priceIndicatif": "gratuit (accès libre)",
+      "url": ""
+    },
+    {
+      "name": "Colline Philopappou",
+      "priceIndicatif": "gratuit",
+      "url": ""
+    },
+    {
+      "name": "Agora romaine et tour des Vents",
+      "priceIndicatif": "8 € (adulte), 4 € (réduit)",
+      "url": ""
+    },
+    {
+      "name": "Marché aux puces de Monastiraki",
+      "priceIndicatif": "gratuit (accès libre)",
+      "url": ""
+    }
+  ],
+  "transports": [
+    "Métro ligne 3 (aéroport → Syntagma/Monastiraki) : 1,20 €/ticket standard, 9 € pour l'aéroport, 20 € (3 jours illimités), 10 € (5 jours illimités)",
+    "Bus express (aéroport → centre-ville) : à partir de 6 €",
+    "Taxi aéroport → centre-ville : 35 € (jour), 50 € (nuit)",
+    "Navettes privées : à partir de 120 € (minibus climatisé)",
+    "Bus Airport Express X95 (aéroport → Syntagma) : 5 €"
+  ],
+  "neighborhoods": [
+    "Plaka (historique, piéton, restaurants, boutiques)",
+    "Monastiraki (marché aux puces, ambiance locale, proche de l'Agora)",
+    "Koukaki (calme, proche de l'Acropole, bon rapport qualité-prix)",
+    "Psyri (branché, vie nocturne, restaurants tendance)",
+    "Syntagma (cœur moderne, Parlement, shopping)",
+    "Thiseio (central, moins touristique, vue sur l'Acropole)",
+    "Exarchia (alternatif, street art, jeunes, prix abordables)"
+  ],
+  "restaurants": [
+    "Tzitzikas & Mermigas (cuisine grecque traditionnelle, Plaka)",
+    "Ergon House (cuisine grecque moderne, central)",
+    "Ama Lachei (taverne typique, recommandée)",
+    "Seychelles (cuisine grecque raffinée, Keramikos)",
+    "Vezené (viandes, restaurant gastronomique)",
+    "Taverne Avli (cadre intimiste, Monastiraki)",
+    "Oxo Nou (spécialités grecques, Exarchia)",
+    "Marché central d'Athènes (tavernes et produits locaux)"
+  ],
+  "attentionPoints": [
+    "Attention aux pickpockets dans les zones très fréquentées (métro, Acropole, Monastiraki)",
+    "Le trafic à Athènes est dense et chaotique : prudence en traversant les rues",
+    "Évitez de manger dans les restaurants trop touristiques (Plaka, Monastiraki) : privilégiez les tavernes locales",
+    "Réservez les billets pour l'Acropole et les sites majeurs à l'avance pour éviter les files d'attente",
+    "Les horaires des repas sont décalés : déjeuner 14h-16h, dîner après 21h",
+    "L'été, les températures peuvent dépasser 35°C : prévoir eau, chapeau, crème solaire",
+    "Préférez les quartiers centraux (Plaka, Monastiraki, Koukaki) pour éviter les transports inutiles"
+  ],
+  "keywords": [
+    "Athènes 5 jours itinéraire",
+    "Que faire à Athènes en 5 jours",
+    "Budget voyage Athènes 5 jours",
+    "Quartiers où dormir Athènes",
+    "Visiter l'Acropole prix billets",
+    "Transports aéroport Athènes centre",
+    "Restaurants typiques Athènes",
+    "Meilleurs quartiers Athènes 2026",
+    "Voyage Grèce antique Athènes",
+    "Conseils voyage Athènes pas cher",
+    "Itinéraire Athènes 5 jours",
+    "Athènes en famille 5 jours",
+    "Où loger à Athènes selon budget",
+    "Visiter Athènes sans voiture",
+    "Tavernes authentiques Athènes",
+    "Pinterest Athènes voyage",
+    "SEO voyage Athènes",
+    "Athènes hors des sentiers battus",
+    "Meilleure période pour visiter Athènes",
+    "Budget repas Athènes"
+  ],
+  "needsVerification": [
+    "Prix exact des billets combinés (à vérifier sur hhticket.gr)",
+    "Disponibilité des créneaux pour l'Acropole (à vérifier sur le site officiel)",
+    "Prix des restaurants (varient selon saison et lieu)",
+    "Disponibilité des hôtels dans les quartiers recommandés (réservation conseillée)",
+    "Horaires précis des transports en commun (vérifier sur le site officiel)",
+    "Prix des navettes privées (à confirmer selon prestataire)",
+    "Météo exacte pour les dates du voyage (à vérifier avant départ)"
+  ]
+}
